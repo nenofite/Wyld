@@ -1,6 +1,7 @@
 module wyld.main;
 
 import n = ncs.curses;
+import std.string: toStringz;
 
 /*const*/ int viewHeight = 20,
           viewWidth = 20;
@@ -18,12 +19,17 @@ enum Col {
 struct Sym {
   char ch;
   Col color;
+
+  void draw(int y, int x) const {
+    n.attrset(n.COLOR_PAIR(color));
+    n.mvaddch(y, x, ch);
+  }
 }
 
 class World {
   int px, py;
   int w, h;
-  Ent[][int][int] ents;
+  Ent[] ents;
   Grid!(Terr) terr;
 
   this(int w, int h) {
@@ -37,13 +43,22 @@ class World {
     int cx = px - (viewWidth / 2),
         cy = py - (viewHeight / 2);
     Sym s;
+    int notDrawn;
 
     for (int y = 0; y < viewHeight; y++) {
       n.move(y + by, bx);
       for (int x = 0; x < viewWidth; x++) {
-        s = at(cx + x, cy + y);
+        s = baseAt(cx + x, cy + y);
         n.attrset(n.COLOR_PAIR(s.color));
         n.addch(s.ch);
+      }
+    }
+
+    foreach (e; ents) {
+      if (inView(e.x, e.y)) {
+	e.sym().draw(e.y + by - cy, e.x + bx - cx);
+      } else {
+	notDrawn++;
       }
     }
 
@@ -52,16 +67,25 @@ class World {
     n.mvprintw(n.LINES - 1, 2, "%d, %d  ", px, py);
     n.attrset(n.COLOR_PAIR(Col.GREEN));
     n.printw("%d, %d", cx, cy);
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.printw("  -  ND: %d", notDrawn);
+    n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
+  }
+
+  bool inView(int x, int y) {
+    x -= px - (viewWidth / 2);
+    y -= py - (viewHeight / 2);
+    return (x >= 0 && x < viewWidth && y >= 0 && y < viewHeight); 
   }
   
-  Sym at(int x, int y) {
-    if (px == x && py == y) {
-      return Sym('@', Col.BLUE);
-    }
-    if (x in ents) {
-      if (y in ents[x])
-        return ents[x][y][0].sym();
-    }
+  Sym baseAt(int x, int y) {
+    //if (px == x && py == y) {
+    //  return Sym('@', Col.BLUE);
+    //}
+
+    //auto es = entsAt(x, y);
+    //if (es.length > 0)
+    //  return es[0].sym();
 
     if (terr.inside(x, y))  
       return terr.get(x, y).sym();
@@ -74,19 +98,26 @@ class World {
   }
 
   Ent[] entsAt(int x, int y) {
-    if (x in ents) {
-      auto xd = ents[x];
-      if (y in xd) {
-        return xd[y];
-      }
+    //if (x in ents) {
+    //  auto xd = ents[x];
+    //  if (y in xd) {
+    //    return xd[y];
+    //  }
+    //}
+    //return [];
+
+    Ent[] ret;
+    foreach (e; ents) {
+      if (e.x == x && e.y == y) ret ~= e;
     }
-    return [];
+    return ret;
   }
 
   bool blockAt(int x, int y) {
     foreach (e; entsAt(x, y)) {
       if (e.isBlocking) return true;
     }
+    if (!terr.inside(x, y)) return true;
     if (terr.get(x, y).isBlocking) return true;
     return false;
   }
@@ -100,21 +131,66 @@ class World {
   void movePlayerD(int nx, int ny) {
     movePlayer(px + nx, py + ny);
   }
+
+  //void collMove(int ox, int oy, Ent ent, int nx, int ny) {
+  //  if (!blockAt(nx, ny)) {
+  //    //ents[ox][oy].remove(ent);
+  //    //ents[nx][ny] ~= ent;
+  //    ent.x = nx;
+  //    ent.y = ny;
+  //    //TODO clean this up
+  //  }
+  //}
+  //void collMoveD(int ox, int oy, Ent ent, int nx, int ny) {
+  //  collMove(ox, oy, ent, nx + ox, ny + oy);
+  //}
+
+  void update() {
+    //foreach (x, col; ents) {
+    //  foreach (y, stack; col) {
+    //    foreach (e; stack)
+    //      e.update(x, y, this);
+    //  }
+    //}
+  
+    foreach (e; ents) {
+      e.update(e.x, e.y, this);
+      //TODO clean this up
+    }
+  }
 }
 
 abstract class Ent {
+  int x, y;
   bool isBlocking;
 
   Sym sym();
+  void update(int x, int y, World);
+
+  void collMove(int nx, int ny, World w) {
+    if (!w.blockAt(nx, ny)) {
+      x = nx;
+      y = ny;
+    }
+  }
+  void collMoveD(int dx, int dy, World w) {
+    collMove(dx + x, dy + y, w);
+  }
 }
 
 class Deer : Ent {
-  this() {
+  this(int x, int y) {
+    this.x = x;
+    this.y = y;
     isBlocking = true;
   }
 
   Sym sym() {
     return Sym('D', Col.TEXT);
+  }
+
+  void update(int x, int y, World world) {
+    collMoveD(-1, 0, world);
   }
 }
 
@@ -167,7 +243,7 @@ class Grid(A) {
   }
 
   private int conv(int x, int y) {
-    if (!inside(x, y)) throw new Error("Not in bounds of Grid!");
+    if (!inside(x, y)) throw new Error("Not in bounds of Grid.");
     return x * w + y;
   }
 
@@ -194,6 +270,11 @@ class Grid(A) {
 }
 
 void main() {
+  auto bob = [1, 2, 3];
+  bob.remove(1);
+  bob.remove(3);
+  assert(bob.length == 1);
+
   n.initscr();
   scope (exit) n.endwin();
   n.cbreak();
@@ -206,12 +287,14 @@ void main() {
   world.px = 5;
   world.py = 11;
 
+  world.ents ~= new Deer(4, 11);
+
 //  for (int x = 0; x < 10000; x++) {
 //    for (int y = 0; y < 10; y++)
 //      world.ents[x][y] ~= new Deer();
 //  }
 
-  world.entsAt(2, 29);
+//  world.entsAt(2, 29);
  
   bool badKey = false;
  
@@ -220,12 +303,15 @@ void main() {
     world.draw(0, 0);
     
     if (badKey) { 
-      n.attrset(n.COLOR_PAIR(Col.RED));
-      n.mvaddch(n.LINES - 1, n.COLS - 1, '?');
+//      n.attrset(n.COLOR_PAIR(Col.RED));
+//      n.mvprintw(n.LINES - 1, n.COLS - 2, "??");
+      barMsg("Unknown key.");
     }
     badKey = false;
 
     n.refresh();
+
+    world.update();
     
     switch (n.getch()) {
       case n.KEY_UP:
@@ -295,3 +381,46 @@ void clearScreen() {
     clearLine(y);
   }
 }
+
+void barMsg(string msg) {
+  n.attrset(n.COLOR_PAIR(Col.BORDER));
+  clearLine(n.LINES - 1);
+  n.mvprintw(n.LINES - 1, 0, "  %s  ", toStringz(msg));
+}
+
+void remove(A)(ref A[] ls, A elem) {
+  A[] ret;
+  foreach (a; ls) {
+    if (a != elem) ret ~= a;
+  }
+  ls = ret;
+}
+
+/+void remove(A)(ref A[] ls, A elem) {
+  A[] ret;
+  ret.length = ls.length - 1;
+  bool started;
+  for (int i = 0; i < ls.length - 1; i++) {
+    if (ls[i] == elem) {
+      started = true;
+    }
+    ret[i] = ls[started ? i + 1 : i];
+  }
+/+
+  int start = -1;
+  foreach (i, a; ls) {
+    if (a == elem) {
+      start = cast (int) i;
+      break;
+    } else {
+      ret[i] = a;
+    }
+  }
+  for (int i = start; i < ls.length - 1; i++) {
+    ls[i] = ls[i + 1];
+  }
+  //ls.length = ls.length - 1;
++/
+  ls = ret;
+}
++/
