@@ -71,7 +71,7 @@ class World {
     n.printw("%d, %d", cx, cy);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.printw("  -  ND: %d", notDrawn);
-    n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
+    //n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
   }
 
   bool inView(int x, int y) {
