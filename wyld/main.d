@@ -62,6 +62,8 @@ class World {
       }
     }
 
+    Sym('@', Col.BLUE).draw(py + by - cy, px + bx - cx);
+
     clearLine(n.LINES - 1);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.mvprintw(n.LINES - 1, 2, "%d, %d  ", px, py);
