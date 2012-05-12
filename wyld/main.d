@@ -213,16 +213,18 @@ class Deer : Ent {
 	collMoveD(mx, my, world);
       }
     } else {
-      for (int i = 0; i < 10; i++) {
-	int dx, dy;
-	dx = x + uniform!("[]")(-10, 10);
-      	dy = y + uniform!("[]")(-10, 10);
-	if (!world.blockAt(dx, dy)) {
-	  destX = dx;
-	  destY = dy;
-	  hasDest = true;
-	  break;
-	}
+      if (uniform!("[]")(0, 20) == 0) {
+	for (int i = 0; i < 10; i++) {
+      	  int dx, dy;
+      	  dx = x + uniform!("[]")(-10, 10);
+      		dy = y + uniform!("[]")(-10, 10);
+      	  if (!world.blockAt(dx, dy)) {
+      	    destX = dx;
+      	    destY = dy;
+      	    hasDest = true;
+      	    break;
+      	  }
+      	}
       }
     }
 
