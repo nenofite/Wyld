@@ -74,6 +74,8 @@ class World {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.printw("  -  ND: %d", notDrawn);
     //n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
+    auto d = cast (Deer) ents[0];
+    n.printw("  -  dest %d, %d  %d, %d", d.destX, d.destY, d.x, d.y);
   }
 
   bool inView(int x, int y) {
@@ -188,6 +190,9 @@ abstract class Ent {
 }
 
 class Deer : Ent {
+  int destX, destY;
+  bool hasDest;
+
   this(int x, int y) {
     super(x, y);
     isBlocking = true;
@@ -198,20 +203,43 @@ class Deer : Ent {
   }
 
   void update(int x, int y, World world) {
-    //collMoveD(-1, 0, world);
-    collMoveD(uniform!("[]")(-1, 1), uniform!("[]")(-1, 1), world);
-
-    int rand = uniform!("[]")(0, 100);
-    if (rand == 0) {
-      world.ents.remove(this);
-      world.ents ~= new Tree(x, y);
-    } else if (rand > 98) {
-      world.ents.remove(this);
-    } else if (rand > 93) {
-      if (!world.blockAt(x, y - 1)) {
-	world.ents ~= new Deer(x, y - 1);
+    if (hasDest) {
+      if (x == destX && y == destY) {
+	hasDest = false;
+      } else {
+	int mx, my;
+	mx = compare(destX, x);
+	my = compare(destY, y);
+	collMoveD(mx, my, world);
+      }
+    } else {
+      for (int i = 0; i < 10; i++) {
+	int dx, dy;
+	dx = x + uniform!("[]")(-10, 10);
+      	dy = y + uniform!("[]")(-10, 10);
+	if (!world.blockAt(dx, dy)) {
+	  destX = dx;
+	  destY = dy;
+	  hasDest = true;
+	  break;
+	}
       }
     }
+
+    //collMoveD(-1, 0, world);
+    //collMoveD(uniform!("[]")(-1, 1), uniform!("[]")(-1, 1), world);
+
+    //int rand = uniform!("[]")(0, 100);
+    //if (rand == 0) {
+    //  world.ents.remove(this);
+    //  world.ents ~= new Tree(x, y);
+    //} else if (rand > 98) {
+    //  world.ents.remove(this);
+    //} else if (rand > 93) {
+    //  if (!world.blockAt(x, y - 1)) {
+    //    world.ents ~= new Deer(x, y - 1);
+    //  }
+    //}
   }
 }
 
@@ -326,12 +354,13 @@ void main() {
   world.px = 5;
   world.py = 11;
 
-  for (int x = 0; x < 15; x++) {
-    world.ents ~= new Deer(4 + x, 11);
-    world.ents ~= new Deer(4 + x, 12);
-    world.ents ~= new Deer(4 + x, 13);
-    world.ents ~= new Deer(4 + x, 14);
-  }
+  world.ents ~= new Deer(10, 6);
+  //for (int x = 0; x < 15; x++) {
+  //  world.ents ~= new Deer(4 + x, 11);
+  //  world.ents ~= new Deer(4 + x, 12);
+  //  world.ents ~= new Deer(4 + x, 13);
+  //  world.ents ~= new Deer(4 + x, 14);
+  //}
 
 //  for (int x = 0; x < 10000; x++) {
 //    for (int y = 0; y < 10; y++)
@@ -494,3 +523,12 @@ void remove(A)(ref A[] ls, A elem) {
   ls = ret;
 }
 +/
+
+int compare(T)(T a, T b) {
+  if (a > b)
+    return 1;
+  else if (a < b)
+    return -1;
+  else
+    return 0;
+}
