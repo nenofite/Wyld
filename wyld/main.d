@@ -309,10 +309,10 @@ class Grid(A) {
 }
 
 void main() {
-  auto bob = [1, 2, 3];
-  bob.remove(1);
-  bob.remove(3);
-  assert(bob.length == 1);
+  //auto bob = [1, 2, 3];
+  //bob.remove(1);
+  //bob.remove(3);
+  //assert(bob.length == 1);
 
   n.initscr();
   scope (exit) n.endwin();
