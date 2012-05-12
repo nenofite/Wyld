@@ -168,6 +168,11 @@ abstract class Ent {
   int x, y;
   bool isBlocking;
 
+  this(int x, int y) {
+    this.x = x;
+    this.y = y;
+  }
+
   Sym sym();
   void update(int x, int y, World);
 
@@ -184,8 +189,7 @@ abstract class Ent {
 
 class Deer : Ent {
   this(int x, int y) {
-    this.x = x;
-    this.y = y;
+    super(x, y);
     isBlocking = true;
   }
 
@@ -196,6 +200,36 @@ class Deer : Ent {
   void update(int x, int y, World world) {
     //collMoveD(-1, 0, world);
     collMoveD(uniform!("[]")(-1, 1), uniform!("[]")(-1, 1), world);
+
+    int rand = uniform!("[]")(0, 100);
+    if (rand == 0) {
+      world.ents.remove(this);
+      world.ents ~= new Tree(x, y);
+    } else if (rand > 98) {
+      world.ents.remove(this);
+    } else if (rand > 93) {
+      if (!world.blockAt(x, y - 1)) {
+	world.ents ~= new Deer(x, y - 1);
+      }
+    }
+  }
+}
+
+class Tree : Ent {
+  this(int x, int y) {
+    super(x, y);
+    isBlocking = true;
+  }
+
+  Sym sym() {
+    return Sym('t', Col.GREEN);
+  }
+
+  void update(int x, int y, World world) {
+    int rand = uniform!("[]")(0, 100);
+    if (rand == 0) {
+      world.ents.remove(this);
+    }
   }
 }
 
