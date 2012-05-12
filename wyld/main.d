@@ -2,8 +2,9 @@ module wyld.main;
 
 import n = ncs.curses;
 import std.string: toStringz;
+import std.random: uniform;
 
-/*const*/ int viewHeight = 20,
+const int viewHeight = 20,
           viewWidth = 20;
 
 enum Col {
@@ -64,6 +65,7 @@ class World {
 
     Sym('@', Col.BLUE).draw(py + by - cy, px + bx - cx);
 
+    clearLine(n.LINES - 2);
     clearLine(n.LINES - 1);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.mvprintw(n.LINES - 1, 2, "%d, %d  ", px, py);
@@ -192,7 +194,8 @@ class Deer : Ent {
   }
 
   void update(int x, int y, World world) {
-    collMoveD(-1, 0, world);
+    //collMoveD(-1, 0, world);
+    collMoveD(uniform!("[]")(-1, 1), uniform!("[]")(-1, 1), world);
   }
 }
 
@@ -281,7 +284,7 @@ void main() {
   scope (exit) n.endwin();
   n.cbreak();
   n.noecho();
-  n.keypad(n.stdscr, true);
+  n.keypad(n.stdscr, false);
   n.curs_set(false);
   initColor();
   
@@ -289,7 +292,12 @@ void main() {
   world.px = 5;
   world.py = 11;
 
-  world.ents ~= new Deer(4, 11);
+  for (int x = 0; x < 15; x++) {
+    world.ents ~= new Deer(4 + x, 11);
+    world.ents ~= new Deer(4 + x, 12);
+    world.ents ~= new Deer(4 + x, 13);
+    world.ents ~= new Deer(4 + x, 14);
+  }
 
 //  for (int x = 0; x < 10000; x++) {
 //    for (int y = 0; y < 10; y++)
@@ -298,36 +306,61 @@ void main() {
 
 //  world.entsAt(2, 29);
  
-  bool badKey = false;
+  //bool badKey = false;
+  int badKey = -1;
  
   bool cont = true;
   while (cont) {
     world.draw(0, 0);
     
-    if (badKey) { 
+    if (badKey != -1) { 
 //      n.attrset(n.COLOR_PAIR(Col.RED));
 //      n.mvprintw(n.LINES - 1, n.COLS - 2, "??");
-      barMsg("Unknown key.");
+      barMsg("Unknown key: %d '%c'", badKey, badKey);
     }
-    badKey = false;
+    badKey = -1;
 
     n.refresh();
 
     world.update();
     
-    switch (n.getch()) {
-      case n.KEY_UP:
+    int key = n.getch();
+    switch (key) {
+      //case n.KEY_UP:
+      case '8':
         world.movePlayerD(0, -1);
         break;
-      case n.KEY_DOWN:
+      //case n.KEY_DOWN:
+      case '2':
         world.movePlayerD(0, 1);
         break;
-      case n.KEY_LEFT:
+      //case n.KEY_LEFT:
+      case '4':
         world.movePlayerD(-1, 0);
         break;
-      case n.KEY_RIGHT:
+      //case n.KEY_RIGHT:
+      case '6':
         world.movePlayerD(1, 0);
         break;
+      //case n.KEY_HOME:
+      case '7':
+	world.movePlayerD(-1, -1);
+	break;
+      //case n.KEY_PPAGE:
+      case '9':
+	world.movePlayerD(1, -1);
+	break;
+      //case n.KEY_B2:
+      case '5':
+	break;
+      //case n.KEY_END:
+      case '1':
+	world.movePlayerD(-1, 1);
+	break;
+      //case n.KEY_NPAGE:
+      case '3':
+	world.movePlayerD(1, 1);
+	break;
       case 'Q':
         cont = false;
         break;
@@ -350,7 +383,7 @@ void main() {
 //        }
         break;
       default:
-        badKey = true;
+        badKey = key;
         break;
     }
   }
@@ -384,10 +417,11 @@ void clearScreen() {
   }
 }
 
-void barMsg(string msg) {
+void barMsg(A...)(const string msg, A fmt) {
   n.attrset(n.COLOR_PAIR(Col.BORDER));
-  clearLine(n.LINES - 1);
-  n.mvprintw(n.LINES - 1, 0, "  %s  ", toStringz(msg));
+  clearLine(n.LINES - 2);
+  //n.mvprintw(n.LINES - 1, 0, "  %s  ", toStringz(msg));
+  n.mvprintw(n.LINES - 2, 0, toStringz(msg), fmt);
 }
 
 void remove(A)(ref A[] ls, A elem) {
