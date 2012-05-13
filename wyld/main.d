@@ -160,7 +160,9 @@ class World {
     //}
   
     foreach (e; ents) {
-      e.update(e.x, e.y, this);
+      e.runUpdate(this);
+      //e.getUpdate(this).run(this);
+      //e.update(e.x, e.y, this).run(this);
       //TODO clean this up
     }
   }
@@ -170,13 +172,30 @@ abstract class Ent {
   int x, y;
   bool isBlocking;
 
+  private Update upd;
+
   this(int x, int y) {
     this.x = x;
     this.y = y;
   }
 
   Sym sym();
-  void update(int x, int y, World);
+  //void update(int x, int y, World);
+  Update update(World);
+
+  //Update getUpdate(World w) {
+  //  if (upd is null)
+  //    upd = update(w);
+  //  return upd;
+  //}
+  void runUpdate(World w) {
+    if (upd is null) {
+      upd = update(w);
+    }
+    if (upd.run(w)) {
+      upd = null;
+    }
+  }
 
   void collMove(int nx, int ny, World w) {
     if (!w.blockAt(nx, ny)) {
@@ -199,25 +218,27 @@ class Deer : Ent {
   }
 
   Sym sym() {
-    return Sym('D', Col.TEXT);
+    return Sym('D', Col.WHITE);
   }
 
-  void update(int x, int y, World world) {
+  Update update(World world) {
+    if (x == destX && y == destY) {
+      hasDest = false;
+    }
     if (hasDest) {
-      if (x == destX && y == destY) {
-	hasDest = false;
-      } else {
-	int mx, my;
-	mx = compare(destX, x);
-	my = compare(destY, y);
-	collMoveD(mx, my, world);
-      }
+      int mx, my;
+      mx = compare(destX, x);
+      my = compare(destY, y);
+      return new Update(100, (World w) {
+        collMoveD(mx, my, world);
+      });
     } else {
-      if (uniform!("[]")(0, 20) == 0) {
-	for (int i = 0; i < 10; i++) {
+      int delay = uniform!("[]")(50, 1000);
+      return new Update(delay, (World w) {
+        for (int i = 0; i < 10; i++) {
       	  int dx, dy;
       	  dx = x + uniform!("[]")(-10, 10);
-      		dy = y + uniform!("[]")(-10, 10);
+	  dy = y + uniform!("[]")(-10, 10);
       	  if (!world.blockAt(dx, dy)) {
       	    destX = dx;
       	    destY = dy;
@@ -225,23 +246,8 @@ class Deer : Ent {
       	    break;
       	  }
       	}
-      }
+      });
     }
-
-    //collMoveD(-1, 0, world);
-    //collMoveD(uniform!("[]")(-1, 1), uniform!("[]")(-1, 1), world);
-
-    //int rand = uniform!("[]")(0, 100);
-    //if (rand == 0) {
-    //  world.ents.remove(this);
-    //  world.ents ~= new Tree(x, y);
-    //} else if (rand > 98) {
-    //  world.ents.remove(this);
-    //} else if (rand > 93) {
-    //  if (!world.blockAt(x, y - 1)) {
-    //    world.ents ~= new Deer(x, y - 1);
-    //  }
-    //}
   }
 }
 
@@ -255,11 +261,13 @@ class Tree : Ent {
     return Sym('t', Col.GREEN);
   }
 
-  void update(int x, int y, World world) {
-    int rand = uniform!("[]")(0, 100);
-    if (rand == 0) {
-      world.ents.remove(this);
-    }
+  Update update(World world) {
+    return new Update(100, (World w) {
+      int rand = uniform!("[]")(0, 100);
+      if (rand == 0) {
+        world.ents.remove(this);
+      }
+    });
   }
 }
 
@@ -357,6 +365,9 @@ void main() {
   world.py = 11;
 
   world.ents ~= new Deer(10, 6);
+  world.ents ~= new Deer(11, 7);
+  world.ents ~= new Deer(12, 6);
+  world.ents ~= new Deer(13, 9);
   //for (int x = 0; x < 15; x++) {
   //  world.ents ~= new Deer(4 + x, 11);
   //  world.ents ~= new Deer(4 + x, 12);
@@ -387,7 +398,8 @@ void main() {
 
     n.refresh();
 
-    world.update();
+    for (int x = 0; x < 100; x++)
+      world.update();
     
     int key = n.getch();
     switch (key) {
@@ -533,4 +545,24 @@ int compare(T)(T a, T b) {
     return -1;
   else
     return 0;
+}
+
+class Update {
+  int timeReq;
+  void delegate(World) update;
+
+  this(int timeReq, void delegate(World) update) {
+    this.timeReq = timeReq;
+    this.update = update;
+  }
+
+  bool run(World world) {
+    timeReq--;
+    if (timeReq <= 0) {
+      if (update !is null)
+        update(world);
+      return true;
+    }
+    return false;
+  }
 }
