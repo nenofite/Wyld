@@ -128,6 +128,14 @@ class World {
     return false;
   }
 
+  int moveCostAt(int x, int y) {
+    int cost = terr.get(x, y).moveCost();
+    foreach (e; entsAt(x, y)) {
+      cost += e.moveCost;
+    }
+    return cost;
+  }
+
   void movePlayer(int nx, int ny) {
     if (!blockAt(nx, ny)) {
       px = nx;
@@ -171,6 +179,7 @@ class World {
 abstract class Ent {
   int x, y;
   bool isBlocking;
+  int moveCost;
 
   private Update upd;
 
@@ -206,6 +215,21 @@ abstract class Ent {
   void collMoveD(int dx, int dy, World w) {
     collMove(dx + x, dy + y, w);
   }
+
+  Update move(int dx, int dy, World w) {
+    int nx = x + dx,
+	ny = y + dy;
+    if (!w.blockAt(nx, ny)) {
+      int cost = w.moveCostAt(x, y) 
+               + w.moveCostAt(nx, ny)
+               + moveCost;
+      return new Update(cost, (World w) {
+        x = nx;
+        y = ny;
+      });
+    }
+    return new Update(0, null);
+  }
 }
 
 class Deer : Ent {
@@ -229,9 +253,10 @@ class Deer : Ent {
       int mx, my;
       mx = compare(destX, x);
       my = compare(destY, y);
-      return new Update(100, (World w) {
-        collMoveD(mx, my, world);
-      });
+      return move(mx, my, world);
+      //return new Update(100, (World w) {
+      //  collMoveD(mx, my, world);
+      //});
     } else {
       int delay = uniform!("[]")(50, 1000);
       return new Update(delay, (World w) {
@@ -274,6 +299,7 @@ class Tree : Ent {
 struct Terr {
   enum Type {
     DIRT,
+    MUD,
     ROCK,
     WATER
   }
@@ -285,6 +311,9 @@ struct Terr {
       case Type.DIRT:
         return Sym('#', Col.YELLOW);
         break;
+      case Type.MUD:
+	return Sym('~', Col.YELLOW);
+	break;
       case Type.ROCK:
         return Sym('#', Col.WHITE);
         break;
@@ -297,13 +326,31 @@ struct Terr {
     }
   }
 
-  bool isBlocking() {
+  bool isBlocking() const {
     switch (type) {
       case Type.WATER:
 	return true;
 	break;
       default:
 	return false;
+	break;
+    }
+  }
+
+  int moveCost() const {
+    switch (type) {
+      case Type.DIRT:
+      case Type.ROCK:
+	return 50;
+	break;
+      case Type.MUD:
+	return 100;
+	break;
+      case Type.WATER:
+	return 500;
+	break;
+      default:
+	throw new Error("No moveCost for bad type.");
 	break;
     }
   }
@@ -398,7 +445,7 @@ void main() {
 
     n.refresh();
 
-    for (int x = 0; x < 100; x++)
+    for (int x = 0; x < 50; x++)
       world.update();
     
     int key = n.getch();
@@ -447,7 +494,7 @@ void main() {
       case 'a':
         //world.terr.set(world.px, world.py, world.terr.get(world.px, world.py))
         //world.terr[world.px][world.py].type = Terr.Type.WATER;
-        world.terr.modify(world.px, world.py, (Terr a) { a.type = Terr.Type.WATER; return a; });
+        world.terr.modify(world.px, world.py, (Terr a) { a.type = Terr.Type.MUD; return a; });
 //        switch (n.getch()) {
 //          case n.KEY_UP:
 //            break;
