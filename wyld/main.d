@@ -28,8 +28,9 @@ struct Sym {
 }
 
 class World {
-  int px, py;
   int w, h;
+  //int px, py;
+  Ent player;
   Ent[] ents;
   Grid!(Terr) terr;
 
@@ -41,8 +42,8 @@ class World {
   }
   
   void draw(int by, int bx) {
-    int cx = px - (viewWidth / 2),
-        cy = py - (viewHeight / 2);
+    int cx = player.x - (viewWidth / 2),
+        cy = player.y - (viewHeight / 2);
     Sym s;
     int notDrawn;
 
@@ -63,24 +64,22 @@ class World {
       }
     }
 
-    Sym('@', Col.BLUE).draw(py + by - cy, px + bx - cx);
+    //Sym('@', Col.BLUE).draw(player.y + by - cy, player.x + bx - cx);
 
     clearLine(n.LINES - 2);
     clearLine(n.LINES - 1);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.mvprintw(n.LINES - 1, 2, "%d, %d  ", px, py);
+    n.mvprintw(n.LINES - 1, 2, "%d, %d  ", player.x, player.y);
     n.attrset(n.COLOR_PAIR(Col.GREEN));
     n.printw("%d, %d", cx, cy);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.printw("  -  ND: %d", notDrawn);
     //n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
-    auto d = cast (Deer) ents[0];
-    n.printw("  -  dest %d, %d  %d, %d", d.destX, d.destY, d.x, d.y);
   }
 
   bool inView(int x, int y) {
-    x -= px - (viewWidth / 2);
-    y -= py - (viewHeight / 2);
+    x -= player.x - (viewWidth / 2);
+    y -= player.y - (viewHeight / 2);
     return (x >= 0 && x < viewWidth && y >= 0 && y < viewHeight); 
   }
   
@@ -136,15 +135,15 @@ class World {
     return cost;
   }
 
-  void movePlayer(int nx, int ny) {
-    if (!blockAt(nx, ny)) {
-      px = nx;
-      py = ny;
-    }
-  }
-  void movePlayerD(int nx, int ny) {
-    movePlayer(px + nx, py + ny);
-  }
+  //void movePlayer(int nx, int ny) {
+  //  if (!blockAt(nx, ny)) {
+  //    player.x = nx;
+  //    player.y = ny;
+  //  }
+  //}
+  //void movePlayerD(int nx, int ny) {
+  //  movePlayer(player.x + nx, player.y + ny);
+  //}
 
   //void collMove(int ox, int oy, Ent ent, int nx, int ny) {
   //  if (!blockAt(nx, ny)) {
@@ -172,6 +171,12 @@ class World {
       //e.getUpdate(this).run(this);
       //e.update(e.x, e.y, this).run(this);
       //TODO clean this up
+    }
+  }
+
+  void playerUpdate(Update upd) {
+    while (!upd.run(this)) {
+      update();
     }
   }
 }
@@ -273,6 +278,22 @@ class Deer : Ent {
       	}
       });
     }
+  }
+}
+
+class Player : Ent {
+  this(int x, int y) {
+    super(x, y);
+    isBlocking = true;
+    moveCost = 50;
+  }
+
+  Sym sym() {
+    return Sym('@', Col.BLUE);
+  }
+
+  Update update(World world) {
+    return Update.empty;
   }
 }
 
@@ -406,10 +427,11 @@ void main() {
   n.keypad(n.stdscr, false);
   n.curs_set(false);
   initColor();
+
   
   auto world = new World(20, 20);
-  world.px = 5;
-  world.py = 11;
+  world.player = new Player(5, 11);
+  world.ents ~= world.player;
 
   world.ents ~= new Deer(10, 6);
   world.ents ~= new Deer(11, 7);
@@ -435,7 +457,7 @@ void main() {
   bool cont = true;
   while (cont) {
     world.draw(0, 0);
-    
+
     if (badKey != -1) { 
 //      n.attrset(n.COLOR_PAIR(Col.RED));
 //      n.mvprintw(n.LINES - 1, n.COLS - 2, "??");
@@ -445,45 +467,45 @@ void main() {
 
     n.refresh();
 
-    for (int x = 0; x < 50; x++)
-      world.update();
+    //for (int x = 0; x < 50; x++)
+    //  world.update();
     
     int key = n.getch();
     switch (key) {
       //case n.KEY_UP:
       case '8':
-        world.movePlayerD(0, -1);
+	world.playerUpdate(world.player.move(0, -1, world));
         break;
       //case n.KEY_DOWN:
       case '2':
-        world.movePlayerD(0, 1);
+        world.playerUpdate(world.player.move(0, 1, world));
         break;
       //case n.KEY_LEFT:
       case '4':
-        world.movePlayerD(-1, 0);
+        world.playerUpdate(world.player.move(-1, 0, world));
         break;
       //case n.KEY_RIGHT:
       case '6':
-        world.movePlayerD(1, 0);
+        world.playerUpdate(world.player.move(1, 0, world));
         break;
       //case n.KEY_HOME:
       case '7':
-	world.movePlayerD(-1, -1);
+	world.playerUpdate(world.player.move(-1, -1, world));
 	break;
       //case n.KEY_PPAGE:
       case '9':
-	world.movePlayerD(1, -1);
+	world.playerUpdate(world.player.move(1, -1, world));
 	break;
       //case n.KEY_B2:
       case '5':
 	break;
       //case n.KEY_END:
       case '1':
-	world.movePlayerD(-1, 1);
+	world.playerUpdate(world.player.move(-1, 1, world));
 	break;
       //case n.KEY_NPAGE:
       case '3':
-	world.movePlayerD(1, 1);
+	world.playerUpdate(world.player.move(1, 1, world));
 	break;
       case 'Q':
         cont = false;
@@ -494,7 +516,7 @@ void main() {
       case 'a':
         //world.terr.set(world.px, world.py, world.terr.get(world.px, world.py))
         //world.terr[world.px][world.py].type = Terr.Type.WATER;
-        world.terr.modify(world.px, world.py, (Terr a) { a.type = Terr.Type.MUD; return a; });
+        world.terr.modify(world.player.x, world.player.y, (Terr a) { a.type = Terr.Type.MUD; return a; });
 //        switch (n.getch()) {
 //          case n.KEY_UP:
 //            break;
@@ -611,5 +633,9 @@ class Update {
       return true;
     }
     return false;
+  }
+
+  static Update empty() {
+    return new Update(0, null);
   }
 }
