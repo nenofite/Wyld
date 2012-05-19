@@ -237,8 +237,7 @@ abstract class Ent {
         if (!w.blockAt(nx, ny)) {
           x = nx;
           y = ny;
-        } else
-          barMsg("Blocked.");
+        }
       });
     }
     return new Update(0, null);
@@ -489,6 +488,7 @@ void main() {
   bool cont = true;
   while (cont) {
     int key = n.getch();
+    n.flushinp();
     switch (key) {
       //case n.KEY_UP:
       case '8':
@@ -550,6 +550,7 @@ void main() {
     
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     clearScreen();
+    world.draw(0, 0);
     while (world.player.upd !is null) {
       world.update();
       world.draw(0, 0);
