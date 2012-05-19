@@ -1,11 +1,16 @@
 module wyld.main;
 
+import wyld.format;
+
+import core.thread: Thread, dur;
 import n = ncs.curses;
 import std.string: toStringz;
 import std.random: uniform;
 
 const int viewHeight = 20,
           viewWidth = 20;
+          
+string[] msgs;
 
 enum Col {
   TEXT,
@@ -58,15 +63,15 @@ class World {
 
     foreach (e; ents) {
       if (inView(e.x, e.y)) {
-	e.sym().draw(e.y + by - cy, e.x + bx - cx);
+        e.sym().draw(e.y + by - cy, e.x + bx - cx);
       } else {
-	notDrawn++;
+        notDrawn++;
       }
     }
 
     //Sym('@', Col.BLUE).draw(player.y + by - cy, player.x + bx - cx);
 
-    clearLine(n.LINES - 2);
+    //clearLine(n.LINES - 2);
     clearLine(n.LINES - 1);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.mvprintw(n.LINES - 1, 2, "%d, %d  ", player.x, player.y);
@@ -119,10 +124,10 @@ class World {
   }
 
   bool blockAt(int x, int y) {
+    if (!terr.inside(x, y)) return true;
     foreach (e; entsAt(x, y)) {
       if (e.isBlocking) return true;
     }
-    if (!terr.inside(x, y)) return true;
     if (terr.get(x, y).isBlocking) return true;
     return false;
   }
@@ -186,7 +191,7 @@ abstract class Ent {
   bool isBlocking;
   int moveCost;
 
-  private Update upd;
+  Update upd;
 
   this(int x, int y) {
     this.x = x;
@@ -223,14 +228,17 @@ abstract class Ent {
 
   Update move(int dx, int dy, World w) {
     int nx = x + dx,
-	ny = y + dy;
-    if (!w.blockAt(nx, ny)) {
+        ny = y + dy;
+    if (w.terr.inside(nx, ny)) {
       int cost = w.moveCostAt(x, y) 
                + w.moveCostAt(nx, ny)
                + moveCost;
       return new Update(cost, (World w) {
-        x = nx;
-        y = ny;
+        if (!w.blockAt(nx, ny)) {
+          x = nx;
+          y = ny;
+        } else
+          barMsg("Blocked.");
       });
     }
     return new Update(0, null);
@@ -244,6 +252,7 @@ class Deer : Ent {
   this(int x, int y) {
     super(x, y);
     isBlocking = true;
+    moveCost = 150;
   }
 
   Sym sym() {
@@ -266,18 +275,29 @@ class Deer : Ent {
       int delay = uniform!("[]")(50, 1000);
       return new Update(delay, (World w) {
         for (int i = 0; i < 10; i++) {
-      	  int dx, dy;
-      	  dx = x + uniform!("[]")(-10, 10);
-	  dy = y + uniform!("[]")(-10, 10);
-      	  if (!world.blockAt(dx, dy)) {
-      	    destX = dx;
-      	    destY = dy;
-      	    hasDest = true;
-      	    break;
-      	  }
-      	}
+          int dx, dy;
+          dx = x + uniform!("[]")(-10, 10);
+          dy = y + uniform!("[]")(-10, 10);
+          if (!world.blockAt(dx, dy)) {
+            destX = dx;
+            destY = dy;
+            hasDest = true;
+            break;
+          }
+        }
       });
     }
+  }
+}
+
+class Troll : Deer {
+  this(int x, int y) {
+    super(x, y);
+    moveCost = 500;
+  }
+  
+  Sym sym() {
+    return Sym('&', Col.GREEN);
   }
 }
 
@@ -293,7 +313,8 @@ class Player : Ent {
   }
 
   Update update(World world) {
-    return Update.empty;
+    //return Update.empty();
+    return null;
   }
 }
 
@@ -333,8 +354,8 @@ struct Terr {
         return Sym('#', Col.YELLOW);
         break;
       case Type.MUD:
-	return Sym('~', Col.YELLOW);
-	break;
+        return Sym('~', Col.YELLOW);
+        break;
       case Type.ROCK:
         return Sym('#', Col.WHITE);
         break;
@@ -350,11 +371,11 @@ struct Terr {
   bool isBlocking() const {
     switch (type) {
       case Type.WATER:
-	return true;
-	break;
+        return true;
+        break;
       default:
-	return false;
-	break;
+        return false;
+        break;
     }
   }
 
@@ -362,17 +383,17 @@ struct Terr {
     switch (type) {
       case Type.DIRT:
       case Type.ROCK:
-	return 50;
-	break;
+        return 50;
+        break;
       case Type.MUD:
-	return 100;
-	break;
+        return 100;
+        break;
       case Type.WATER:
-	return 500;
-	break;
+        return 500;
+        break;
       default:
-	throw new Error("No moveCost for bad type.");
-	break;
+        throw new Error("No moveCost for bad type.");
+        break;
     }
   }
 }
@@ -437,6 +458,14 @@ void main() {
   world.ents ~= new Deer(11, 7);
   world.ents ~= new Deer(12, 6);
   world.ents ~= new Deer(13, 9);
+  world.ents ~= new Troll(15, 2);
+  
+  barMsg("I");
+  barMsg("do");
+  barMsg("love");
+  barMsg("a");
+  barMsg("good");
+  barMsg("pie.");
   //for (int x = 0; x < 15; x++) {
   //  world.ents ~= new Deer(4 + x, 11);
   //  world.ents ~= new Deer(4 + x, 12);
@@ -450,63 +479,60 @@ void main() {
 //  }
 
 //  world.entsAt(2, 29);
- 
+
   //bool badKey = false;
+  world.draw(0, 0);
+
   int badKey = -1;
- 
+
   bool cont = true;
   while (cont) {
-    world.draw(0, 0);
-
-    if (badKey != -1) { 
-//      n.attrset(n.COLOR_PAIR(Col.RED));
-//      n.mvprintw(n.LINES - 1, n.COLS - 2, "??");
-      barMsg("Unknown key: %d '%c'", badKey, badKey);
-    }
-    badKey = -1;
-
-    n.refresh();
-
-    //for (int x = 0; x < 50; x++)
-    //  world.update();
-    
     int key = n.getch();
     switch (key) {
       //case n.KEY_UP:
       case '8':
-	world.playerUpdate(world.player.move(0, -1, world));
+        //world.playerUpdate(world.player.move(0, -1, world));
+        world.player.upd = world.player.move(0, -1, world);
         break;
       //case n.KEY_DOWN:
       case '2':
-        world.playerUpdate(world.player.move(0, 1, world));
+        //world.playerUpdate(world.player.move(0, 1, world));
+        world.player.upd = world.player.move(0, 1, world);
         break;
       //case n.KEY_LEFT:
       case '4':
-        world.playerUpdate(world.player.move(-1, 0, world));
+        //world.playerUpdate(world.player.move(-1, 0, world));
+        world.player.upd = world.player.move(-1, 0, world);
         break;
       //case n.KEY_RIGHT:
       case '6':
-        world.playerUpdate(world.player.move(1, 0, world));
+        //world.playerUpdate(world.player.move(1, 0, world));
+        world.player.upd = world.player.move(1, 0, world);
         break;
       //case n.KEY_HOME:
       case '7':
-	world.playerUpdate(world.player.move(-1, -1, world));
-	break;
+        //world.playerUpdate(world.player.move(-1, -1, world));
+        world.player.upd = world.player.move(-1, -1, world);
+        break;
       //case n.KEY_PPAGE:
       case '9':
-	world.playerUpdate(world.player.move(1, -1, world));
-	break;
+        //world.playerUpdate(world.player.move(1, -1, world));
+        world.player.upd = world.player.move(1, -1, world);
+        break;
       //case n.KEY_B2:
       case '5':
-	break;
+        world.player.upd = new Update(100, null);
+        break;
       //case n.KEY_END:
       case '1':
-	world.playerUpdate(world.player.move(-1, 1, world));
-	break;
+        //world.playerUpdate(world.player.move(-1, 1, world));
+        world.player.upd = world.player.move(-1, 1, world);
+        break;
       //case n.KEY_NPAGE:
       case '3':
-	world.playerUpdate(world.player.move(1, 1, world));
-	break;
+        //world.playerUpdate(world.player.move(1, 1, world));
+        world.player.upd = world.player.move(1, 1, world);
+        break;
       case 'Q':
         cont = false;
         break;
@@ -514,24 +540,30 @@ void main() {
         clearScreen();
         break;
       case 'a':
-        //world.terr.set(world.px, world.py, world.terr.get(world.px, world.py))
-        //world.terr[world.px][world.py].type = Terr.Type.WATER;
         world.terr.modify(world.player.x, world.player.y, (Terr a) { a.type = Terr.Type.MUD; return a; });
-//        switch (n.getch()) {
-//          case n.KEY_UP:
-//            break;
-//          case n.KEY_DOWN:
-//            break;
-//          case n.KEY_LEFT:
-//            break;
-//          case n.KEY_RIGHT:
-//            break;
-//        }
         break;
       default:
         badKey = key;
         break;
     }
+    
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    clearScreen();
+    while (world.player.upd !is null) {
+      world.update();
+      world.draw(0, 0);
+      n.refresh();
+      Thread.sleep(dur!("nsecs")(500));
+      //n.getch();
+    }
+
+    if (badKey != -1) { 
+      barMsg(format("Unknown key: %d '%s'", badKey, cast(char) badKey));
+    }
+    badKey = -1;
+    
+    showBarMsgs();
+    n.refresh();
   }
 }
 
@@ -563,11 +595,107 @@ void clearScreen() {
   }
 }
 
-void barMsg(A...)(const string msg, A fmt) {
-  n.attrset(n.COLOR_PAIR(Col.BORDER));
+
+
+//void barMsg(A...)(const string msg, A fmt) {
+//  msgs ~= format(msg, fmt);
+void barMsg(string msg) {
+  msgs ~= msg;
+
+  /*n.attrset(n.COLOR_PAIR(Col.BORDER));
   clearLine(n.LINES - 2);
-  //n.mvprintw(n.LINES - 1, 0, "  %s  ", toStringz(msg));
-  n.mvprintw(n.LINES - 2, 0, toStringz(msg), fmt);
+  n.mvprintw(n.LINES - 2, 0, toStringz(msg), fmt);*/
+}
+
+void showBarMsgs() {
+  int dispLen = cast(int) msgs.length;
+  if (dispLen > 5) dispLen = 5;
+
+  n.attrset(n.COLOR_PAIR(Col.BORDER));
+  int offset;
+  while (true) {
+    int ln = n.LINES - dispLen;
+    for (int i = 0; i < dispLen; i++) {
+      clearLine(ln);
+      n.mvprintw(ln, 0, toStringz(msgs[i + offset]));
+      ln++;
+    }
+    if (offset + dispLen < msgs.length) {
+      clearLine(n.LINES - 1);
+      n.mvprintw(n.LINES - 1, 0, toStringz("-- [Enter] for more --"));
+      while (n.getch() != '\n') {}
+      offset++;
+    } else {
+      break;
+    }
+  }
+  
+
+
+  /+int ln = n.LINES - (cast(int) msgs.length);
+  n.attrset(n.COLOR_PAIR(Col.BORDER));
+  foreach (m; msgs) {
+    clearLine(ln);
+    n.mvprintw(ln, 0, toStringz(m));
+    ln++;
+  }+/
+  msgs = [];
+
+
+
+  /+
+  int m = 0;
+  while (true) {
+//    msgs.length - m
+    
+
+    for (int i = (cast(int) msgs.length) - m; i >= 0; i--) {
+      int line = (cast(int) n.LINES) - 2 - i;
+      clearLine(line);
+      n.mvprintw(line, 0, toStringz(msgs[$ - 1 - i]));
+    }
+    clearLine(n.LINES - 1);
+    n.mvprintw(n.LINES - 1, 0, "[Enter] for more");
+    while (n.getch() != '\n') {}
+    m++;
+    if (m >= msgs.length) break;
+  }
+
+  /+
+  int n = 0;
+  for (int i = 0; i < 4; i++) {
+    clearLine(n.LINES - i - 1);
+    n.mvprintw(n.LINES - i - 1, 0, toStringz(msgs[n + i]));
+  }
+
+
+  int line, i;
+  bool more;
+  
+  while (i < msgs.length) {
+    line = cast(int) msgs.length;
+    if (line > 5) line = 5;
+    n.attrset(n.COLOR_PAIR(Col.BORDER));
+    
+    more = msgs.length > 5;
+    if (more) {
+      clearLine(n.LINES - 1);
+      n.mvprintw(n.LINES - 1, 0, toStringz("[Enter] for more"));
+    }
+    
+    //n.attrset(n.COLOR_PAIR(Col.BORDER));
+    while (line >= 0) {
+      clearLine(n.LINES - line - 1);
+      n.mvprintw(n.LINES - line - 1, 0, toStringz(msgs[i]));
+      i++;
+      line--;
+      if (more && line < 1) break;
+    }
+    
+    while (n.getch() != '\n') {}
+  }
+  
+  msgs = [];+/+/
 }
 
 void remove(A)(ref A[] ls, A elem) {
