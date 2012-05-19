@@ -328,12 +328,14 @@ class Tree : Ent {
   }
 
   Update update(World world) {
-    return new Update(100, (World w) {
+    return Update.empty();
+  
+    /+return new Update(100, (World w) {
       int rand = uniform!("[]")(0, 100);
       if (rand == 0) {
         world.ents.remove(this);
       }
-    });
+    });+/
   }
 }
 
@@ -458,6 +460,15 @@ void main() {
   world.ents ~= new Deer(12, 6);
   world.ents ~= new Deer(13, 9);
   world.ents ~= new Troll(15, 2);
+  
+  for (int i = 0; i < 20; i++) {
+    int x = uniform(0, 20),
+        y = uniform(0, 20);
+    if (!world.blockAt(x, y)) {
+      world.ents ~= new Tree(x, y);
+    } else
+      i--;
+  }
   
   /+barMsg("I");
   barMsg("do");
