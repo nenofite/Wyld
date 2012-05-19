@@ -460,12 +460,13 @@ void main() {
   world.ents ~= new Deer(13, 9);
   world.ents ~= new Troll(15, 2);
   
-  barMsg("I");
+  /+barMsg("I");
   barMsg("do");
   barMsg("love");
   barMsg("a");
   barMsg("good");
-  barMsg("pie.");
+  barMsg("pie.");+/
+  
   //for (int x = 0; x < 15; x++) {
   //  world.ents ~= new Deer(4 + x, 11);
   //  world.ents ~= new Deer(4 + x, 12);
