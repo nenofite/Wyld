@@ -211,8 +211,10 @@ abstract class Ent {
     if (upd is null) {
       upd = update(w);
     }
-    if (upd.run(w)) {
-      upd = null;
+    if (upd !is null) {
+      if (upd.run(w)) {
+        upd = null;
+      }
     }
   }
 
@@ -240,7 +242,7 @@ abstract class Ent {
         }
       });
     }
-    return new Update(0, null);
+    return null;
   }
 }
 
@@ -328,7 +330,8 @@ class Tree : Ent {
   }
 
   Update update(World world) {
-    return Update.empty();
+    return null;
+    //return Update.empty();
   
     /+return new Update(100, (World w) {
       int rand = uniform!("[]")(0, 100);
@@ -776,7 +779,7 @@ class Update {
     return false;
   }
 
-  static Update empty() {
+  /+static Update empty() {
     return new Update(0, null);
-  }
+  }+/
 }
