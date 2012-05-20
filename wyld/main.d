@@ -228,7 +228,7 @@ abstract class Ent {
     collMove(dx + x, dy + y, w);
   }
 
-  Update move(int dx, int dy, World w) {
+  Update move(int dx, int dy, World w, void delegate(bool) callback = null) {
     int nx = x + dx,
         ny = y + dy;
     if (w.terr.inside(nx, ny)) {
@@ -236,12 +236,16 @@ abstract class Ent {
                + w.moveCostAt(nx, ny)
                + moveCost;
       return new Update(cost, (World w) {
-        if (!w.blockAt(nx, ny)) {
+        bool succ = !w.blockAt(nx, ny);
+        if (succ) {
           x = nx;
           y = ny;
         }
+        if (callback !is null)
+          callback(succ);
       });
     }
+    callback(false);
     return null;
   }
 }
@@ -249,6 +253,7 @@ abstract class Ent {
 class Deer : Ent {
   int destX, destY;
   bool hasDest;
+  int moveFailed;
 
   this(int x, int y) {
     super(x, y);
@@ -261,6 +266,12 @@ class Deer : Ent {
   }
 
   Update update(World world) {
+    if (moveFailed >= 2) {
+      hasDest = false;
+      barMsg(format("New dest time at %d", moveFailed));
+      moveFailed = 0;
+    }
+  
     if (x == destX && y == destY) {
       hasDest = false;
     }
@@ -268,10 +279,13 @@ class Deer : Ent {
       int mx, my;
       mx = compare(destX, x);
       my = compare(destY, y);
-      return move(mx, my, world);
-      //return new Update(100, (World w) {
-      //  collMoveD(mx, my, world);
-      //});
+      return move(mx, my, world, (bool succ) {
+        if (succ) {
+          this.moveFailed = 0;
+        } else {
+          this.moveFailed++;
+        }
+      });
     } else {
       int delay = uniform!("[]")(50, 1000);
       return new Update(delay, (World w) {
