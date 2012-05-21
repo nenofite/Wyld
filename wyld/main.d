@@ -1,6 +1,7 @@
 module wyld.main;
 
 import wyld.format;
+import wyld.worldgen;
 
 import core.thread: Thread, dur;
 import n = ncs.curses;
@@ -33,15 +34,15 @@ struct Sym {
 }
 
 class World {
-  int w, h;
+  //int w, h;
   //int px, py;
   Ent player;
   Ent[] ents;
   Grid!(Terr) terr;
 
   this(int w, int h) {
-    this.w = w;
-    this.h = h;
+    //this.w = w;
+    //this.h = h;
   
     this.terr = new Grid!(Terr)(w, h);
   }
@@ -245,7 +246,8 @@ abstract class Ent {
           callback(succ);
       });
     }
-    callback(false);
+    if (callback !is null)
+      callback(false);
     return null;
   }
 }
@@ -426,12 +428,12 @@ class Grid(A) {
     ls.length = w * h;
   }
 
-  private int conv(int x, int y) {
+  private int conv(int x, int y) const {
     if (!inside(x, y)) throw new Error("Not in bounds of Grid.");
     return x * w + y;
   }
 
-  A get(int x, int y) {
+  A get(int x, int y) const {
     return ls[conv(x, y)];
   }
   void set(int x, int y, A a) {
@@ -448,7 +450,7 @@ class Grid(A) {
     }
   }
 
-  bool inside(int x, int y) {
+  bool inside(int x, int y) const {
     return (x >= 0 && x < w && y >= 0 && y < h);
   }
 }
@@ -467,15 +469,22 @@ void main() {
   n.curs_set(false);
   initColor();
 
+  auto gen = new WorldGen(20, 20);
+  gen.fillNoise();
   
   auto world = new World(20, 20);
+  world.terr = gen.toTerrs();
   world.player = new Player(5, 11);
   world.ents ~= world.player;
 
   world.ents ~= new Deer(10, 6);
   world.ents ~= new Deer(11, 7);
   world.ents ~= new Deer(12, 6);
-  world.ents ~= new Deer(13, 9);
+  world.ents ~= new Deer(13, 6);
+  world.ents ~= new Deer(14, 5);
+  world.ents ~= new Deer(13, 7);
+  world.ents ~= new Deer(17, 9);
+  world.ents ~= new Deer(11, 3);
   world.ents ~= new Troll(15, 2);
   
   for (int i = 0; i < 20; i++) {
@@ -570,6 +579,22 @@ void main() {
         break;
       case 'a':
         world.terr.modify(world.player.x, world.player.y, (Terr a) { a.type = Terr.Type.MUD; return a; });
+        break;
+      case '\\':
+        n.attrset(n.COLOR_PAIR(Col.TEXT));
+        n.mvprintw(n.LINES - 1, n.COLS - 1, "-");
+        switch (n.getch()) {
+          case 'f':
+            gen.fillNoise();
+            world.terr = gen.toTerrs();
+            break;
+          case 's':
+            gen.subd();
+            world.terr = gen.toTerrs();
+            break;
+          default:
+            break;
+        }
         break;
       default:
         badKey = key;
