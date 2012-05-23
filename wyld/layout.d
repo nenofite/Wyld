@@ -51,18 +51,33 @@ class List : Container {
   }
   
   void draw(Dim dim) {
-    int y = dim.y;
-    for (int i = 0; i < children.length - 1; i++) {
-      auto b = children[i];
-      b.draw(Dim(dim.x, y, dim.w, b.h));
-      y += b.h;
+    if (horiz) {
+      int x = dim.x;
+      for (int i = 0; i < children.length - 1; i++) {
+        auto b = children[i];
+        b.draw(Dim(x, dim.y, b.w, dim.h));
+        x += b.w;
+      }
+      children[$-1].draw(Dim(x, dim.y, dim.x2() - x + 1, dim.h));
+    } else {
+      int y = dim.y;
+      for (int i = 0; i < children.length - 1; i++) {
+        auto b = children[i];
+        b.draw(Dim(dim.x, y, dim.w, b.h));
+        y += b.h;
+      }
+      children[$-1].draw(Dim(dim.x, y, dim.w, dim.y2() - y + 1));
     }
-    children[$-1].draw(Dim(dim.x, y, dim.w, dim.y2() - y + 1));
   }
   
   void pack() {
-    w = reduce!(max)(map!("a.w")(children));
-    h = reduce!("a + b")(map!("a.h")(children));
+    if (horiz) {
+      w = reduce!("a + b")(map!("a.w")(children));
+      h = reduce!(max)(map!("a.h")(children));
+    } else {
+      w = reduce!(max)(map!("a.w")(children));
+      h = reduce!("a + b")(map!("a.h")(children));
+    }
   }
 }
 
