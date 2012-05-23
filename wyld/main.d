@@ -449,6 +449,13 @@ class Grid(A) {
       ls[i] = f(a);
     }
   }
+  Grid!(B) mapT(B)(B delegate(A) f) {
+    auto ret = new Grid!(B)(w, h);
+    foreach (i, a; ls) {
+      ret.ls[i] = f(a);
+    }
+    return ret;
+  }
 
   bool inside(int x, int y) const {
     return (x >= 0 && x < w && y >= 0 && y < h);
