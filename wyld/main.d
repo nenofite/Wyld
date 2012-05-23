@@ -1,6 +1,7 @@
 module wyld.main;
 
 import wyld.format;
+import wyld.layout;
 import wyld.worldgen;
 
 import core.thread: Thread, dur;
@@ -52,7 +53,7 @@ class World {
     stat = new Grid!(StatCont)(w, h);
   }
   
-  void draw(int by, int bx) {
+  /+void draw(int by, int bx) {
     int cx = player.x - (viewWidth / 2),
         cy = player.y - (viewHeight / 2);
     Sym s;
@@ -104,7 +105,7 @@ class World {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     n.printw("  -  ");
     n.printw("Dim: %d x %d", stat.w, stat.h);
-  }
+  }+/
 
   bool inView(int x, int y) {
     x -= player.x - (viewWidth / 2);
@@ -601,7 +602,11 @@ void main() {
 //  world.entsAt(2, 29);
 
   //bool badKey = false;
-  world.draw(0, 0);
+  
+  auto hud = mainView(world);
+  
+  //world.draw(0, 0);
+  hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
   showBarMsgs();
 
   int badKey = -1;
@@ -668,10 +673,12 @@ void main() {
     
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     clearScreen();
-    world.draw(0, 0);
+    //world.draw(0, 0);
+    hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     while (world.player.upd !is null) {
       world.update();
-      world.draw(0, 0);
+      //world.draw(0, 0);
+      hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
       n.refresh();
       Thread.sleep(dur!("nsecs")(500));
       //n.getch();
