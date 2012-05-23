@@ -242,6 +242,7 @@ abstract class Ent {
   Sym sym();
   //void update(int x, int y, World);
   Update update(World) { return null; }
+  string name();
 
   //Update getUpdate(World w) {
   //  if (upd is null)
@@ -346,6 +347,8 @@ class Deer : Ent {
       });
     }
   }
+  
+  string name() { return "deer"; }
 }
 
 class Troll : Deer {
@@ -357,6 +360,8 @@ class Troll : Deer {
   Sym sym() {
     return Sym('&', Col.GREEN);
   }
+  
+  string name() { return "troll"; }
 }
 
 class Player : Ent {
@@ -374,6 +379,8 @@ class Player : Ent {
     //return Update.empty();
     return null;
   }
+  
+  string name() { return "you"; }
 }
 
 class Grass : Ent {
@@ -384,6 +391,10 @@ class Grass : Ent {
   
   Sym sym() {
     return Sym('"', Col.GREEN);
+  }
+  
+  string name() {
+    return "grass";
   }
 }
 
@@ -396,6 +407,8 @@ class Tree : Ent {
   Sym sym() {
     return Sym('t', Col.GREEN);
   }
+  
+  string name() { return "tree"; }
 }
 
 Terr terr(Terr.Type type) {
