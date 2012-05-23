@@ -520,6 +520,10 @@ void main() {
   n.keypad(n.stdscr, false);
   n.curs_set(false);
   initColor();
+  
+  n.attrset(n.COLOR_PAIR(Col.GREEN));
+  n.mvprintw(2, 2, "Generating world...");
+  n.refresh();
 
   auto world = genWorld(40, 40); //new World(20, 20);
   world.player = new Player(5, 11);
