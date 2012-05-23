@@ -103,40 +103,34 @@ class WorldGen {
   void subd(/*ref Grid!(Geo) grid*/) {
     auto old = grid;
     grid = new Grid!(Geo)(old.w * 2 - 1, old.h * 2 - 1);
-    
-    int oy;
+
     for (int y = 0; y < grid.h; y += 2) {
-      int ox;
-      for (int x = 0; x < grid.w; x++) {
-        if (x % 2 == 0) {
-          grid.set(x, y, old.get(ox, oy));
-          ox++;
-        } else {
-          if (old.inside(ox + 1, oy)) {
-            grid.set(x, y, 
-              Geo.interp(old.get(ox, oy), old.get(ox + 1, oy))
-            );
-          } else {
-            grid.set(x, y, old.get(ox, oy));
-          }
-        }
+      for (int x = 0; x < grid.w; x += 2) {
+        grid.set(x, y, old.get(x / 2, y / 2));
       }
-      oy++;
+    }
+
+    for (int y = 1; y < grid.h; y += 2) {
+      for (int x = 1; x < grid.w; x += 2) {
+        Geo[4] options = [
+          grid.get(x - 1, y - 1),
+          grid.get(x + 1, y - 1),
+          grid.get(x - 1, y + 1),
+          grid.get(x + 1, y + 1)
+        ];
+        grid.set(x, y, options[uniform(0, 4)]);
+      }
     }
     
-    for (int y = 1; y < grid.h; y += 2) {
-      for (int x = 0; x < grid.w; x++) {
-        if (grid.inside(x, y + 1)) {
-          if (grid.inside(x, y - 1)) {
-            grid.set(x, y, 
-              Geo.interp(grid.get(x, y + 1), grid.get(x, y - 1))
-            );
-          } else {
-            grid.set(x, y, grid.get(x, y + 1));
-          }
-        } else {
-          grid.set(x, y, grid.get(x, y - 1));
-        }
+    for (int y = 0; y < grid.h; y++) {
+      for (int x = y % 2 == 0 ? 1 : 0; x < grid.w; x += 2) {
+        Geo[] options;
+        if (grid.inside(x, y - 1)) options ~= grid.get(x, y - 1);
+        if (grid.inside(x + 1, y)) options ~= grid.get(x + 1, y);
+        if (grid.inside(x, y + 1)) options ~= grid.get(x, y + 1);
+        if (grid.inside(x - 1, y)) options ~= grid.get(x - 1, y);
+        
+        grid.set(x, y, options[uniform(0, options.length)]);
       }
     }
   }
