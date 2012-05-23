@@ -56,7 +56,7 @@ class World {
     int cx = player.x - (viewWidth / 2),
         cy = player.y - (viewHeight / 2);
     Sym s;
-    int notDrawn;
+    int drawn;
 
     for (int y = 0; y < viewHeight; y++) {
       n.move(y + by, bx);
@@ -76,8 +76,7 @@ class World {
     foreach (e; movingEnts) {
       if (inView(e.x, e.y)) {
         e.sym().draw(e.y + by - cy, e.x + bx - cx);
-      } else {
-        notDrawn++;
+        drawn++;
       }
     }
 
@@ -86,12 +85,25 @@ class World {
     //clearLine(n.LINES - 2);
     clearLine(n.LINES - 1);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.mvprintw(n.LINES - 1, 2, "%d, %d  ", player.x, player.y);
-    n.attrset(n.COLOR_PAIR(Col.GREEN));
-    n.printw("%d, %d", cx, cy);
+    n.move(n.LINES - 1, 2);
+    n.printw("Drew ");
+    n.attrset(n.COLOR_PAIR(Col.BLUE));
+    n.printw("%d ", drawn);
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.printw("  -  ND: %d", notDrawn);
-    //n.printw("  Deer@%d, %d", ents[0].x, ents[0].y);
+    n.printw("out of ");
+    n.attrset(n.COLOR_PAIR(Col.GREEN));
+    n.printw("%d movingEnts", movingEnts.length);
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.printw("  -  ");
+    n.printw("Move cost: ");
+    n.attrset(n.COLOR_PAIR(Col.RED));
+    n.printw("%d + %d",
+      player.speed, 
+      moveCostAt(player.x, player.y)
+      - player.moveCost);
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.printw("  -  ");
+    n.printw("Dim: %d x %d", stat.w, stat.h);
   }
 
   bool inView(int x, int y) {
