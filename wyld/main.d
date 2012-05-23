@@ -203,7 +203,7 @@ abstract class Ent {
 
   Sym sym();
   //void update(int x, int y, World);
-  Update update(World);
+  Update update(World) { return null; }
 
   //Update getUpdate(World w) {
   //  if (upd is null)
@@ -346,20 +346,11 @@ class Tree : Ent {
   Sym sym() {
     return Sym('t', Col.GREEN);
   }
-
-  Update update(World world) {
-    return null;
-    //return Update.empty();
-  
-    /+return new Update(100, (World w) {
-      int rand = uniform!("[]")(0, 100);
-      if (rand == 0) {
-        world.ents.remove(this);
-      }
-    });+/
-  }
 }
 
+Terr terr(Terr.Type type) {
+  return Terr(type, uniform(0, 5) == 0);
+}
 struct Terr {
   enum Type {
     DIRT,
