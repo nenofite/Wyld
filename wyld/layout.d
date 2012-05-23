@@ -90,7 +90,6 @@ class WorldView : Box {
         if (world.stat.inside(cx + x, cy + y)) {
           auto se = world.stat.get(cx + x, cy + y).statEnts;
           if (se.length > 0)
-          //if (se !is null)
             s = se[$-1].sym();
         }
         n.attrset(n.COLOR_PAIR(s.color));

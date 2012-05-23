@@ -35,11 +35,8 @@ struct Sym {
 }
 
 class World {
-  //int w, h;
-  //int px, py;
   Ent player;
   Ent[] movingEnts;
-  //Grid!(Terr) terr;
   Grid!(StatCont) stat;
   
   struct StatCont {
@@ -53,60 +50,6 @@ class World {
     stat = new Grid!(StatCont)(w, h);
   }
   
-  /+void draw(int by, int bx) {
-    int cx = player.x - (viewWidth / 2),
-        cy = player.y - (viewHeight / 2);
-    Sym s;
-    int drawn;
-
-    for (int y = 0; y < viewHeight; y++) {
-      n.move(y + by, bx);
-      for (int x = 0; x < viewWidth; x++) {
-        s = baseAt(cx + x, cy + y);
-        if (stat.inside(cx + x, cy + y)) {
-          auto se = stat.get(cx + x, cy + y).statEnts;
-          if (se.length > 0)
-          //if (se !is null)
-            s = se[$-1].sym();
-        }
-        n.attrset(n.COLOR_PAIR(s.color));
-        n.addch(s.ch);
-      }
-    }
-
-    foreach (e; movingEnts) {
-      if (inView(e.x, e.y)) {
-        e.sym().draw(e.y + by - cy, e.x + bx - cx);
-        drawn++;
-      }
-    }
-
-    //Sym('@', Col.BLUE).draw(player.y + by - cy, player.x + bx - cx);
-
-    //clearLine(n.LINES - 2);
-    clearLine(n.LINES - 1);
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.move(n.LINES - 1, 2);
-    n.printw("Drew ");
-    n.attrset(n.COLOR_PAIR(Col.BLUE));
-    n.printw("%d ", drawn);
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.printw("out of ");
-    n.attrset(n.COLOR_PAIR(Col.GREEN));
-    n.printw("%d movingEnts", movingEnts.length);
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.printw("  -  ");
-    n.printw("Move cost: ");
-    n.attrset(n.COLOR_PAIR(Col.RED));
-    n.printw("%d + %d",
-      player.speed, 
-      moveCostAt(player.x, player.y)
-      - player.moveCost);
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.printw("  -  ");
-    n.printw("Dim: %d x %d", stat.w, stat.h);
-  }+/
-
   bool inView(int x, int y) {
     x -= player.x - (viewWidth / 2);
     y -= player.y - (viewHeight / 2);
@@ -114,14 +57,6 @@ class World {
   }
   
   Sym baseAt(int x, int y) {
-    //if (px == x && py == y) {
-    //  return Sym('@', Col.BLUE);
-    //}
-
-    //auto es = entsAt(x, y);
-    //if (es.length > 0)
-    //  return es[0].sym();
-
     if (stat.inside(x, y))  
       return stat.get(x, y).terr.sym();
 
@@ -133,17 +68,7 @@ class World {
   }
 
   Ent[] entsAt(int x, int y) {
-    //if (x in ents) {
-    //  auto xd = ents[x];
-    //  if (y in xd) {
-    //    return xd[y];
-    //  }
-    //}
-    //return [];
-
     Ent[] ret = stat.get(x, y).statEnts.dup;
-    //auto se = stat.get(x, y).statEnts;
-    //if (se !is null) ret ~= se;
     foreach (e; movingEnts) {
       if (e.x == x && e.y == y) ret ~= e;
     }
@@ -167,50 +92,10 @@ class World {
     return cost;
   }
 
-  //void movePlayer(int nx, int ny) {
-  //  if (!blockAt(nx, ny)) {
-  //    player.x = nx;
-  //    player.y = ny;
-  //  }
-  //}
-  //void movePlayerD(int nx, int ny) {
-  //  movePlayer(player.x + nx, player.y + ny);
-  //}
-
-  //void collMove(int ox, int oy, Ent ent, int nx, int ny) {
-  //  if (!blockAt(nx, ny)) {
-  //    //ents[ox][oy].remove(ent);
-  //    //ents[nx][ny] ~= ent;
-  //    ent.x = nx;
-  //    ent.y = ny;
-  //    //TODO clean this up
-  //  }
-  //}
-  //void collMoveD(int ox, int oy, Ent ent, int nx, int ny) {
-  //  collMove(ox, oy, ent, nx + ox, ny + oy);
-  //}
-
   void update() {
-    //foreach (x, col; ents) {
-    //  foreach (y, stack; col) {
-    //    foreach (e; stack)
-    //      e.update(x, y, this);
-    //  }
-    //}
-  
     foreach (e; movingEnts) {
       e.runUpdate(this);
-      //e.getUpdate(this).run(this);
-      //e.update(e.x, e.y, this).run(this);
-      //TODO clean this up
     }
-    /+stat.map((StatCont c) {
-      if (c.statEnts !is null)
-        c.statEnts.runUpdate(this);
-      //foreach (e; c.statEnts)
-      //  e.runUpdate(this);
-      return c;
-    });+/
   }
 
   void playerUpdate(Update upd) {
@@ -241,15 +126,9 @@ abstract class Ent {
   }
 
   Sym sym();
-  //void update(int x, int y, World);
   Update update(World) { return null; }
   string name();
 
-  //Update getUpdate(World w) {
-  //  if (upd is null)
-  //    upd = update(w);
-  //  return upd;
-  //}
   void runUpdate(World w) {
     if (upd is null) {
       upd = update(w);
@@ -313,7 +192,6 @@ class Deer : Ent {
   Update update(World world) {
     if (moveFailed >= 2) {
       hasDest = false;
-      //barMsg(format("New dest time at %d", moveFailed));
       moveFailed = 0;
     }
   
@@ -377,7 +255,6 @@ class Player : Ent {
   }
 
   Update update(World world) {
-    //return Update.empty();
     return null;
   }
   
@@ -522,11 +399,6 @@ class Grid(A) {
 }
 
 void main() {
-  //auto bob = [1, 2, 3];
-  //bob.remove(1);
-  //bob.remove(3);
-  //assert(bob.length == 1);
-
   n.initscr();
   scope (exit) n.endwin();
   n.cbreak();
@@ -539,21 +411,9 @@ void main() {
   n.mvprintw(2, 2, "Generating world...");
   n.refresh();
 
-  auto world = genWorld(40, 40); //new World(20, 20);
+  auto world = genWorld(40, 40);
   world.player = new Player(5, 11);
   world.movingEnts ~= world.player;
-
-  /+world.movingEnts ~= [
-    new Deer(10, 6),
-    new Deer(11, 7),
-    new Deer(12, 6),
-    new Deer(13, 6),
-    new Deer(14, 5),
-    new Deer(13, 7),
-    new Deer(17, 9),
-    new Deer(11, 3),
-    new Troll(15, 2)
-  ];+/
   
   for (int i = 0; i < 1000; i++) {
     while (true) {
@@ -566,46 +426,13 @@ void main() {
     }
   }
   
-  /+for (int i = 0; i < 20; i++) {
-    int x = uniform(0, 20),
-        y = uniform(0, 20);
-    if (!world.blockAt(x, y)) {
-      world.ents ~= new Tree(x, y);
-    } else
-      i--;
-  }+/
-  
-  /+barMsg("I");
-  barMsg("do");
-  barMsg("love");
-  barMsg("a");
-  barMsg("good");
-  barMsg("pie.");+/
-  
   barMsg("One thousand deer");
   barMsg("roam this random spread.");
   barMsg("Now run around like an idiot");
   barMsg("and explore!");
   
-  //for (int x = 0; x < 15; x++) {
-  //  world.ents ~= new Deer(4 + x, 11);
-  //  world.ents ~= new Deer(4 + x, 12);
-  //  world.ents ~= new Deer(4 + x, 13);
-  //  world.ents ~= new Deer(4 + x, 14);
-  //}
-
-//  for (int x = 0; x < 10000; x++) {
-//    for (int y = 0; y < 10; y++)
-//      world.ents[x][y] ~= new Deer();
-//  }
-
-//  world.entsAt(2, 29);
-
-  //bool badKey = false;
-  
   auto hud = mainView(world);
   
-  //world.draw(0, 0);
   hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
   showBarMsgs();
 
@@ -618,32 +445,26 @@ void main() {
     switch (key) {
       //case n.KEY_UP:
       case '8':
-        //world.playerUpdate(world.player.move(0, -1, world));
         world.player.upd = world.player.move(0, -1, world);
         break;
       //case n.KEY_DOWN:
       case '2':
-        //world.playerUpdate(world.player.move(0, 1, world));
         world.player.upd = world.player.move(0, 1, world);
         break;
       //case n.KEY_LEFT:
       case '4':
-        //world.playerUpdate(world.player.move(-1, 0, world));
         world.player.upd = world.player.move(-1, 0, world);
         break;
       //case n.KEY_RIGHT:
       case '6':
-        //world.playerUpdate(world.player.move(1, 0, world));
         world.player.upd = world.player.move(1, 0, world);
         break;
       //case n.KEY_HOME:
       case '7':
-        //world.playerUpdate(world.player.move(-1, -1, world));
         world.player.upd = world.player.move(-1, -1, world);
         break;
       //case n.KEY_PPAGE:
       case '9':
-        //world.playerUpdate(world.player.move(1, -1, world));
         world.player.upd = world.player.move(1, -1, world);
         break;
       //case n.KEY_B2:
@@ -652,12 +473,10 @@ void main() {
         break;
       //case n.KEY_END:
       case '1':
-        //world.playerUpdate(world.player.move(-1, 1, world));
         world.player.upd = world.player.move(-1, 1, world);
         break;
       //case n.KEY_NPAGE:
       case '3':
-        //world.playerUpdate(world.player.move(1, 1, world));
         world.player.upd = world.player.move(1, 1, world);
         break;
       case 'Q':
@@ -673,15 +492,12 @@ void main() {
     
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     clearScreen();
-    //world.draw(0, 0);
     hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     while (world.player.upd !is null) {
       world.update();
-      //world.draw(0, 0);
       hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
       n.refresh();
       Thread.sleep(dur!("nsecs")(500));
-      //n.getch();
     }
 
     if (badKey != -1) { 
@@ -724,14 +540,8 @@ void clearScreen() {
 
 
 
-//void barMsg(A...)(const string msg, A fmt) {
-//  msgs ~= format(msg, fmt);
 void barMsg(string msg) {
   msgs ~= msg;
-
-  /*n.attrset(n.COLOR_PAIR(Col.BORDER));
-  clearLine(n.LINES - 2);
-  n.mvprintw(n.LINES - 2, 0, toStringz(msg), fmt);*/
 }
 
 void showBarMsgs() {
@@ -756,73 +566,8 @@ void showBarMsgs() {
       break;
     }
   }
-  
 
-
-  /+int ln = n.LINES - (cast(int) msgs.length);
-  n.attrset(n.COLOR_PAIR(Col.BORDER));
-  foreach (m; msgs) {
-    clearLine(ln);
-    n.mvprintw(ln, 0, toStringz(m));
-    ln++;
-  }+/
   msgs = [];
-
-
-
-  /+
-  int m = 0;
-  while (true) {
-//    msgs.length - m
-    
-
-    for (int i = (cast(int) msgs.length) - m; i >= 0; i--) {
-      int line = (cast(int) n.LINES) - 2 - i;
-      clearLine(line);
-      n.mvprintw(line, 0, toStringz(msgs[$ - 1 - i]));
-    }
-    clearLine(n.LINES - 1);
-    n.mvprintw(n.LINES - 1, 0, "[Enter] for more");
-    while (n.getch() != '\n') {}
-    m++;
-    if (m >= msgs.length) break;
-  }
-
-  /+
-  int n = 0;
-  for (int i = 0; i < 4; i++) {
-    clearLine(n.LINES - i - 1);
-    n.mvprintw(n.LINES - i - 1, 0, toStringz(msgs[n + i]));
-  }
-
-
-  int line, i;
-  bool more;
-  
-  while (i < msgs.length) {
-    line = cast(int) msgs.length;
-    if (line > 5) line = 5;
-    n.attrset(n.COLOR_PAIR(Col.BORDER));
-    
-    more = msgs.length > 5;
-    if (more) {
-      clearLine(n.LINES - 1);
-      n.mvprintw(n.LINES - 1, 0, toStringz("[Enter] for more"));
-    }
-    
-    //n.attrset(n.COLOR_PAIR(Col.BORDER));
-    while (line >= 0) {
-      clearLine(n.LINES - line - 1);
-      n.mvprintw(n.LINES - line - 1, 0, toStringz(msgs[i]));
-      i++;
-      line--;
-      if (more && line < 1) break;
-    }
-    
-    while (n.getch() != '\n') {}
-  }
-  
-  msgs = [];+/+/
 }
 
 void remove(A)(ref A[] ls, A elem) {
@@ -832,35 +577,6 @@ void remove(A)(ref A[] ls, A elem) {
   }
   ls = ret;
 }
-
-/+void remove(A)(ref A[] ls, A elem) {
-  A[] ret;
-  ret.length = ls.length - 1;
-  bool started;
-  for (int i = 0; i < ls.length - 1; i++) {
-    if (ls[i] == elem) {
-      started = true;
-    }
-    ret[i] = ls[started ? i + 1 : i];
-  }
-/+
-  int start = -1;
-  foreach (i, a; ls) {
-    if (a == elem) {
-      start = cast (int) i;
-      break;
-    } else {
-      ret[i] = a;
-    }
-  }
-  for (int i = start; i < ls.length - 1; i++) {
-    ls[i] = ls[i + 1];
-  }
-  //ls.length = ls.length - 1;
-+/
-  ls = ret;
-}
-+/
 
 int compare(T)(T a, T b) {
   if (a > b)
@@ -889,8 +605,4 @@ class Update {
     }
     return false;
   }
-
-  /+static Update empty() {
-    return new Update(0, null);
-  }+/
 }
