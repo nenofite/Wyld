@@ -8,8 +8,8 @@ import n = ncs.curses;
 import std.string: toStringz;
 import std.random: uniform;
 
-const int viewHeight = 20,
-          viewWidth = 20;
+const int viewHeight = 25,
+          viewWidth = 25;
           
 string[] msgs;
 
