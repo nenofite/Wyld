@@ -506,7 +506,7 @@ void main() {
   n.curs_set(false);
   initColor();
 
-  auto world = genWorld(5, 5); //new World(20, 20);
+  auto world = genWorld(40, 40); //new World(20, 20);
   world.player = new Player(5, 11);
   world.movingEnts ~= world.player;
 
@@ -548,6 +548,11 @@ void main() {
   barMsg("a");
   barMsg("good");
   barMsg("pie.");+/
+  
+  barMsg("One thousand deer");
+  barMsg("roam this random spread.");
+  barMsg("Now run around like an idiot");
+  barMsg("and explore!");
   
   //for (int x = 0; x < 15; x++) {
   //  world.ents ~= new Deer(4 + x, 11);
