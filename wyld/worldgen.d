@@ -42,25 +42,29 @@ World genWorld(int w, int h) {
   
   World world = new World();
 
-  world.terr = geos.mapT((Geo g) {
+  world.stat = geos.mapT((Geo g) {
+    Terr.Type t;
+  
     switch (g.type) {
       case Geo.WATER:
-        return Terr(Terr.WATER);
+        t = Terr.WATER;
         break;
       case Geo.ROCK:
-        return Terr(Terr.ROCK);
+        t = Terr.ROCK;
         break;
       case Geo.GRASS:
       case Geo.FOREST:
-        return terr(Terr.DIRT);
+        t = Terr.DIRT;
         break;
       case Geo.MARSH:
-        return Terr(Terr.MUD);
+        t = Terr.MUD;
         break;
       default:
         throw new Error(format("Cannot convert to Terr: %d", g));
         break;
     }
+    
+    return World.StatCont(terr(t));
   });
   
   for (int y = 0; y < geos.h; y += 3) {
@@ -70,7 +74,7 @@ World genWorld(int w, int h) {
           int xd = x + uniform(-1, 1),
               yd = y + uniform(-1, 1);
           if (geos.inside(xd, yd) && !world.blockAt(xd, yd)) {
-            world.ents ~= new Tree(xd, yd);
+            world.addStatEnt(new Tree(xd, yd));
             break;
           }
         }
@@ -84,7 +88,7 @@ World genWorld(int w, int h) {
       if (a.type == Geo.FOREST || a.type == Geo.GRASS) {
         if (uniform(0, 50) != 0) {
           if (!world.blockAt(x, y)) {
-            world.ents ~= new Grass(x, y);
+            world.addStatEnt(new Grass(x, y));
           }
         }
       }

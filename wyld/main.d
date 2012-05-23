@@ -37,16 +37,19 @@ class World {
   //int w, h;
   //int px, py;
   Ent player;
-  Ent[] ents;
-  Grid!(Terr) terr;
+  Ent[] movingEnts;
+  //Grid!(Terr) terr;
+  Grid!(StatCont) stat;
+  
+  struct StatCont {
+    Terr terr;
+    Ent[] statEnts;
+  }
 
   this() {}
 
   this(int w, int h) {
-    //this.w = w;
-    //this.h = h;
-  
-    this.terr = new Grid!(Terr)(w, h);
+    stat = new Grid!(StatCont)(w, h);
   }
   
   void draw(int by, int bx) {
@@ -59,12 +62,18 @@ class World {
       n.move(y + by, bx);
       for (int x = 0; x < viewWidth; x++) {
         s = baseAt(cx + x, cy + y);
+        if (stat.inside(cx + x, cy + y)) {
+          auto se = stat.get(cx + x, cy + y).statEnts;
+          if (se.length > 0)
+          //if (se !is null)
+            s = se[$-1].sym();
+        }
         n.attrset(n.COLOR_PAIR(s.color));
         n.addch(s.ch);
       }
     }
 
-    foreach (e; ents) {
+    foreach (e; movingEnts) {
       if (inView(e.x, e.y)) {
         e.sym().draw(e.y + by - cy, e.x + bx - cx);
       } else {
@@ -100,8 +109,8 @@ class World {
     //if (es.length > 0)
     //  return es[0].sym();
 
-    if (terr.inside(x, y))  
-      return terr.get(x, y).sym();
+    if (stat.inside(x, y))  
+      return stat.get(x, y).terr.sym();
 
     if (x % 3 == 0)
       return Sym('\'', Col.GREEN);
@@ -119,24 +128,26 @@ class World {
     //}
     //return [];
 
-    Ent[] ret;
-    foreach (e; ents) {
+    Ent[] ret = stat.get(x, y).statEnts.dup;
+    //auto se = stat.get(x, y).statEnts;
+    //if (se !is null) ret ~= se;
+    foreach (e; movingEnts) {
       if (e.x == x && e.y == y) ret ~= e;
     }
     return ret;
   }
 
   bool blockAt(int x, int y) {
-    if (!terr.inside(x, y)) return true;
+    if (!stat.inside(x, y)) return true;
     foreach (e; entsAt(x, y)) {
       if (e.isBlocking) return true;
     }
-    if (terr.get(x, y).isBlocking) return true;
+    if (stat.get(x, y).terr.isBlocking) return true;
     return false;
   }
 
   int moveCostAt(int x, int y) {
-    int cost = terr.get(x, y).moveCost();
+    int cost = stat.get(x, y).terr.moveCost();
     foreach (e; entsAt(x, y)) {
       cost += e.moveCost;
     }
@@ -174,18 +185,32 @@ class World {
     //  }
     //}
   
-    foreach (e; ents) {
+    foreach (e; movingEnts) {
       e.runUpdate(this);
       //e.getUpdate(this).run(this);
       //e.update(e.x, e.y, this).run(this);
       //TODO clean this up
     }
+    /+stat.map((StatCont c) {
+      if (c.statEnts !is null)
+        c.statEnts.runUpdate(this);
+      //foreach (e; c.statEnts)
+      //  e.runUpdate(this);
+      return c;
+    });+/
   }
 
   void playerUpdate(Update upd) {
     while (!upd.run(this)) {
       update();
     }
+  }
+  
+  void addStatEnt(Ent e) {
+    stat.modify(e.x, e.y, (StatCont c) {
+      c.statEnts ~= e;
+      return c;
+    });
   }
 }
 
@@ -234,7 +259,7 @@ abstract class Ent {
   Update move(int dx, int dy, World w, void delegate(bool) callback = null) {
     int nx = x + dx,
         ny = y + dy;
-    if (w.terr.inside(nx, ny)) {
+    if (w.stat.inside(nx, ny)) {
       int cost = w.moveCostAt(x, y) 
                + w.moveCostAt(nx, ny)
                + moveCost;
@@ -483,17 +508,19 @@ void main() {
 
   auto world = genWorld(5, 5); //new World(20, 20);
   world.player = new Player(5, 11);
-  world.ents ~= world.player;
+  world.movingEnts ~= world.player;
 
-  world.ents ~= new Deer(10, 6);
-  world.ents ~= new Deer(11, 7);
-  world.ents ~= new Deer(12, 6);
-  world.ents ~= new Deer(13, 6);
-  world.ents ~= new Deer(14, 5);
-  world.ents ~= new Deer(13, 7);
-  world.ents ~= new Deer(17, 9);
-  world.ents ~= new Deer(11, 3);
-  world.ents ~= new Troll(15, 2);
+  world.movingEnts ~= [
+    new Deer(10, 6),
+    new Deer(11, 7),
+    new Deer(12, 6),
+    new Deer(13, 6),
+    new Deer(14, 5),
+    new Deer(13, 7),
+    new Deer(17, 9),
+    new Deer(11, 3),
+    new Troll(15, 2)
+  ];
   
   /+for (int i = 0; i < 20; i++) {
     int x = uniform(0, 20),
@@ -585,25 +612,6 @@ void main() {
       case n.KEY_RESIZE:
         clearScreen();
         break;
-      case 'a':
-        world.terr.modify(world.player.x, world.player.y, (Terr a) { a.type = Terr.Type.MUD; return a; });
-        break;
-      /+case '\\':
-        n.attrset(n.COLOR_PAIR(Col.TEXT));
-        n.mvprintw(n.LINES - 1, n.COLS - 1, "-");
-        switch (n.getch()) {
-          case 'f':
-            gen.fillNoise();
-            world.terr = gen.toTerrs();
-            break;
-          case 's':
-            gen.subd();
-            world.terr = gen.toTerrs();
-            break;
-          default:
-            break;
-        }
-        break;+/
       default:
         badKey = key;
         break;
