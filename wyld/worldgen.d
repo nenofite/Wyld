@@ -52,7 +52,7 @@ World genWorld(int w, int h) {
         break;
       case Geo.GRASS:
       case Geo.FOREST:
-        return Terr(Terr.DIRT);
+        return terr(Terr.DIRT);
         break;
       case Geo.MARSH:
         return Terr(Terr.MUD);

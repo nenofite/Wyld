@@ -359,19 +359,20 @@ struct Terr {
     WATER
   }
   alias Type this;
-
+  
   Type type;
+  bool pocked;
 
   Sym sym() {
     switch (type) {
       case Type.DIRT:
-        return Sym('#', Col.YELLOW);
+        return Sym(pocked ? ',' : '.', Col.YELLOW);
         break;
       case Type.MUD:
         return Sym('~', Col.YELLOW);
         break;
       case Type.ROCK:
-        return Sym('#', Col.WHITE);
+        return Sym('.', Col.WHITE);
         break;
       case Type.WATER:
         return Sym('~', Col.BLUE);
