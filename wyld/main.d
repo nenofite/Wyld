@@ -270,7 +270,7 @@ class Deer : Ent {
   Update update(World world) {
     if (moveFailed >= 2) {
       hasDest = false;
-      barMsg(format("New dest time at %d", moveFailed));
+      //barMsg(format("New dest time at %d", moveFailed));
       moveFailed = 0;
     }
   
