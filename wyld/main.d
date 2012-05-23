@@ -217,7 +217,8 @@ class World {
 abstract class Ent {
   int x, y;
   bool isBlocking;
-  int moveCost;
+  int moveCost,  // cost for others on this tile
+      speed;  // cost to self
 
   Update upd;
 
@@ -262,7 +263,8 @@ abstract class Ent {
     if (w.stat.inside(nx, ny)) {
       int cost = w.moveCostAt(x, y) 
                + w.moveCostAt(nx, ny)
-               + moveCost;
+               + speed
+               - moveCost; //because moveCastAt() will include this too
       return new Update(cost, (World w) {
         bool succ = !w.blockAt(nx, ny);
         if (succ) {
@@ -287,7 +289,7 @@ class Deer : Ent {
   this(int x, int y) {
     super(x, y);
     isBlocking = true;
-    moveCost = 150;
+    speed = 150;
   }
 
   Sym sym() {
@@ -337,7 +339,7 @@ class Deer : Ent {
 class Troll : Deer {
   this(int x, int y) {
     super(x, y);
-    moveCost = 500;
+    speed = 500;
   }
   
   Sym sym() {
@@ -349,7 +351,7 @@ class Player : Ent {
   this(int x, int y) {
     super(x, y);
     isBlocking = true;
-    moveCost = 50;
+    speed = 50;
   }
 
   Sym sym() {
@@ -365,6 +367,7 @@ class Player : Ent {
 class Grass : Ent {
   this(int x, int y) {
     super(x, y);
+    moveCost = 20;
   }
   
   Sym sym() {
