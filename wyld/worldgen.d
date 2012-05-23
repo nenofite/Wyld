@@ -6,142 +6,124 @@ import wyld.format;
 import std.random: uniform;
 import std.stdio;
 
-class WorldGen {
-  Grid!(Geo) grid;
+World genWorld(int w, int h) {
+  auto biomes = new Grid!(Biome)(w, h);
+  biomes.map((Biome a) {
+    int r = uniform(0, 100);
+    if (r < 40) return Biome(Biome.GRASS);
+    else if (r < 65) return Biome(Biome.FOREST);
+    else if (r < 75) return Biome(Biome.JUNGLE);
+    else if (r < 85) return Biome(Biome.MARSH);
+    else return Biome(Biome.MOUNTAIN);
+  });
+  biomes = subdiv(subdiv(subdiv(biomes)));
   
-  this(int w, int h) {
-    grid = new Grid!(Geo)(w, h);
+  auto geos = biomes.mapT((Biome b) {
+    if (uniform(0, 100) == 0) return Geo(Geo.WATER);
+    switch (b.type) {
+      case Biome.GRASS:
+        if (uniform(0, 100) == 0) return Geo(Geo.ROCK);
+        else return Geo(Geo.GRASS);
+      case Biome.FOREST:
+        if (uniform(0, 100) == 0) return Geo(Geo.GRASS);
+        else return Geo(Geo.FOREST);
+      case Biome.JUNGLE:
+        return Geo(Geo.FOREST);  //TODO add Jungle Geo
+      case Biome.MARSH:
+        if (uniform(0, 100) == 0) return Geo(Geo.GRASS);
+        else return Geo(Geo.MARSH);
+      case Biome.MOUNTAIN:
+        return Geo(Geo.ROCK);
+      default:
+        throw new Error(format("No Terr for Biome %d", b));
+    }
+  });
+  geos = subdiv(subdiv(geos));
+  
+  World world = new World();
+  
+  world.terr = geos.mapT((Geo g) {
+    switch (g.type) {
+      case Geo.WATER:
+        return Terr(Terr.WATER);
+        break;
+      case Geo.ROCK:
+        return Terr(Terr.ROCK);
+        break;
+      case Geo.GRASS:
+      case Geo.FOREST:
+        return Terr(Terr.DIRT);
+        break;
+      case Geo.MARSH:
+        return Terr(Terr.MUD);
+        break;
+      default:
+        throw new Error(format("Cannot convert to Terr: %d", g));
+        break;
+    }
+  });
+  
+  return world;
+}
+
+struct Biome {
+  enum Type {
+    GRASS,
+    FOREST,
+    JUNGLE,
+    MARSH,
+    MOUNTAIN
+  }
+  alias Type this;
+  
+  Type type;
+}
+
+struct Geo {
+  enum Type {
+    WATER,
+    ROCK,
+    GRASS,
+    FOREST,
+    MARSH
+  }
+  alias Type this;
+  
+  Type type;
+}
+    
+Grid!(A) subdiv(A)(Grid!(A) old) {
+  auto grid = new Grid!(A)(old.w * 2 - 1, old.h * 2 - 1);
+
+  for (int y = 0; y < grid.h; y += 2) {
+    for (int x = 0; x < grid.w; x += 2) {
+      grid.set(x, y, old.get(x / 2, y / 2));
+    }
   }
 
-  struct Geo {
-    enum Type {
-      WATER,
-      ROCK,
-      GRASS,
-      FOREST,
-      MARSH
-    }
-    
-    Type type;
-    
-    int spreadChance() const {
-      switch (type) {
-        case Type.WATER:
-          return 80;
-        case Type.FOREST:
-        case Type.MARSH:
-          return 75;
-        default:
-          return 50;
-      }
-    }
-    
-    Terr toTerr() const {
-      switch (type) {
-        case Type.WATER:
-          return Terr(Terr.Type.WATER);
-          break;
-        case Type.ROCK:
-          return Terr(Terr.Type.ROCK);
-          break;
-        case Type.GRASS:
-        case Type.FOREST:
-          return Terr(Terr.Type.DIRT);
-          break;
-        case Type.MARSH:
-          return Terr(Terr.Type.MUD);
-          break;
-        default:
-          throw new Error(format("Cannot convert to Terr: %d", type));
-          break;
-      }
-    }
-    
-    static Geo random() {
-      Geo ret;
-      if (uniform(0, 100) <= 2) {
-        ret.type = Geo.Type.WATER;
-      } else if (uniform(0, 100) <= 2) {
-        ret.type = Geo.Type.ROCK;
-      } else if (uniform(0, 100) <= 50) {
-        ret.type = Geo.Type.GRASS;
-      } else if (uniform(0, 100) <= 25) {
-        ret.type = Geo.Type.FOREST;
-      } else if (uniform(0, 100) <= 2) {
-        ret.type = Geo.Type.MARSH;
-      } else {
-        ret.type = Geo.Type.GRASS;
-      }
-      return ret;
-    }
-    
-    static Geo interp(Geo a, Geo b) {
-      if (a.spreadChance() > b.spreadChance()) {
-        if (uniform(0, 100) <= a.spreadChance()) {
-          return a;
-        } else {
-          return b;
-        }
-      } else {
-        if (uniform(0, 100) <= b.spreadChance()) {
-          return b;
-        } else {
-          return a;
-        }
-      }
+  for (int y = 1; y < grid.h; y += 2) {
+    for (int x = 1; x < grid.w; x += 2) {
+      A[4] options = [
+        grid.get(x - 1, y - 1),
+        grid.get(x + 1, y - 1),
+        grid.get(x - 1, y + 1),
+        grid.get(x + 1, y + 1)
+      ];
+      grid.set(x, y, options[uniform(0, 4)]);
     }
   }
   
-  void fillNoise(/*ref Grid!(Geo) grid*/) {
-    for (int y = 0; y < grid.h; y++) {
-      for (int x = 0; x < grid.w; x++) {
-        grid.set(x, y, Geo.random());
-      }
+  for (int y = 0; y < grid.h; y++) {
+    for (int x = y % 2 == 0 ? 1 : 0; x < grid.w; x += 2) {
+      A[] options;
+      if (grid.inside(x, y - 1)) options ~= grid.get(x, y - 1);
+      if (grid.inside(x + 1, y)) options ~= grid.get(x + 1, y);
+      if (grid.inside(x, y + 1)) options ~= grid.get(x, y + 1);
+      if (grid.inside(x - 1, y)) options ~= grid.get(x - 1, y);
+      
+      grid.set(x, y, options[uniform(0, options.length)]);
     }
   }
   
-  void subd(/*ref Grid!(Geo) grid*/) {
-    auto old = grid;
-    grid = new Grid!(Geo)(old.w * 2 - 1, old.h * 2 - 1);
-
-    for (int y = 0; y < grid.h; y += 2) {
-      for (int x = 0; x < grid.w; x += 2) {
-        grid.set(x, y, old.get(x / 2, y / 2));
-      }
-    }
-
-    for (int y = 1; y < grid.h; y += 2) {
-      for (int x = 1; x < grid.w; x += 2) {
-        Geo[4] options = [
-          grid.get(x - 1, y - 1),
-          grid.get(x + 1, y - 1),
-          grid.get(x - 1, y + 1),
-          grid.get(x + 1, y + 1)
-        ];
-        grid.set(x, y, options[uniform(0, 4)]);
-      }
-    }
-    
-    for (int y = 0; y < grid.h; y++) {
-      for (int x = y % 2 == 0 ? 1 : 0; x < grid.w; x += 2) {
-        Geo[] options;
-        if (grid.inside(x, y - 1)) options ~= grid.get(x, y - 1);
-        if (grid.inside(x + 1, y)) options ~= grid.get(x + 1, y);
-        if (grid.inside(x, y + 1)) options ~= grid.get(x, y + 1);
-        if (grid.inside(x - 1, y)) options ~= grid.get(x - 1, y);
-        
-        grid.set(x, y, options[uniform(0, options.length)]);
-      }
-    }
-  }
-  
-  Grid!(Terr) toTerrs() {
-    auto ret = new Grid!(Terr)(grid.w, grid.h);
-    for (int y = 0; y < grid.h; y++) {
-      for (int x = 0; x < grid.w; x++) {
-        ret.set(x, y, grid.get(x, y).toTerr());
-      }
-    }
-    return ret;
-  }
+  return grid;
 }

@@ -40,6 +40,8 @@ class World {
   Ent[] ents;
   Grid!(Terr) terr;
 
+  this() {}
+
   this(int w, int h) {
     //this.w = w;
     //this.h = h;
@@ -365,6 +367,7 @@ struct Terr {
     ROCK,
     WATER
   }
+  alias Type this;
 
   Type type;
 
@@ -476,11 +479,7 @@ void main() {
   n.curs_set(false);
   initColor();
 
-  auto gen = new WorldGen(20, 20);
-  gen.fillNoise();
-  
-  auto world = new World(20, 20);
-  world.terr = gen.toTerrs();
+  auto world = genWorld(5, 5); //new World(20, 20);
   world.player = new Player(5, 11);
   world.ents ~= world.player;
 
@@ -587,7 +586,7 @@ void main() {
       case 'a':
         world.terr.modify(world.player.x, world.player.y, (Terr a) { a.type = Terr.Type.MUD; return a; });
         break;
-      case '\\':
+      /+case '\\':
         n.attrset(n.COLOR_PAIR(Col.TEXT));
         n.mvprintw(n.LINES - 1, n.COLS - 1, "-");
         switch (n.getch()) {
@@ -602,7 +601,7 @@ void main() {
           default:
             break;
         }
-        break;
+        break;+/
       default:
         badKey = key;
         break;
