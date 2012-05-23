@@ -493,14 +493,14 @@ void main() {
   world.ents ~= new Deer(11, 3);
   world.ents ~= new Troll(15, 2);
   
-  for (int i = 0; i < 20; i++) {
+  /+for (int i = 0; i < 20; i++) {
     int x = uniform(0, 20),
         y = uniform(0, 20);
     if (!world.blockAt(x, y)) {
       world.ents ~= new Tree(x, y);
     } else
       i--;
-  }
+  }+/
   
   /+barMsg("I");
   barMsg("do");

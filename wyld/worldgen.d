@@ -41,7 +41,7 @@ World genWorld(int w, int h) {
   geos = subdiv(subdiv(geos));
   
   World world = new World();
-  
+
   world.terr = geos.mapT((Geo g) {
     switch (g.type) {
       case Geo.WATER:
@@ -62,6 +62,21 @@ World genWorld(int w, int h) {
         break;
     }
   });
+  
+  for (int y = 0; y < geos.h; y += 3) {
+    for (int x = 0; x < geos.w; x += 3) {
+      if (geos.get(x, y).type == Geo.FOREST) {
+        while (true) {
+          int xd = x + uniform(-1, 1),
+              yd = y + uniform(-1, 1);
+          if (geos.inside(xd, yd) && !world.blockAt(xd, yd)) {
+            world.ents ~= new Tree(xd, yd);
+            break;
+          }
+        }
+      }
+    }
+  }
   
   return world;
 }
