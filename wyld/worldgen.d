@@ -78,6 +78,19 @@ World genWorld(int w, int h) {
     }
   }
   
+  for (int y = 0; y < geos.h; y++) {
+    for (int x = 0; x < geos.w; x++) {
+      auto a = geos.get(x, y);
+      if (a.type == Geo.FOREST || a.type == Geo.GRASS) {
+        if (uniform(0, 50) != 0) {
+          if (!world.blockAt(x, y)) {
+            world.ents ~= new Grass(x, y);
+          }
+        }
+      }
+    }
+  }
+  
   return world;
 }
 

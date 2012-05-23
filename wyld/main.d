@@ -337,6 +337,16 @@ class Player : Ent {
   }
 }
 
+class Grass : Ent {
+  this(int x, int y) {
+    super(x, y);
+  }
+  
+  Sym sym() {
+    return Sym('"', Col.GREEN);
+  }
+}
+
 class Tree : Ent {
   this(int x, int y) {
     super(x, y);
