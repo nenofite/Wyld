@@ -52,21 +52,27 @@ class List : Container {
   
   void draw(Dim dim) {
     if (horiz) {
-      int x = dim.x;
+      int x = rtl ? dim.x2() + 1 : dim.x;
       for (int i = 0; i < children.length - 1; i++) {
         auto b = children[i];
+        if (rtl) x -= b.w;
         b.draw(Dim(x, dim.y, b.w, dim.h));
-        x += b.w;
+        if (!rtl) x += b.w;
       }
-      children[$-1].draw(Dim(x, dim.y, dim.x2() - x + 1, dim.h));
+      int width = (rtl ? x - dim.x : dim.x2() - x + 1);
+      if (rtl) x = dim.x;
+      children[$-1].draw(Dim(x, dim.y, width, dim.h));
     } else {
-      int y = dim.y;
+      int y = rtl ? dim.y2() + 1 : dim.y;
       for (int i = 0; i < children.length - 1; i++) {
         auto b = children[i];
+        if (rtl) y -= b.h;
         b.draw(Dim(dim.x, y, dim.w, b.h));
-        y += b.h;
+        if (!rtl) y += b.h;
       }
-      children[$-1].draw(Dim(dim.x, y, dim.w, dim.y2() - y + 1));
+      int height = (rtl ? y - dim.y : dim.y2() - y + 1);
+      if (rtl) y = dim.y;
+      children[$-1].draw(Dim(dim.x, y, dim.w, height));
     }
   }
   
