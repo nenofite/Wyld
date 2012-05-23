@@ -433,7 +433,7 @@ class Grid(A) {
     return x * w + y;
   }
 
-  A get(int x, int y) const {
+  A get(int x, int y) {
     return ls[conv(x, y)];
   }
   void set(int x, int y, A a) {

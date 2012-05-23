@@ -141,7 +141,7 @@ class WorldGen {
     }
   }
   
-  Grid!(Terr) toTerrs() const {
+  Grid!(Terr) toTerrs() {
     auto ret = new Grid!(Terr)(grid.w, grid.h);
     for (int y = 0; y < grid.h; y++) {
       for (int x = 0; x < grid.w; x++) {
