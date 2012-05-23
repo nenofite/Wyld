@@ -510,7 +510,7 @@ void main() {
   world.player = new Player(5, 11);
   world.movingEnts ~= world.player;
 
-  world.movingEnts ~= [
+  /+world.movingEnts ~= [
     new Deer(10, 6),
     new Deer(11, 7),
     new Deer(12, 6),
@@ -520,7 +520,18 @@ void main() {
     new Deer(17, 9),
     new Deer(11, 3),
     new Troll(15, 2)
-  ];
+  ];+/
+  
+  for (int i = 0; i < 1000; i++) {
+    while (true) {
+      int x = uniform(0, world.stat.w),
+          y = uniform(0, world.stat.h);
+      if (!world.blockAt(x, y)) {
+        world.movingEnts ~= new Deer(x, y);
+        break;
+      }
+    }
+  }
   
   /+for (int i = 0; i < 20; i++) {
     int x = uniform(0, 20),
