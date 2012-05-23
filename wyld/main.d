@@ -422,7 +422,7 @@ struct Terr {
         return Sym('~', Col.YELLOW);
         break;
       case Type.ROCK:
-        return Sym('.', Col.WHITE);
+        return Sym(pocked ? '-' : '.', Col.WHITE);
         break;
       case Type.WATER:
         return Sym('~', Col.BLUE);
