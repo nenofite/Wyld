@@ -565,6 +565,7 @@ void main() {
 
   //bool badKey = false;
   world.draw(0, 0);
+  showBarMsgs();
 
   int badKey = -1;
 
