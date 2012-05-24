@@ -605,7 +605,7 @@ class Update {
 struct Time {
   uint periods, pticks;
   
-  const uint ticksPerPeriod = 200000,
+  const uint ticksPerPeriod = 260000,
              periodsPerMoon = 1,
              moonOffset = 90,
              sunMoonMax = 200,
