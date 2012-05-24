@@ -300,7 +300,29 @@ class TimeBar : Box {
   int h() const { return 1; }
   
   void draw(Dim dim) {
-    n.mvprintw(dim.y, dim.x, "Time bar!");
+    if (world.time.isDay()) {
+      if (world.time.isDawn() || world.time.isDusk()) {
+        n.attrset(n.COLOR_PAIR(Col.RED_BG));
+      } else {
+        n.attrset(n.COLOR_PAIR(Col.BLUE_BG));
+      }
+    } else {
+      n.attrset(n.COLOR_PAIR(Col.WHITE));
+    }
+    
+    n.move(dim.y, dim.x);
+    for (int x = 0; x < dim.w; x++) {
+      n.addch(' ');
+    }
+    
+    uint moon = world.time.moon() * dim.w / Time.sunMoonMax,
+         sun = world.time.sun() * dim.w / Time.sunMoonMax;
+    
+    n.mvprintw(dim.y, dim.x + moon, "C");
+    if (world.time.isDay()) {
+      n.attrset(n.COLOR_PAIR(Col.YELLOW_BG));
+      n.mvprintw(dim.y, dim.x + sun, "O");
+    }
   }
 }
 

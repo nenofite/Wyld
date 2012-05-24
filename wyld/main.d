@@ -23,7 +23,10 @@ enum Col {
   GREEN,
   RED,
   YELLOW,
-  WHITE
+  WHITE,
+  BLUE_BG,
+  YELLOW_BG,
+  RED_BG
 }
 
 struct Sym {
@@ -42,6 +45,8 @@ class World {
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
   string[] msgs;
+  
+  Time time;
   
   struct StatCont {
     Terr terr;
@@ -107,6 +112,7 @@ class World {
     foreach (e; movingEnts) {
       e.runUpdate(this);
     }
+    time.elapse(1);
   }
 
   void playerUpdate(Update upd) {
@@ -538,6 +544,9 @@ void initColor() {
     n.init_pair(Col.RED, n.COLOR_RED, n.COLOR_BLACK);
     n.init_pair(Col.YELLOW, n.COLOR_YELLOW, n.COLOR_BLACK);
     n.init_pair(Col.WHITE, n.COLOR_WHITE, n.COLOR_BLACK);
+    n.init_pair(Col.BLUE_BG, n.COLOR_WHITE, n.COLOR_BLUE);
+    n.init_pair(Col.YELLOW_BG, n.COLOR_WHITE, n.COLOR_YELLOW);
+    n.init_pair(Col.RED_BG, n.COLOR_WHITE, n.COLOR_RED);
   } else {
     throw new Error("No color.");
   }
@@ -590,5 +599,44 @@ class Update {
       return true;
     }
     return false;
+  }
+}
+
+struct Time {
+  uint periods, pticks;
+  
+  const uint ticksPerPeriod = 200000,
+             periodsPerMoon = 4,
+             moonOffset = 190,
+             sunMoonMax = 500,
+             dawnDuskTicks = 10000;
+  
+  void elapse(int ticks) {
+    pticks += ticks;
+    while (pticks >= ticksPerPeriod) {
+      periods++;
+      pticks -= ticksPerPeriod;
+    }
+  }
+  
+  bool isDay() const {
+    return periods % 2 == 0;
+  }
+  
+  bool isDawn() const {
+    assert(isDay());
+    return pticks <= dawnDuskTicks;
+  }
+  bool isDusk() const {
+    assert(isDay());
+    return pticks >= ticksPerPeriod - dawnDuskTicks;
+  }
+  
+  uint sun() const {
+    return (pticks * sunMoonMax / ticksPerPeriod) % sunMoonMax;
+  }
+  
+  uint moon() const {
+    return (periods / periodsPerMoon + moonOffset) % sunMoonMax;
   }
 }
