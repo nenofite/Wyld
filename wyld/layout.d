@@ -171,7 +171,7 @@ Box mainView(World world) {
   auto msgPane = new List();
   msgPane.rtl = true;
   msgPane.addChild(new Msgs(world));
-  msgPane.addChild(new HBar());
+  msgPane.addChild(new HBar(" - Messages -"));
   {
     auto menuPane = new List();
     msgPane.addChild(menuPane);
@@ -218,13 +218,10 @@ class Msgs : Box {
   
   void draw(Dim dim) {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.attron(n.A_BOLD);
-    n.mvprintw(dim.y, dim.x, "- Messages: -");
-    n.attroff(n.A_BOLD);
-    uint msgIndex = world.msgs.length > dim.h - 1 
-      ? cast(uint) world.msgs.length - dim.h + 1
+    uint msgIndex = world.msgs.length > dim.h 
+      ? cast(uint) world.msgs.length - dim.h
       : 0;
-    for (int i = 1; i < dim.h; i++) {
+    for (int i = 0; i < dim.h; i++) {
       clearLine(dim.y + i);
       if (msgIndex < world.msgs.length) {
         n.mvprintw(dim.y + i, dim.x, toStringz(world.msgs[msgIndex]));
