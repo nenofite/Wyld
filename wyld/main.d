@@ -442,8 +442,6 @@ void main() {
   
   hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
 
-  int badKey = -1;
-
   bool cont = true;
   while (cont) {
     int key = n.getch();
@@ -492,7 +490,7 @@ void main() {
         clearScreen();
         break;
       default:
-        badKey = key;
+        world.barMsg(format("Unknown key: %d '%s'", key, cast(char) key));
         break;
     }
     
@@ -505,11 +503,6 @@ void main() {
       n.refresh();
       Thread.sleep(dur!("nsecs")(500));
     }
-
-    if (badKey != -1) { 
-      world.barMsg(format("Unknown key: %d '%s'", badKey, cast(char) badKey));
-    }
-    badKey = -1;
     
     n.refresh();
   }
