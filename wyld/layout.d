@@ -132,6 +132,7 @@ class OnGround : Box {
   
   this(World world) {
     this.world = world;
+    h = 6;
   }
   
   void draw(Dim dim) {
@@ -161,5 +162,27 @@ Box mainView(World world) {
   auto top = new List();
   top.addChild(new WorldView(world));
   top.addChild(new OnGround(world));
+  top.addChild(new Msgs(world));
   return top;
+}
+
+class Msgs : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.attron(n.A_BOLD);
+    n.mvprintw(dim.y, dim.x, "- Messages: -");
+    n.attroff(n.A_BOLD);
+    for (int i = 1; i < dim.h; i++) {
+      clearLine(dim.y + i);
+      if (i - 1 < world.msgs.length) {
+        n.mvprintw(dim.y + i, dim.x, toStringz(world.msgs[i-1]));
+      }
+    }
+  }
 }

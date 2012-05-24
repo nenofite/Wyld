@@ -12,8 +12,6 @@ import std.random: uniform;
 const int viewHeight = 25,
           viewWidth = 25;
           
-string[] msgs;
-
 enum Col {
   TEXT,
   BORDER,
@@ -38,6 +36,7 @@ class World {
   Ent player;
   Ent[] movingEnts;
   Grid!(StatCont) stat;
+  string[] msgs;
   
   struct StatCont {
     Terr terr;
@@ -109,6 +108,14 @@ class World {
       c.statEnts ~= e;
       return c;
     });
+  }
+  
+  void barMsg(string msg) {
+    msgs ~= msg;
+  }
+  void barMsg(string[] msgs) {
+    foreach (m; msgs)
+      barMsg(m);
   }
 }
 
@@ -426,15 +433,14 @@ void main() {
     }
   }
   
-  barMsg("One thousand deer");
-  barMsg("roam this random spread.");
-  barMsg("Now run around like an idiot");
-  barMsg("and explore!");
+  world.barMsg("One thousand deer");
+  world.barMsg("roam this random spread.");
+  world.barMsg("Now run around like an idiot");
+  world.barMsg("and explore!");
   
   auto hud = mainView(world);
   
   hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
-  showBarMsgs();
 
   int badKey = -1;
 
@@ -501,11 +507,10 @@ void main() {
     }
 
     if (badKey != -1) { 
-      barMsg(format("Unknown key: %d '%s'", badKey, cast(char) badKey));
+      world.barMsg(format("Unknown key: %d '%s'", badKey, cast(char) badKey));
     }
     badKey = -1;
     
-    showBarMsgs();
     n.refresh();
   }
 }
@@ -536,38 +541,6 @@ void clearScreen() {
   for (int y = 0; y < n.LINES; y++) {
     clearLine(y);
   }
-}
-
-
-
-void barMsg(string msg) {
-  msgs ~= msg;
-}
-
-void showBarMsgs() {
-  int dispLen = cast(int) msgs.length;
-  if (dispLen > 5) dispLen = 5;
-
-  n.attrset(n.COLOR_PAIR(Col.BORDER));
-  int offset;
-  while (true) {
-    int ln = n.LINES - dispLen;
-    for (int i = 0; i < dispLen; i++) {
-      clearLine(ln);
-      n.mvprintw(ln, 0, toStringz(msgs[i + offset]));
-      ln++;
-    }
-    if (offset + dispLen < msgs.length) {
-      clearLine(n.LINES - 1);
-      n.mvprintw(n.LINES - 1, 0, toStringz("-- [Enter] for more --"));
-      while (n.getch() != '\n') {}
-      offset++;
-    } else {
-      break;
-    }
-  }
-
-  msgs = [];
 }
 
 void remove(A)(ref A[] ls, A elem) {
