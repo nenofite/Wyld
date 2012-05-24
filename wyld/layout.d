@@ -171,7 +171,7 @@ Box mainView(World world) {
   auto msgPane = new List();
   msgPane.rtl = true;
   msgPane.addChild(new Msgs(world));
-  msgPane.addChild(new HBar(" - Messages -"));
+  msgPane.addChild(new HBar(true, " - Messages -"));
   {
     auto menuPane = new List();
     msgPane.addChild(menuPane);
@@ -193,12 +193,14 @@ Box mainView(World world) {
           rows.addChild(new WorldView(world));
           rows.addChild(new OnGround(world));
         }
+        cols.addChild(new VBar(false));
         {
           auto rows = new List();
           cols.addChild(rows);
           rows.addChild(new Minimap(world));
           rows.addChild(new Nearby(world));
         }
+        cols.addChild(new VBar(false));
         cols.addChild(new Stats(world));
       }
     }
@@ -245,34 +247,46 @@ class Menu : Box {
 }
 
 class VBar : Box {
+  bool visible;
+  
+  this(bool visible = true) {
+    this.visible = visible;
+  }
+
   int w() const { return 1; }
   
   void draw(Dim dim) {
-    n.attrset(n.COLOR_PAIR(Col.BORDER));
-    for (int y = dim.y; y <= dim.y2(); y++) {
-      n.mvprintw(y, dim.x, " ");
+    if (visible) {
+      n.attrset(n.COLOR_PAIR(Col.BORDER));
+      for (int y = dim.y; y <= dim.y2(); y++) {
+        n.mvprintw(y, dim.x, " ");
+      }
     }
   }
 }
 
 class HBar : Box {
   string label;
+  bool visible;
   
-  this(string label = "") {
+  this(bool visible = true, string label = "") {
+    this.visible = visible;
     this.label = label;
   }
 
   int h() const { return 1; }
   
   void draw(Dim dim) {
-    n.attrset(n.COLOR_PAIR(Col.BORDER));
-    n.move(dim.y, dim.x);
-    for (int x = 0; x <= dim.x2(); x++) {
-      n.addch(' ');
+    if (visible) {
+      n.attrset(n.COLOR_PAIR(Col.BORDER));
+      n.move(dim.y, dim.x);
+      for (int x = 0; x <= dim.x2(); x++) {
+        n.addch(' ');
+      }
+      n.attron(n.A_BOLD);
+      n.mvprintw(dim.y, dim.x, toStringz(label));
+      n.attroff(n.A_BOLD);
     }
-    n.attron(n.A_BOLD);
-    n.mvprintw(dim.y, dim.x, toStringz(label));
-    n.attroff(n.A_BOLD);
   }
 }
 
