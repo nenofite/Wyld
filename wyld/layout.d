@@ -260,6 +260,12 @@ class VBar : Box {
 }
 
 class HBar : Box {
+  string label;
+  
+  this(string label = "") {
+    this.label = label;
+  }
+
   int h() const { return 1; }
   
   void draw(Dim dim) {
@@ -268,6 +274,9 @@ class HBar : Box {
     for (int x = 0; x <= dim.x2(); x++) {
       n.addch(' ');
     }
+    n.attron(n.A_BOLD);
+    n.mvprintw(dim.y, dim.x, toStringz(label));
+    n.attroff(n.A_BOLD);
   }
 }
 
