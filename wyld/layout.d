@@ -168,48 +168,43 @@ void printBlock(int y, int x, string[] lines) {
 }
 
 Box mainView(World world) {
-  auto top = new List();
-  top.addChild(new GameInfoBar(world));
+  auto msgPane = new List();
+  msgPane.rtl = true;
+  msgPane.addChild(new Msgs(world));
+  msgPane.addChild(new HBar());
   {
-    auto msgPane = new List();
-    top.addChild(msgPane);
-    msgPane.rtl = true;
-    msgPane.addChild(new Msgs(world));
-    msgPane.addChild(new HBar());
+    auto menuPane = new List();
+    msgPane.addChild(menuPane);
+    menuPane.rtl = true;
+    menuPane.horiz = true;
+    menuPane.addChild(new Menu(world));
+    menuPane.addChild(new VBar());
     {
-      auto menuPane = new List();
-      msgPane.addChild(menuPane);
-      menuPane.rtl = true;
-      menuPane.horiz = true;
-      menuPane.addChild(new Menu(world));
-      menuPane.addChild(new VBar());
+      auto timeRow = new List();
+      menuPane.addChild(timeRow);
+      timeRow.addChild(new TimeBar(world));
       {
-        auto timeRow = new List();
-        menuPane.addChild(timeRow);
-        timeRow.addChild(new TimeBar(world));
+        auto cols = new List();
+        timeRow.addChild(cols);
+        cols.horiz = true;
         {
-          auto cols = new List();
-          timeRow.addChild(cols);
-          cols.horiz = true;
-          {
-            auto rows = new List();
-            cols.addChild(rows);
-            rows.addChild(new WorldView(world));
-            rows.addChild(new OnGround(world));
-          }
-          {
-            auto rows = new List();
-            cols.addChild(rows);
-            rows.addChild(new Minimap(world));
-            rows.addChild(new Nearby(world));
-          }
-          cols.addChild(new Stats(world));
+          auto rows = new List();
+          cols.addChild(rows);
+          rows.addChild(new WorldView(world));
+          rows.addChild(new OnGround(world));
         }
+        {
+          auto rows = new List();
+          cols.addChild(rows);
+          rows.addChild(new Minimap(world));
+          rows.addChild(new Nearby(world));
+        }
+        cols.addChild(new Stats(world));
       }
     }
   }
   
-  return top;
+  return msgPane;
 }
 
 class Msgs : Box {
@@ -236,22 +231,6 @@ class Msgs : Box {
         msgIndex++;
       }
     }
-  }
-}
-
-class GameInfoBar : Box {
-  World world;
-  
-  this(World world) {
-    this.world = world;
-  }
-  
-  int h() const { return 1; }
-  
-  void draw(Dim dim) {
-    n.attrset(n.COLOR_PAIR(Col.BORDER));
-    clearLine(dim.y);
-    n.mvprintw(dim.y, dim.x, "Player name HURR DURR!");
   }
 }
 
