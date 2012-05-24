@@ -218,9 +218,8 @@ class Msgs : Box {
   
   void draw(Dim dim) {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    uint msgIndex = world.msgs.length > dim.h 
-      ? cast(uint) world.msgs.length - dim.h
-      : 0;
+    int msgIndex = max(0, cast(int) world.msgs.length - dim.h);
+    
     for (int i = 0; i < dim.h; i++) {
       clearLine(dim.y + i);
       if (msgIndex < world.msgs.length) {
