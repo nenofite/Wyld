@@ -329,8 +329,8 @@ class TimeBar : Box {
 class Minimap : Box {
   World world;
   
-  const int mapW = 7,
-            mapH = 7,
+  const int mapW = 11,
+            mapH = 11,
             padW = mapW / 2,
             padH = mapH / 2;
   

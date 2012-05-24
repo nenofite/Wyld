@@ -14,7 +14,7 @@ import m = std.math;
 const int viewHeight = 25,
           viewWidth = 25;
           
-const int geoSubd = 3,
+const int geoSubd = 4,
           geoSize = 5;
           
 enum Col {
