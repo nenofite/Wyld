@@ -606,9 +606,9 @@ struct Time {
   uint periods, pticks;
   
   const uint ticksPerPeriod = 200000,
-             periodsPerMoon = 4,
-             moonOffset = 190,
-             sunMoonMax = 500,
+             periodsPerMoon = 1,
+             moonOffset = 90,
+             sunMoonMax = 200,
              dawnDuskTicks = 10000;
   
   void elapse(int ticks) {
