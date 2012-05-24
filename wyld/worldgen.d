@@ -38,9 +38,11 @@ World genWorld(int w, int h) {
         throw new Error(format("No Terr for Biome %d", b));
     }
   });
-  geos = subdiv(subdiv(geos));
-  
   World world = new World();
+  world.geos = geos.dup;
+  for (int i = 0; i < geoSubd; i++) {
+    geos = subdiv(geos);
+  }
 
   world.stat = geos.mapT((Geo g) {
     Terr.Type t;
@@ -122,6 +124,23 @@ struct Geo {
   alias Type this;
   
   Type type;
+  
+  Sym sym() const {
+    switch (type) {
+      case WATER:
+        return Sym('~', Col.BLUE);
+      case ROCK:
+        return Sym('-', Col.WHITE);
+      case GRASS:
+        return Sym('"', Col.GREEN);
+      case FOREST:
+        return Sym('t', Col.GREEN);
+      case MARSH:
+        return Sym('~', Col.YELLOW);
+      default:
+        throw new Error(format("No sym for Geo %d", type));
+    }
+  }
 }
     
 Grid!(A) subdiv(A)(Grid!(A) old) {

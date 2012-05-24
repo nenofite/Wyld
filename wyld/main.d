@@ -8,9 +8,13 @@ import core.thread: Thread, dur;
 import n = ncs.curses;
 import std.string: toStringz;
 import std.random: uniform;
+import m = std.math;
 
 const int viewHeight = 25,
           viewWidth = 25;
+          
+const int geoSubd = 3,
+          geoSize = 5;
           
 enum Col {
   TEXT,
@@ -36,6 +40,7 @@ class World {
   Ent player;
   Ent[] movingEnts;
   Grid!(StatCont) stat;
+  Grid!(Geo) geos;
   string[] msgs;
   
   struct StatCont {
@@ -47,6 +52,13 @@ class World {
 
   this(int w, int h) {
     stat = new Grid!(StatCont)(w, h);
+  }
+  
+  int xToGeo(int x) {
+    return cast(int) m.round((cast(float) x) * geos.w / stat.w);
+  }
+  int yToGeo(int y) {
+    return cast(int) m.round((cast(float) y) * geos.h / stat.h);
   }
   
   bool inView(int x, int y) {
@@ -399,6 +411,14 @@ class Grid(A) {
     }
     return ret;
   }
+  
+  Grid!(A) dup() {
+    auto ret = new Grid!(A)(w, h);
+    foreach (i, a; ls) {
+      ret.ls[i] = a;
+    }
+    return ret;
+  }
 
   bool inside(int x, int y) const {
     return (x >= 0 && x < w && y >= 0 && y < h);
@@ -418,7 +438,7 @@ void main() {
   n.mvprintw(2, 2, "Generating world...");
   n.refresh();
 
-  auto world = genWorld(40, 40);
+  auto world = genWorld(7, 7);
   world.player = new Player(5, 11);
   world.movingEnts ~= world.player;
   

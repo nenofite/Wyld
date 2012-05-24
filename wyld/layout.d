@@ -294,8 +294,13 @@ class TimeBar : Box {
 class Minimap : Box {
   World world;
   
-  int w() const { return 7; }
-  int h() const { return 7; }
+  const int mapW = 7,
+            mapH = 7,
+            padW = mapW / 2,
+            padH = mapH / 2;
+  
+  int w() const { return mapW; }
+  int h() const { return mapH; }
   
   this(World world) {
     this.world = world;
@@ -303,6 +308,22 @@ class Minimap : Box {
   
   void draw(Dim dim) {
     n.mvprintw(dim.y, dim.x, "Minimap");
+    
+    for (int y = 0; y < h(); y++) {
+      for (int x = 0; x < w(); x++) {
+        int cx = world.xToGeo(world.player.x) - padW,
+            cy = world.yToGeo(world.player.y) - padH;
+        if (world.geos.inside(cx + x, cy + y)) {
+          world.geos.get(x + cx, y + cy)
+            .sym().draw(y + dim.y, x + dim.x);
+        } else {
+          Sym(' ', Col.TEXT).draw(y + dim.y, x + dim.x);
+        }
+      }
+    }
+    
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.mvprintw(dim.y + padH, dim.x + padW, "X");
   }
 }
 
