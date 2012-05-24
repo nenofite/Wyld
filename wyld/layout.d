@@ -6,7 +6,8 @@ import std.algorithm: reduce, map, max;
 import std.string: toStringz;
 
 abstract class Box {
-  int w, h;
+  int w() const { return 0; }
+  int h() const { return 0; }
 
   void draw(Dim);
   
@@ -76,13 +77,19 @@ class List : Container {
     }
   }
   
-  void pack() {
+  int w() const {
     if (horiz) {
-      w = reduce!("a + b")(map!("a.w")(children));
-      h = reduce!(max)(map!("a.h")(children));
+      return reduce!("a + b")(map!("a.w")(children));
     } else {
-      w = reduce!(max)(map!("a.w")(children));
-      h = reduce!("a + b")(map!("a.h")(children));
+      return reduce!(max)(map!("a.w")(children));
+    }
+  }
+  
+  int h() const {
+    if (horiz) {
+      return reduce!(max)(map!("a.h")(children));
+    } else {
+      return reduce!("a + b")(map!("a.h")(children));
     }
   }
 }
@@ -93,9 +100,10 @@ class WorldView : Box {
 
   this(World world) {
     this.world = world;
-    w = viewWidth;
-    h = viewHeight;
   }
+  
+  int w() const { return viewWidth; }
+  int h() const { return viewHeight; }
   
   void draw(Dim dim) {
     int cx = world.player.x - (viewWidth / 2),
@@ -132,8 +140,9 @@ class OnGround : Box {
   
   this(World world) {
     this.world = world;
-    h = 6;
   }
+  
+  int h() const { return 6; }
   
   void draw(Dim dim) {
     string[] lines;
@@ -160,9 +169,46 @@ void printBlock(int y, int x, string[] lines) {
 
 Box mainView(World world) {
   auto top = new List();
-  top.addChild(new WorldView(world));
-  top.addChild(new OnGround(world));
-  top.addChild(new Msgs(world));
+  top.addChild(new GameInfoBar(world));
+  {
+    auto msgPane = new List();
+    top.addChild(msgPane);
+    msgPane.rtl = true;
+    msgPane.addChild(new Msgs(world));
+    msgPane.addChild(new HBar());
+    {
+      auto menuPane = new List();
+      msgPane.addChild(menuPane);
+      menuPane.rtl = true;
+      menuPane.horiz = true;
+      menuPane.addChild(new Menu(world));
+      menuPane.addChild(new VBar());
+      {
+        auto timeRow = new List();
+        menuPane.addChild(timeRow);
+        timeRow.addChild(new TimeBar(world));
+        {
+          auto cols = new List();
+          timeRow.addChild(cols);
+          cols.horiz = true;
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            rows.addChild(new WorldView(world));
+            rows.addChild(new OnGround(world));
+          }
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            rows.addChild(new Minimap(world));
+            rows.addChild(new Nearby(world));
+          }
+          cols.addChild(new Stats(world));
+        }
+      }
+    }
+  }
+  
   return top;
 }
 
@@ -172,6 +218,8 @@ class Msgs : Box {
   this(World world) {
     this.world = world;
   }
+  
+  int h() const { return 6; }
   
   void draw(Dim dim) {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
@@ -188,5 +236,116 @@ class Msgs : Box {
         msgIndex++;
       }
     }
+  }
+}
+
+class GameInfoBar : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  int h() const { return 1; }
+  
+  void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.BORDER));
+    clearLine(dim.y);
+    n.mvprintw(dim.y, dim.x, "Player name HURR DURR!");
+  }
+}
+
+class Menu : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  int w() const { return 20; }
+  
+  void draw(Dim dim) {
+    n.mvprintw(dim.y, dim.x, "Menu go here!");
+  }
+}
+
+class VBar : Box {
+  int w() const { return 1; }
+  
+  void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.BORDER));
+    for (int y = dim.y; y <= dim.y2(); y++) {
+      n.mvprintw(y, dim.x, " ");
+    }
+  }
+}
+
+class HBar : Box {
+  int h() const { return 1; }
+  
+  void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.BORDER));
+    n.move(dim.y, dim.x);
+    for (int x = 0; x <= dim.x2(); x++) {
+      n.addch(' ');
+    }
+  }
+}
+
+class TimeBar : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  int h() const { return 1; }
+  
+  void draw(Dim dim) {
+    n.mvprintw(dim.y, dim.x, "Time bar!");
+  }
+}
+
+class Minimap : Box {
+  World world;
+  
+  int w() const { return 7; }
+  int h() const { return 7; }
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  void draw(Dim dim) {
+    n.mvprintw(dim.y, dim.x, "Minimap");
+  }
+}
+
+class Nearby : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  int w() const { return 12; }
+  
+  void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.attron(n.A_BOLD);
+    n.mvprintw(dim.y, dim.x, "- Nearby: -");
+    n.attroff(n.A_BOLD);
+  }
+}
+
+class Stats : Box {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+  }
+  
+  void draw(Dim dim) {
+    n.mvprintw(dim.y, dim.x, "Stats!");
   }
 }
