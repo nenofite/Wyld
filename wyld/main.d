@@ -380,25 +380,22 @@ struct Terr {
 }
 
 class Grid(A) {
-  A[] ls;
+  A[][] grid;
   int w, h;
 
   this(int w, int h) {
     this.w = w;
     this.h = h;
-    ls.length = w * h;
-  }
-
-  private int conv(int x, int y) const {
-    if (!inside(x, y)) throw new Error("Not in bounds of Grid.");
-    return x * w + y;
+    grid = new A[][](w, h);
   }
 
   A get(int x, int y) {
-    return ls[conv(x, y)];
+    assert(inside(x, y));
+    return grid[x][y];
   }
   void set(int x, int y, A a) {
-    ls[conv(x, y)] = a;
+    assert(inside(x, y));
+    grid[x][y] = a;
   }
   void modify(int x, int y, A delegate(A) f) {
     auto a = get(x, y);
@@ -406,22 +403,28 @@ class Grid(A) {
   }
 
   void map(A delegate(A) f) {
-    foreach (i, a; ls) {
-      ls[i] = f(a);
+    foreach (ref col; grid) {
+      foreach (ref c; col) {
+        c = f(c);
+      }
     }
   }
   Grid!(B) mapT(B)(B delegate(A) f) {
     auto ret = new Grid!(B)(w, h);
-    foreach (i, a; ls) {
-      ret.ls[i] = f(a);
+    foreach (int x, col; grid) {
+      foreach (int y, c; col) {
+        ret.set(x, y, f(c));
+      }
     }
     return ret;
   }
   
   Grid!(A) dup() {
     auto ret = new Grid!(A)(w, h);
-    foreach (i, a; ls) {
-      ret.ls[i] = a;
+    foreach (int x, col; grid) {
+      foreach (int y, c; col) {
+        ret.set(x, y, c);
+      }
     }
     return ret;
   }
