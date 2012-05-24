@@ -178,10 +178,14 @@ class Msgs : Box {
     n.attron(n.A_BOLD);
     n.mvprintw(dim.y, dim.x, "- Messages: -");
     n.attroff(n.A_BOLD);
+    uint msgIndex = world.msgs.length > dim.h - 1 
+      ? cast(uint) world.msgs.length - dim.h + 1
+      : 0;
     for (int i = 1; i < dim.h; i++) {
       clearLine(dim.y + i);
-      if (i - 1 < world.msgs.length) {
-        n.mvprintw(dim.y + i, dim.x, toStringz(world.msgs[i-1]));
+      if (msgIndex < world.msgs.length) {
+        n.mvprintw(dim.y + i, dim.x, toStringz(world.msgs[msgIndex]));
+        msgIndex++;
       }
     }
   }
