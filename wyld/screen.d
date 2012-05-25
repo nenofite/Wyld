@@ -37,6 +37,7 @@ class MainScreen : Screen {
   }
   
   void update(ScrStack stack) {
+    clearScreen();
     hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
 
     int key = n.getch();
@@ -92,9 +93,6 @@ class MainScreen : Screen {
         break;
     }
     
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    clearScreen();
-    hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     while (world.player.upd !is null) {
       world.update();
       hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
