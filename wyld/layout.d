@@ -350,6 +350,15 @@ class MainMenu : Menu {
     this.world = world;
     super([
       Entry('m', "Map", (ScrStack scr) { scr ~= new MapScreen(world); }),
+      Entry('D', "Debugging", null, [
+        Entry('r', "Reveal map", (ScrStack scr) {
+          world.geos.map((wg.Geo g) {
+            g.discovered = true;
+            return g;
+          });
+          world.barMsg("Map revealed.");
+        })
+      ]),
       Entry('Q', "Quit game", (ScrStack scr) { scr.pop(); })
     ]);
   }
