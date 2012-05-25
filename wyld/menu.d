@@ -16,7 +16,12 @@ class Menu : Box {
   uint w() const { return 30; }
   
   void draw(Dim dim) {
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
     for (int i = 0; i < dim.h; i++) {
+      n.move(i + dim.y, dim.x);
+      for (int x = 0; x < dim.w; x++) {
+        n.addch(' ');
+      }
       if (i < entries.length) {
         n.attrset(n.COLOR_PAIR(Col.GREEN));
         n.mvprintw(i + dim.y, dim.x, "%c ", entries[i].key);
