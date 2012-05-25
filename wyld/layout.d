@@ -4,6 +4,7 @@ import wyld.main;
 import wyld.menu;
 import wyld.screen;
 import wg = wyld.worldgen;
+import wyld.map;
 
 import std.algorithm: reduce, map, max;
 import std.string: toStringz;
@@ -168,48 +169,6 @@ void printBlock(int y, int x, string[] lines) {
     n.mvprintw(y, x, toStringz(l));
     y++;
   }
-}
-
-Box mainView(World world) {
-  auto msgPane = new List();
-  msgPane.rtl = true;
-  msgPane.addChild(new Msgs(world));
-  msgPane.addChild(new HBar(true, " - Messages -"));
-  {
-    auto menuPane = new List();
-    msgPane.addChild(menuPane);
-    menuPane.rtl = true;
-    menuPane.horiz = true;
-    menuPane.addChild(new MainMenu(world));
-    menuPane.addChild(new VBar());
-    {
-      auto timeRow = new List();
-      menuPane.addChild(timeRow);
-      timeRow.addChild(new TimeBar(world));
-      {
-        auto cols = new List();
-        timeRow.addChild(cols);
-        cols.horiz = true;
-        {
-          auto rows = new List();
-          cols.addChild(rows);
-          rows.addChild(new WorldView(world));
-          rows.addChild(new OnGround(world));
-        }
-        cols.addChild(new VBar(false));
-        {
-          auto rows = new List();
-          cols.addChild(rows);
-          rows.addChild(new Minimap(world));
-          rows.addChild(new Nearby(world));
-        }
-        cols.addChild(new VBar(false));
-        cols.addChild(new Stats(world));
-      }
-    }
-  }
-  
-  return msgPane;
 }
 
 class Msgs : Box {
@@ -390,6 +349,8 @@ class MainMenu : Menu {
   this(World world) {
     this.world = world;
     super([
+      Entry('m', "Map", (ScrStack scr) { scr ~= new MapScreen(world); }),
+      Entry('Q', "Quit game", (ScrStack scr) { scr.pop(); })
     ]);
   }
 }

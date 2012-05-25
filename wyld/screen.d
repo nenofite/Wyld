@@ -4,6 +4,7 @@ import wyld.main;
 import wyld.layout;
 import wyld.format;
 import wyld.map;
+import wyld.menu;
 
 import n = ncs.ncurses;
 
@@ -29,18 +30,57 @@ abstract class Screen {
 
 class MainScreen : Screen {
   World world;
-  Box hud;
+  List hud;
+  Menu menu;
   
   this(World world) {
     this.world = world;
-    hud = mainView(world);
+    
+    hud = new List();
+    hud.rtl = true;
+    hud.addChild(new Msgs(world));
+    hud.addChild(new HBar(true, " - Messages -"));
+    {
+      auto menuPane = new List();
+      hud.addChild(menuPane);
+      menuPane.rtl = true;
+      menuPane.horiz = true;
+      menu = new MainMenu(world);
+      menuPane.addChild(menu);
+      menuPane.addChild(new VBar());
+      {
+        auto timeRow = new List();
+        menuPane.addChild(timeRow);
+        timeRow.addChild(new TimeBar(world));
+        {
+          auto cols = new List();
+          timeRow.addChild(cols);
+          cols.horiz = true;
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            rows.addChild(new WorldView(world));
+            rows.addChild(new OnGround(world));
+          }
+          cols.addChild(new VBar(false));
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            rows.addChild(new Minimap(world));
+            rows.addChild(new Nearby(world));
+          }
+          cols.addChild(new VBar(false));
+          cols.addChild(new Stats(world));
+        }
+      }
+    }
   }
   
   void update(ScrStack stack) {
     clearScreen();
     hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
 
-    int key = n.getch();
+    char key = cast(char) n.getch();
     n.flushinp();
     switch (key) {
       //case n.KEY_UP:
@@ -79,17 +119,14 @@ class MainScreen : Screen {
       case '3':
         world.player.upd = world.player.move(1, 1, world);
         break;
-      case 'm':
-        stack ~= new MapScreen(world);
-        break;
-      case 'Q':
-        stack.pop();
-        break;
       case n.KEY_RESIZE:
         clearScreen();
         break;
       default:
-        world.barMsg(format("Unknown key: %d '%s'", key, cast(char) key));
+        if (!menu.update(stack, key))
+          world.barMsg(
+            format("Unknown key: %d '%s'", cast(int) key, key)
+          );
         break;
     }
     

@@ -19,12 +19,13 @@ class Menu : Box {
     n.attrset(n.COLOR_PAIR(Col.TEXT));
     for (int i = 0; i < dim.h; i++) {
       n.move(i + dim.y, dim.x);
+      n.addch(' ');
       for (int x = 0; x < dim.w; x++) {
         n.addch(' ');
       }
       if (i < entries.length) {
         n.attrset(n.COLOR_PAIR(Col.GREEN));
-        n.mvprintw(i + dim.y, dim.x, "%c ", entries[i].key);
+        n.mvprintw(i + dim.y, dim.x + 1, "%c ", entries[i].key);
         n.attrset(n.COLOR_PAIR(Col.TEXT));
         n.printw(toStringz(entries[i].label));
       }
