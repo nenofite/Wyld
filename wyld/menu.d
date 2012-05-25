@@ -42,7 +42,9 @@ class Menu : Box {
     } else {
       foreach (e; entryStack[$-1]) {
         if (e.key == key) {
-          e.onSelect(stack);
+          if (e.onSelect !is null) {
+            e.onSelect(stack);
+          }
           if (e.submenu !is null) {
             entryStack ~= e.submenu;
           }
