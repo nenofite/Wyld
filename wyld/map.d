@@ -81,8 +81,14 @@ class MapScreen : Screen {
       for (int y = 0; y < dim.h; y++) {
         for (int x = 0; x < dim.w; x++) {
           if (world.geos.inside(cx + x, cy + y)) {
-            world.geos.get(cx + x, cy + y).sym()
-              .draw(dim.y + y, dim.x + x);
+            auto geo = world.geos.get(cx + x, cy + y);
+            if (geo.discovered) {
+              geo.sym().draw(dim.y + y, dim.x + x);
+            } else {
+              n.attron(n.A_BOLD);
+              Sym('#', Col.WHITE).draw(dim.y + y, dim.x + x);
+              n.attroff(n.A_BOLD);
+            }
           } else {
             if (y % 3 == 0 && x % 3 == 0) {
               Sym('.', Col.BLUE).draw(dim.y + y, dim.x + x);

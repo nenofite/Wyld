@@ -124,6 +124,7 @@ struct Geo {
   alias Type this;
   
   Type type;
+  bool discovered;
   
   Sym sym() const {
     switch (type) {

@@ -3,6 +3,7 @@ module wyld.layout;
 import wyld.main;
 import wyld.menu;
 import wyld.screen;
+import wg = wyld.worldgen;
 
 import std.algorithm: reduce, map, max;
 import std.string: toStringz;
@@ -339,6 +340,10 @@ class Minimap : Box {
         if (world.geos.inside(cx + x, cy + y)) {
           world.geos.get(x + cx, y + cy)
             .sym().draw(y + dim.y, x + dim.x);
+          world.geos.modify(x + cx, y + cy, (wg.Geo g) {
+            g.discovered = true;
+            return g;
+          });
         } else {
           Sym(' ', Col.TEXT).draw(y + dim.y, x + dim.x);
         }
