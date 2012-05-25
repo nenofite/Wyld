@@ -3,12 +3,14 @@ module wyld.map;
 import wyld.main;
 import wyld.screen;
 import wyld.layout;
+import wyld.menu;
 
 import n = ncs.curses;
 
 class MapScreen : Screen {
   List gui;
   World world;
+  Menu menu;
   uint vx, vy;
   
   this(World world) {
@@ -19,7 +21,11 @@ class MapScreen : Screen {
     gui = new List();
     gui.horiz = true;
     gui.rtl = true;
-    gui.addChild(new Menu(world));
+    menu = new Menu([
+      Entry('c', "Center on player", null),
+      Entry('Q', "Close", (ScrStack stack) { stack.pop(); })
+    ]);
+    gui.addChild(menu);
     gui.addChild(new VBar());
     gui.addChild(new Map());
   }
@@ -27,10 +33,7 @@ class MapScreen : Screen {
   void update(ScrStack stack) {
     gui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     
-    switch (n.getch()) {
-      default:
-        break;
-    }
+    menu.update(stack, cast(char) n.getch());
     n.flushinp();
   }
   

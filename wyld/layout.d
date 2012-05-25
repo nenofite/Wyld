@@ -1,6 +1,8 @@
 module wyld.layout;
 
 import wyld.main;
+import wyld.menu;
+import wyld.screen;
 
 import std.algorithm: reduce, map, max;
 import std.string: toStringz;
@@ -177,7 +179,7 @@ Box mainView(World world) {
     msgPane.addChild(menuPane);
     menuPane.rtl = true;
     menuPane.horiz = true;
-    menuPane.addChild(new Menu(world));
+    menuPane.addChild(new MainMenu(world));
     menuPane.addChild(new VBar());
     {
       auto timeRow = new List();
@@ -229,20 +231,6 @@ class Msgs : Box {
         msgIndex++;
       }
     }
-  }
-}
-
-class Menu : Box {
-  World world;
-  
-  this(World world) {
-    this.world = world;
-  }
-  
-  int w() const { return 20; }
-  
-  void draw(Dim dim) {
-    n.mvprintw(dim.y, dim.x, "Menu go here!");
   }
 }
 
@@ -388,5 +376,15 @@ class Stats : Box {
   
   void draw(Dim dim) {
     n.mvprintw(dim.y, dim.x, "Stats!");
+  }
+}
+
+class MainMenu : Menu {
+  World world;
+  
+  this(World world) {
+    this.world = world;
+    super([
+    ]);
   }
 }
