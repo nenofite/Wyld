@@ -1,0 +1,3 @@
+#!/bin/sh
+
+gdc wyld/*.d -I ncs/ -o main -l curses
