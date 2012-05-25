@@ -22,7 +22,10 @@ class MapScreen : Screen {
     gui.horiz = true;
     gui.rtl = true;
     menu = new Menu([
-      Entry('c', "Center on player", null),
+      Entry('c', "Center on player", (ScrStack stack) {
+        vx = world.xToGeo(world.player.x);
+        vy = world.yToGeo(world.player.y);
+      }),
       Entry('Q', "Close", (ScrStack stack) { stack.pop(); })
     ]);
     gui.addChild(menu);
@@ -33,7 +36,40 @@ class MapScreen : Screen {
   void update(ScrStack stack) {
     gui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     
-    menu.update(stack, cast(char) n.getch());
+    char key = cast(char) n.getch();
+    switch (key) {
+      case '8':
+        vy--;
+        break;
+      case '9':
+        vy--;
+        vx++;
+        break;
+      case '6':
+        vx++;
+        break;
+      case '3':
+        vy++;
+        vx++;
+        break;
+      case '2':
+        vy++;
+        break;
+      case '1':
+        vy++;
+        vx--;
+        break;
+      case '4':
+        vx--;
+        break;
+      case '7':
+        vy--;
+        vx--;
+        break;
+      default:
+        menu.update(stack, key);
+        break;
+    }
     n.flushinp();
   }
   
