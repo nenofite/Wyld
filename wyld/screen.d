@@ -120,6 +120,7 @@ class MainScreen : Screen {
         world.player.upd = world.player.move(1, 1, world);
         break;
       case n.KEY_RESIZE:
+      case 154:
         clearScreen();
         break;
       default:
