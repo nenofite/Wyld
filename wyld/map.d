@@ -26,7 +26,6 @@ class MapScreen : Screen {
         vx = world.xToGeo(world.player.x);
         vy = world.yToGeo(world.player.y);
       }),
-      Entry('Q', "Close", (ScrStack stack) { stack.pop(); })
     ]);
     gui.addChild(menu);
     gui.addChild(new VBar());
@@ -65,6 +64,9 @@ class MapScreen : Screen {
       case '7':
         vy--;
         vx--;
+        break;
+      case 27:  // 27 is the escape key
+        stack.pop();
         break;
       default:
         menu.update(stack, key);
