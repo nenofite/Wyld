@@ -14,12 +14,13 @@ World genWorld(int w, int h) {
     else if (r < 65) return Biome(Biome.FOREST);
     else if (r < 75) return Biome(Biome.JUNGLE);
     else if (r < 85) return Biome(Biome.MARSH);
+    else if (r < 95) return Biome(Biome.LAKE);
     else return Biome(Biome.MOUNTAIN);
   });
   biomes = subdiv(subdiv(subdiv(biomes)));
   
   auto geos = biomes.mapT((Biome b) {
-    if (uniform(0, 100) == 0) return Geo(Geo.WATER);
+    if (uniform(0, 1000) == 0) return Geo(Geo.WATER);
     switch (b.type) {
       case Biome.GRASS:
         if (uniform(0, 100) == 0) return Geo(Geo.ROCK);
@@ -32,6 +33,8 @@ World genWorld(int w, int h) {
       case Biome.MARSH:
         if (uniform(0, 100) == 0) return Geo(Geo.GRASS);
         else return Geo(Geo.MARSH);
+      case Biome.LAKE:
+        return Geo(Geo.WATER);
       case Biome.MOUNTAIN:
         return Geo(Geo.ROCK);
       default:
@@ -106,6 +109,7 @@ struct Biome {
     FOREST,
     JUNGLE,
     MARSH,
+    LAKE,
     MOUNTAIN
   }
   alias Type this;
