@@ -20,7 +20,7 @@ class Menu : Box {
     for (int i = 0; i < dim.h; i++) {
       n.move(i + dim.y, dim.x);
       n.addch(' ');
-      for (int x = 0; x < dim.w; x++) {
+      for (int x = 1; x < dim.w; x++) {
         n.addch(' ');
       }
       if (i < entries.length) {
