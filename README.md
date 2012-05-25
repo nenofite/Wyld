@@ -12,7 +12,7 @@ Before you compile this, you will need:
 To compile:
 
     cd Wyld
-    gdc wyld/*.d -o main -l curses
+    gdc wyld/*.d -I ncs/ -o main -l curses
 
 ## Running
 
