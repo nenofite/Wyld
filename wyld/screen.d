@@ -130,14 +130,17 @@ class MainScreen : Screen {
           );
         break;
     }
-    
+
+    runUpdates();    
+    n.refresh();
+  }
+  
+  void runUpdates() {
     while (world.player.upd !is null) {
       world.update();
       hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
       n.refresh();
       Thread.sleep(dur!("nsecs")(500));
     }
-    
-    n.refresh();
   }
 }
