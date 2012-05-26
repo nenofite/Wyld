@@ -357,6 +357,11 @@ class MainMenu : Menu {
             return g;
           });
           world.barMsg("Map revealed.");
+        }),
+        Entry('t', "Pass time", (ScrStack scr) {
+          world.player.upd = new Update(10000, null);
+          while (world.player.upd !is null)
+            world.update();
         })
       ]),
       Entry('Q', "Quit game", (ScrStack scr) { scr.pop(); })
