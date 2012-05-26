@@ -116,12 +116,6 @@ class World {
     time.elapse(1);
   }
 
-  void playerUpdate(Update upd) {
-    while (!upd.run(this)) {
-      update();
-    }
-  }
-  
   void addStatEnt(Ent e) {
     stat.modify(e.x, e.y, (StatCont c) {
       c.statEnts ~= e;
