@@ -476,7 +476,17 @@ void main() {
   n.refresh();
 
   auto world = genWorld(7, 7);
-  world.player = new Player(5, 11);
+  while (true) {
+    int x = uniform(-100, 100),
+        y = uniform(-100, 100);
+    int mx = world.stat.w / 2,
+        my = world.stat.h / 2;
+    if (!world.blockAt(x, y)) {
+      world.player = new Player(mx + x, my + y);
+      break;
+    }
+  }
+  
   world.movingEnts ~= world.player;
   
   for (int i = 0; i < 1000; i++) {
