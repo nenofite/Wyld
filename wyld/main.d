@@ -370,10 +370,10 @@ struct Terr {
         return Sym(pocked ? ',' : '.', Col.YELLOW);
         break;
       case Type.MUD:
-        return Sym('~', Col.YELLOW);
+        return Sym(pocked ? '~' : '-', Col.YELLOW);
         break;
       case Type.ROCK:
-        return Sym(pocked ? '-' : '.', Col.WHITE);
+        return Sym(pocked ? ',' : '.', Col.WHITE);
         break;
       case Type.WATER:
         return Sym('~', Col.BLUE);

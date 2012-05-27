@@ -172,7 +172,7 @@ struct Geo {
       case FOREST:
         return Sym('t', Col.GREEN);
       case MARSH:
-        return Sym('~', Col.YELLOW);
+        return Sym('=', Col.YELLOW);
       default:
         throw new Error(format("No sym for Geo %d", type));
     }
