@@ -379,7 +379,20 @@ class Stats : Box {
   }
   
   void draw(Dim dim) {
-    n.mvprintw(dim.y, dim.x, "Stats!");
+    int y = dim.y - 1;
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.mvprintw(++y, dim.x, "HP: ");
+    world.player.hp.draw();
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.mvprintw(++y, dim.x, "SP: ");
+    world.player.sp.draw();
+    y++;
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.mvprintw(++y, dim.x, "Thirst: ");
+    world.player.thirst.draw();
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.mvprintw(++y, dim.x, "Hunger: ");
+    world.player.hunger.draw();
   }
 }
 
@@ -399,7 +412,7 @@ class MainMenu : Menu {
           world.barMsg("Map revealed.");
         }),
         Entry('t', "Pass time", (ScrStack scr) {
-          world.player.upd = new Update(10000, null);
+          world.player.upd = new Update(Time.minutes(1), null);
           while (world.player.upd !is null)
             world.update();
         })

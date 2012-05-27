@@ -113,6 +113,7 @@ class World {
   void update() {
     foreach (e; movingEnts) {
       e.runUpdate(this);
+      e.statUpdate();
     }
     time.elapse(1);
   }
@@ -138,6 +139,7 @@ abstract class Ent {
   bool isBlocking;
   int moveCost,  // cost for others on this tile
       speed;  // cost to self
+  Stat hp, sp, hunger, thirst;
 
   Update upd;
 
@@ -160,6 +162,8 @@ abstract class Ent {
       }
     }
   }
+  
+  void statUpdate() {}
 
   void collMove(int nx, int ny, World w) {
     if (!w.blockAt(nx, ny)) {
@@ -285,6 +289,11 @@ class Player : Ent {
     super(x, y);
     isBlocking = true;
     speed = 50;
+    
+    hp = Stat(200);
+    sp = Stat(1000);
+    hunger = Stat(Time.hours(24));  // 24 hours
+    thirst = Stat(Time.hours(6));  // 6 hours
   }
 
   Sym sym() {
@@ -293,6 +302,13 @@ class Player : Ent {
 
   Update update(World world) {
     return null;
+  }
+  
+  void statUpdate() {
+    if (hunger > 0)
+      hunger--;
+    if (thirst > 0)
+      thirst--;
   }
   
   string name() { return "you"; }
@@ -556,11 +572,11 @@ class Update {
 struct Time {
   uint periods, pticks;
   
-  const uint ticksPerPeriod = 260000,
+  const uint ticksPerPeriod = hours(12),
              periodsPerMoon = 1,
              moonOffset = 90,
              sunMoonMax = 200,
-             dawnDuskTicks = 10000;
+             dawnDuskTicks = minutes(10);
   
   void elapse(int ticks) {
     pticks += ticks;
@@ -589,6 +605,16 @@ struct Time {
   
   uint moon() const {
     return (periods / periodsPerMoon + moonOffset) % sunMoonMax;
+  }
+  
+  static int hours(int hrs) {
+    return hrs * 60 * 60 * 100;
+  }
+  static int minutes(int mins) {
+    return mins * 60 * 100;
+  }
+  static int seconds(int secs) {
+    return secs * 100;
   }
 }
 
@@ -672,5 +698,30 @@ string dirName(Dir d) {
     default:
       assert(false);
       break;  
+  }
+}
+
+struct Stat {
+  uint val, max;
+  alias val this;
+  
+  this(uint val, uint max) {
+    this.val = val;
+    this.max = max;
+  }
+  this (uint max) {
+    this(max, max);
+  }
+  
+  void draw(uint w = 10) const {
+    uint gw = cast(int) (cast(float) val / max * w);
+    n.attrset(n.COLOR_PAIR(Col.GREEN));
+    for (int i = 0; i < gw; i++) {
+      n.addch('=');
+    }
+    n.attrset(n.COLOR_PAIR(Col.RED));
+    for (int i = 0; i < w - gw; i++) {
+      n.addch('-');
+    }
   }
 }
