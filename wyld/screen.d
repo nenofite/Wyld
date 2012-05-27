@@ -85,27 +85,27 @@ class MainScreen : Screen {
     switch (key) {
       //case n.KEY_UP:
       case '8':
-        world.player.upd = world.player.move(0, -1, world);
+        world.player.upd = world.player.chmove(0, -1, world);
         break;
       //case n.KEY_DOWN:
       case '2':
-        world.player.upd = world.player.move(0, 1, world);
+        world.player.upd = world.player.chmove(0, 1, world);
         break;
       //case n.KEY_LEFT:
       case '4':
-        world.player.upd = world.player.move(-1, 0, world);
+        world.player.upd = world.player.chmove(-1, 0, world);
         break;
       //case n.KEY_RIGHT:
       case '6':
-        world.player.upd = world.player.move(1, 0, world);
+        world.player.upd = world.player.chmove(1, 0, world);
         break;
       //case n.KEY_HOME:
       case '7':
-        world.player.upd = world.player.move(-1, -1, world);
+        world.player.upd = world.player.chmove(-1, -1, world);
         break;
       //case n.KEY_PPAGE:
       case '9':
-        world.player.upd = world.player.move(1, -1, world);
+        world.player.upd = world.player.chmove(1, -1, world);
         break;
       //case n.KEY_B2:
       case '5':
@@ -113,11 +113,11 @@ class MainScreen : Screen {
         break;
       //case n.KEY_END:
       case '1':
-        world.player.upd = world.player.move(-1, 1, world);
+        world.player.upd = world.player.chmove(-1, 1, world);
         break;
       //case n.KEY_NPAGE:
       case '3':
-        world.player.upd = world.player.move(1, 1, world);
+        world.player.upd = world.player.chmove(1, 1, world);
         break;
       case n.KEY_RESIZE:
       case 154:
@@ -130,7 +130,7 @@ class MainScreen : Screen {
           );
         break;
     }
-
+    
     runUpdates();    
     n.refresh();
   }
