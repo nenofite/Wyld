@@ -82,7 +82,10 @@ class MapScreen : Screen {
            
       for (int y = 0; y < dim.h; y++) {
         for (int x = 0; x < dim.w; x++) {
-          if (world.geos.inside(cx + x, cy + y)) {
+          if (cx + x == world.xToGeo(world.player.x) 
+          && cy + y == world.yToGeo(world.player.y)) {
+            Sym('X', Col.TEXT).draw(dim.y + y, dim.x + x);
+          } else if (world.geos.inside(cx + x, cy + y)) {
             auto geo = world.geos.get(cx + x, cy + y);
             if (geo.discovered) {
               geo.sym().draw(dim.y + y, dim.x + x);
