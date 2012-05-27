@@ -13,7 +13,7 @@ import m = std.math;
 
 const int viewHeight = 25,
           viewWidth = 25,
-          nearbyDist = 30;
+          nearbyDist = 25;
           
 const int geoSubd = 4,
           geoSize = 5;
