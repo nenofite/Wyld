@@ -325,11 +325,6 @@ class Nearby : Box {
   int w() const { return 12; }
   
   void draw(Dim dim) {
-    n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.attron(n.A_BOLD);
-    n.mvprintw(dim.y, dim.x, "- Nearby: -");
-    n.attroff(n.A_BOLD);
-    
     struct EntDist {
       Ent ent;
       int dist;
@@ -342,15 +337,36 @@ class Nearby : Box {
     }
     sort!("a.dist < b.dist")(ents);
     
-    foreach (int i, ent; ents) {
-      ent.sym().draw(i + dim.y + 1, dim.x);
-      n.mvprintw(i + dim.y + 1, dim.x + 2, 
-        toStringz(format("(%d %d) %s", 
-          getDir(world.player.x, world.player.y, ent.x, ent.y),
-          ent.dist,
-          ent.name
-        ))
-      );
+    EntDist[] nearby;
+    EntDist[][Dir] far;
+    foreach (ent; ents) {
+      if (world.inView(ent.x, ent.y)) {
+        nearby ~= ent;
+      } else {
+        far[getDir(world.player.x, world.player.y, ent.x, ent.y)] 
+          ~= ent;
+      }
+    }
+    
+    int y = dim.y - 1;
+    void list(Ent e) {
+      e.sym().draw(++y, dim.x);
+      n.mvprintw(y, dim.x + 2, toStringz(e.name));
+    }
+    
+    if (nearby.length > 0) {
+      n.attrset(n.COLOR_PAIR(Col.BLUE));
+      n.mvprintw(++y, dim.x, "NEARBY");
+      foreach (e; nearby) {
+        list(e);
+      }
+    }
+    foreach (Dir d, ents; far) {
+      n.attrset(n.COLOR_PAIR(Col.BLUE));
+      n.mvprintw(++y, dim.x, toStringz(dirName(d)));
+      foreach (e; ents) {
+        list(e);
+      }
     }
   }
 }
