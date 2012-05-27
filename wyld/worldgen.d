@@ -7,6 +7,13 @@ import std.random: uniform;
 import std.stdio;
 
 World genWorld(int w, int h) {
+  int msgY = 0;
+  n.attrset(n.COLOR_PAIR(Col.BLUE));
+  void msg(string m) {
+    n.mvprintw(++msgY, 2, toStringz(m));
+    n.refresh();
+  }
+  
   auto biomes = new Grid!(Biome)(w, h);
   biomes.map((Biome a) {
     int r = uniform(0, 100);
@@ -17,7 +24,9 @@ World genWorld(int w, int h) {
     else if (r < 95) return Biome(Biome.LAKE);
     else return Biome(Biome.MOUNTAIN);
   });
+  msg("Biomes generated.");
   biomes = subdiv(subdiv(subdiv(biomes)));
+  msg("Biomes subdivided.");
   
   auto geos = biomes.mapT((Biome b) {
     if (uniform(0, 1000) == 0) return Geo(Geo.WATER);
@@ -41,11 +50,16 @@ World genWorld(int w, int h) {
         throw new Error(format("No Terr for Biome %d", b));
     }
   });
+  msg("Biomes converted to Geos.");
+
+  
   World world = new World();
   world.geos = geos.dup;
+  msg("World created, map copied.");
   for (int i = 0; i < geoSubd; i++) {
     geos = subdiv(geos);
   }
+  msg("Geos subdivided.");
 
   world.stat = geos.mapT((Geo g) {
     Terr.Type t;
@@ -71,11 +85,25 @@ World genWorld(int w, int h) {
     
     return World.StatCont(terr(t));
   });
+  msg("Geos converted to StatCont grid.");
+  
+  {
+    int rx = uniform(world.stat.w / 4, world.stat.w * 3 / 4);
+    for (int ry = 0; ry < world.stat.h; ry++) {
+      if (world.geos.inside(world.xToGeo(rx), world.yToGeo(ry)))
+        world.geos.set(world.xToGeo(rx), world.yToGeo(ry), Geo(Geo.WATER));
+      for (int xd = 0; xd < 3; xd++)
+        world.stat.set(rx + xd, ry, World.StatCont(terr(Terr.WATER)));
+      if (ry % 5 == 0)
+        rx += uniform(-1, 2);
+    }
+  }
+  msg("River generated.");
   
   for (int y = 0; y < geos.h; y += 3) {
     for (int x = 0; x < geos.w; x += 3) {
       if (geos.get(x, y).type == Geo.FOREST) {
-        while (true) {
+        for (int tries = 0; tries < 10; tries++) {
           int xd = x + uniform(-1, 1),
               yd = y + uniform(-1, 1);
           if (geos.inside(xd, yd) && !world.blockAt(xd, yd)) {
@@ -86,6 +114,7 @@ World genWorld(int w, int h) {
       }
     }
   }
+  msg("Trees generated.");
   
   for (int y = 0; y < geos.h; y++) {
     for (int x = 0; x < geos.w; x++) {
@@ -99,7 +128,9 @@ World genWorld(int w, int h) {
       }
     }
   }
+  msg("Grass generated.");
   
+  msg("Worldgen done.");
   return world;
 }
 

@@ -478,10 +478,6 @@ void main() {
   n.curs_set(false);
   initColor();
   
-  n.attrset(n.COLOR_PAIR(Col.GREEN));
-  n.mvprintw(2, 2, "Generating world...");
-  n.refresh();
-
   auto world = genWorld(7, 7);
   while (true) {
     int x = uniform(-100, 100),
