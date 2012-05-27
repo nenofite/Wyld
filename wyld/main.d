@@ -197,6 +197,13 @@ abstract class Ent {
       callback(false);
     return null;
   }
+  Update chmove(int dx, int dy, World w, void delegate(bool) callback = null) {
+    if (!w.blockAt(x + dx, y + dy)) {
+      return move(dx, dy, w, callback);
+    } else {
+      return null;
+    }
+  }
   
   Ent[] nearby(World world) {
     Ent[] ret;
