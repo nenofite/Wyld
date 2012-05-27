@@ -45,8 +45,8 @@ class Menu : Box {
           if (e.onSelect !is null) {
             e.onSelect(stack);
           }
-          if (e.submenu !is null) {
-            entryStack ~= e.submenu;
+          if (e.mkMenu !is null) {
+            entryStack ~= e.mkMenu();
           }
           return true;
         }
@@ -61,5 +61,23 @@ struct Entry {
   string label;
   
   void delegate(ScrStack) onSelect;
-  Entry[] submenu;
+  Entry[] delegate() mkMenu;
+  
+  this(char key, string label, void delegate(ScrStack) onSelect) {
+    this.key = key;
+    this.label = label;
+    this.onSelect = onSelect;
+  }
+  
+  this(char key, string label, void delegate(ScrStack) onSelect,
+  Entry[] delegate() mkMenu) {
+    this(key, label, onSelect);
+    this.mkMenu = mkMenu;
+  }
+  
+  this(char key, string label, void delegate(ScrStack) onSelect, 
+  Entry[] submenu) {
+    this(key, label, onSelect);
+    this.mkMenu = () { return submenu; };
+  }
 }
