@@ -5,8 +5,9 @@ import wyld.menu;
 import wyld.screen;
 import wg = wyld.worldgen;
 import wyld.map;
+import wyld.format;
 
-import std.algorithm: reduce, map, max;
+import std.algorithm: reduce, map, max, sort;
 import std.string: toStringz;
 
 abstract class Box {
@@ -328,6 +329,29 @@ class Nearby : Box {
     n.attron(n.A_BOLD);
     n.mvprintw(dim.y, dim.x, "- Nearby: -");
     n.attroff(n.A_BOLD);
+    
+    struct EntDist {
+      Ent ent;
+      int dist;
+      
+      alias ent this;
+    }
+    EntDist[] ents;
+    foreach (ent; world.player.nearby(world)) {
+      ents ~= EntDist(ent, dist(ent.x, ent.y, world.player.x, world.player.y));
+    }
+    sort!("a.dist < b.dist")(ents);
+    
+    foreach (int i, ent; ents) {
+      ent.sym().draw(i + dim.y + 1, dim.x);
+      n.mvprintw(i + dim.y + 1, dim.x + 2, 
+        toStringz(format("(%d %d) %s", 
+          getDir(world.player.x, world.player.y, ent.x, ent.y),
+          ent.dist,
+          ent.name
+        ))
+      );
+    }
   }
 }
 

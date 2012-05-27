@@ -12,7 +12,8 @@ import std.random: uniform;
 import m = std.math;
 
 const int viewHeight = 25,
-          viewWidth = 25;
+          viewWidth = 25,
+          nearbyDist = 30;
           
 const int geoSubd = 4,
           geoSize = 5;
@@ -191,6 +192,22 @@ abstract class Ent {
     if (callback !is null)
       callback(false);
     return null;
+  }
+  
+  Ent[] nearby(World world) {
+    Ent[] ret;
+    foreach (e; world.movingEnts) {
+      /+auto d = dist(e.x, e.y, x, y);
+      if (d < nearbyDist) {
+        ret ~= DistEnt(d, e);
+      }+/
+      if (e !is this) {
+        if (m.abs(e.x - x) < nearbyDist && m.abs(e.y - y) < nearbyDist) {
+          ret ~= e;
+        }
+      }
+    }
+    return ret;
   }
 }
 
@@ -573,4 +590,55 @@ struct Time {
   uint moon() const {
     return (periods / periodsPerMoon + moonOffset) % sunMoonMax;
   }
+}
+
+enum Dir {
+  N,
+  NE,
+  E,
+  SE,
+  S,
+  SW,
+  W,
+  NW
+}
+
+Dir getDir(int x1, int y1, int x2, int y2) {
+  auto angle = m.atan2(cast(real) y2 - y1, cast(real) x2 - x1);
+  int oct = cast(int) m.round(angle * 4 / m.PI);
+  switch (oct) {
+    case -2:
+      return Dir.N;
+      break;
+    case -1:
+      return Dir.NE;
+      break;
+    case 0:
+      return Dir.E;
+      break;
+    case 1:
+      return Dir.SE;
+      break;
+    case 2:
+      return Dir.S;
+      break;
+    case 3:
+      return Dir.SW;
+      break;
+    case 4:
+    case -4:
+      return Dir.W;
+      break;
+    case -3:
+      return Dir.NW;
+      break;
+    default:
+      throw new Error(format("%d", oct));
+      assert(false);
+      break;
+  }
+}
+
+int dist(int x1, int y1, int x2, int y2) {
+  return cast(int) m.sqrt(m.abs(x2 - x1) ^^ 2 + m.abs(y2 - y1) ^^ 2);
 }
