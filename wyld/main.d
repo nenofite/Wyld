@@ -642,3 +642,35 @@ Dir getDir(int x1, int y1, int x2, int y2) {
 int dist(int x1, int y1, int x2, int y2) {
   return cast(int) m.sqrt(m.abs(x2 - x1) ^^ 2 + m.abs(y2 - y1) ^^ 2);
 }
+
+string dirName(Dir d) {
+  switch (d) {
+    case Dir.N:
+      return "NORTH";
+      break;
+    case Dir.NE:
+      return "NORTHEAST";
+      break;
+    case Dir.E:
+      return "EAST";
+      break;
+    case Dir.SE:
+      return "SOUTHEAST";
+      break;
+    case Dir.S:
+      return "SOUTH";
+      break;
+    case Dir.SW:
+      return "SOUTHWEST";
+      break;
+    case Dir.W:
+      return "WEST";
+      break;
+    case Dir.NW:
+      return "NORTHWEST";
+      break;
+    default:
+      assert(false);
+      break;  
+  }
+}
