@@ -45,7 +45,7 @@ class MainScreen : Screen {
       hud.addChild(menuPane);
       menuPane.rtl = true;
       menuPane.horiz = true;
-      menu = new MainMenu(world);
+      menu = makeMenu();
       menuPane.addChild(menu);
       menuPane.addChild(new VBar());
       {
@@ -143,4 +143,30 @@ class MainScreen : Screen {
       Thread.sleep(dur!("nsecs")(500));
     }
   }
+  
+  Menu makeMenu() {
+    return new Menu([
+      Entry('m', "Map", (ScrStack scr) { scr ~= new MapScreen(world); }),
+      Entry('D', "Debugging", null, [
+        Entry('r', "Reveal map", (ScrStack scr) {
+          world.geos.map((wg.Geo g) {
+            g.discovered = true;
+            return g;
+          });
+          world.barMsg("Map revealed.");
+        }),
+        Entry('t', "Pass time", (ScrStack scr) {
+          world.player.upd = new Update(Time.minutes(1), null);
+          while (world.player.upd !is null)
+            world.update();
+        })
+      ]),
+      Entry('Q', "Quit game", (ScrStack scr) { scr.pop(); })
+    ]);
+  }
+}
+
+abstract class Controls {
+  bool runUpdates;
+  Controls run();
 }
