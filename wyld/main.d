@@ -738,3 +738,44 @@ struct Stat {
     }
   }
 }
+
+struct Coord {
+  int x, y;
+  
+  void mult(int f) {
+    x *= f;
+    y *= f;
+  }
+}
+
+Coord getDirKey(char key) {
+  switch (key) {
+    case '8':
+      return Coord(0, -1);
+      break;
+    case '9':
+      return Coord(1, -1);
+      break;
+    case '6':
+      return Coord(1, 0);
+      break;
+    case '3':
+      return Coord(1, 1);
+      break;
+    case '2':
+      return Coord(0, 1);
+      break;
+    case '1':
+      return Coord(-1, 1);
+      break;
+    case '4':
+      return Coord(-1, 0);
+      break;
+    case '7':
+      return Coord(-1, -1);
+      break;
+    default:
+      return Coord(0, 0);
+      break;
+  }
+}
