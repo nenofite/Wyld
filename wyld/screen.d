@@ -177,6 +177,63 @@ abstract class Controls {
   bool runUpdates;
   void update(World, ControlStack);
 }
+
+class RunCommand : Controls {
+  Command cmd;
+  bool gotUsing, gotTo, gotDest, gotDir;
+  bool stacked;
+  
+  this(Command cmd) {
+    this.cmd = cmd;
+  }
+  
+  void update(World world, ControlStack stack) {
+    if (!stacked) {
+      if (cmd.takesUsing) {
+        //TODO
+      }
+      if (cmd.takesTo) {
+        //TODO
+      }
+      if (cmd.takesDest) {
+        stack ~= new ChooseDest(&cmd.dest);
+      }
+      if (cmd.takesDir) {
+        //stack ~= new ChooseDir(&cmd.dir);
+      }
+      stacked = true;
+    } else {
+      cmd.run(world);
+      stack.pop();
+    }
+  }
+}
+
+class ChooseDest : Controls {
+  Coord *dest;
+  
+  this(Coord *dest) {
+    this.dest = dest;
+  }
+
+  void update(World world, ControlStack stack) {
+    char key = cast(char) n.getch();
+    n.flushinp();
+    
+    if (key == 27) {
+      //*succ = false;
+      stack.pop();
+    } else if (key == '\n') {
+      //*succ = true;
+      stack.pop();
+    } else {
+      dest.add(getDirKey(key));
+      
+      world.disp ~= Disp(Sym('X', Col.YELLOW), *dest);
+    }
+  }
+}
+
 class ControlStack {
   Controls[] stack;
   alias stack this;

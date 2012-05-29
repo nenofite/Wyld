@@ -786,6 +786,24 @@ Coord getDirKey(char key) {
   }
 }
 
+abstract class Skill {
+  string name;
+  char key;
+
+  Command cmd();
+}
+
+abstract class Command {
+  string name;
+  
+  bool takesUsing, takesTo, takesDest, takesDir;
+  Ent using, to;
+  Coord dest;
+  Dir dir;
+  
+  void run(World);
+}
+
 struct Disp {
   Sym sym;
   Coord coord;
