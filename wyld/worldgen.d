@@ -8,7 +8,7 @@ import std.stdio;
 
 World genWorld(int w, int h) {
   int msgY = 0;
-  n.attrset(n.COLOR_PAIR(Col.BLUE));
+  n.attrset(n.COLOR_PAIR(Col.TEXT));
   void msg(string m) {
     n.mvprintw(++msgY, 2, toStringz(m));
     n.refresh();
