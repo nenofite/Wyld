@@ -47,6 +47,7 @@ class World {
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
   string[] msgs;
+  Disp[] disp;
   
   Time time;
   
@@ -746,6 +747,11 @@ struct Coord {
     x *= f;
     y *= f;
   }
+  
+  void add(Coord c) {
+    x += c.x;
+    y += c.y;
+  }
 }
 
 Coord getDirKey(char key) {
@@ -778,4 +784,9 @@ Coord getDirKey(char key) {
       return Coord(0, 0);
       break;
   }
+}
+
+struct Disp {
+  Sym sym;
+  Coord coord;
 }

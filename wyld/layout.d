@@ -137,6 +137,14 @@ class WorldView : Box {
         drawn++;
       }
     }
+    
+    foreach (d; world.disp) {
+      if (world.inView(d.coord.x, d.coord.y)) {
+        d.sym.draw(d.coord.y + by - cy, d.coord.x + bx - cx);
+      }
+    }
+    
+    world.disp = [];
   }
 }
 
