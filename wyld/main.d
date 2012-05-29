@@ -755,6 +755,11 @@ struct Coord {
 }
 
 Coord getDirKey(char key) {
+  bool isKey;
+  return getDirKey(key, isKey);
+}
+Coord getDirKey(char key, ref bool isKey) {
+  isKey = true;
   switch (key) {
     case '8':
       return Coord(0, -1);
@@ -781,6 +786,7 @@ Coord getDirKey(char key) {
       return Coord(-1, -1);
       break;
     default:
+      isKey = false;
       return Coord(0, 0);
       break;
   }

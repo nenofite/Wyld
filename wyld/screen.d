@@ -89,51 +89,23 @@ class MainScreen : Screen {
       char key = cast(char) n.getch();
       n.flushinp();
       switch (key) {
-        //case n.KEY_UP:
-        case '8':
-          world.player.upd = world.player.chmove(0, -1, world);
-          break;
-        //case n.KEY_DOWN:
-        case '2':
-          world.player.upd = world.player.chmove(0, 1, world);
-          break;
-        //case n.KEY_LEFT:
-        case '4':
-          world.player.upd = world.player.chmove(-1, 0, world);
-          break;
-        //case n.KEY_RIGHT:
-        case '6':
-          world.player.upd = world.player.chmove(1, 0, world);
-          break;
-        //case n.KEY_HOME:
-        case '7':
-          world.player.upd = world.player.chmove(-1, -1, world);
-          break;
-        //case n.KEY_PPAGE:
-        case '9':
-          world.player.upd = world.player.chmove(1, -1, world);
-          break;
-        //case n.KEY_B2:
-        case '5':
-          world.player.upd = new Update(100, null);
-          break;
-        //case n.KEY_END:
-        case '1':
-          world.player.upd = world.player.chmove(-1, 1, world);
-          break;
-        //case n.KEY_NPAGE:
-        case '3':
-          world.player.upd = world.player.chmove(1, 1, world);
-          break;
         case n.KEY_RESIZE:
         case 154:
           clearScreen();
           break;
+        case '5':
+          world.player.upd = new Update(100, null);
+          break;
         default:
-          if (!menu.update(stack, key))
+          bool isKey;
+          Coord c = getDirKey(key, isKey);
+          if (isKey) {
+            world.player.upd = world.player.chmove(c.x, c.y, world);
+          } else if (!menu.update(stack, key)) {
             world.barMsg(
               format("Unknown key: %d '%s'", cast(int) key, key)
             );
+          }
           break;
       }
       runUpdates();
