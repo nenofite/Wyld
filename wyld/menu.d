@@ -34,6 +34,7 @@ class Menu {
     char key = '\0';
     
     if (mode.getKeys) {
+      n.flushinp();
       key = cast(char) n.getch();
       n.flushinp();
     }
