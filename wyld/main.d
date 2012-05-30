@@ -792,9 +792,8 @@ Coord getDirKey(char key, ref bool isKey) {
   }
 }
 
-abstract class Skill {
+abstract class ActiveSkill {
   string name;
-  char key;
   Stat level;
 
   Command cmd();
@@ -802,39 +801,17 @@ abstract class Skill {
 
 abstract class Command {
   string name;
+  char key;
   
-  bool takesUsing, takesTo, takesDest, takesDir;
-  Ent using, to;
-  Coord dest;
-  Dir dir;
-  
-  void run(World);
+  Controls perform();
 }
 
-class Jump : Skill {
-  this() {
-    name = "Jump";
-    key = 'j';
-    level = Stat(0, 10);
-  }
+abstract class Take(A) {
+  A cont;
+  string name;
   
-  Command cmd() {
-    return new Cmd();
-  }
-
-  class Cmd : Command {
-    TakeDest dest;
-  
-    this(int range) {
-      name = "Jump";
-      dest = new TakeDest();
-      d.within = range;
-      takes ~= d;
-    }
-    
-    void run(World world) {
-      
-    }
+  void drawName(MainScreen scr) {
+    scr.menu.title = name;
   }
 }
 

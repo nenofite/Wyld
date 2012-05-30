@@ -21,10 +21,11 @@ class MapScreen : Screen {
     gui = new List();
     gui.horiz = true;
     gui.rtl = true;
-    menu = new Menu([
-      Entry('c', "Center on player", (ScrStack stack) {
+    menu = new Menu("Map", [
+      Entry('c', "Center on player", (Screen scr, ScrStack) {
         vx = world.xToGeo(world.player.x);
         vy = world.yToGeo(world.player.y);
+        return cast(Entry[]) [];
       }),
     ]);
     gui.addChild(menu);
@@ -69,7 +70,7 @@ class MapScreen : Screen {
         stack.pop();
         break;
       default:
-        menu.update(stack, key);
+        menu.update(key, this, stack);
         break;
     }
     n.flushinp();

@@ -10,7 +10,7 @@ import n = ncs.ncurses;
 
 class ScrStack {
   Screen[] stack;
-  alias stack this; 
+  alias stack this;
   
   void update() {
     assert(stack.length > 0);
@@ -30,7 +30,7 @@ abstract class Screen {
 class MainScreen : Screen {
   World world;
   List hud;
-  ControlStack controls;
+  Controls[] controls;
   Menu menu;
   
   this(World world) {
@@ -74,8 +74,6 @@ class MainScreen : Screen {
         }
       }
     }
-    
-    controls = new ControlStack();
   }
   
   void update(ScrStack stack) {
@@ -83,8 +81,10 @@ class MainScreen : Screen {
     hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     
     if (controls.length > 0) {
-      controls[$-1].update(world, controls);
-      //if (controls[$-1].runUpdates) runUpdates();
+      auto keep = controls[$-1].update(this, stack);
+      if (!keep) {
+        controls = controls[0 .. $-1];
+      }
     } else {
       char key = cast(char) n.getch();
       n.flushinp();
@@ -101,7 +101,7 @@ class MainScreen : Screen {
           Coord c = getDirKey(key, isKey);
           if (isKey) {
             world.player.upd = world.player.chmove(c.x, c.y, world);
-          } else if (!menu.update(stack, key)) {
+          } else if (!menu.update(key, this, stack)) {
             world.barMsg(
               format("Unknown key: %d '%s'", cast(int) key, key)
             );
@@ -124,93 +124,27 @@ class MainScreen : Screen {
   }
   
   Menu makeMenu() {
-    return new Menu([
-      Entry('m', "Map", (ScrStack scr) { scr ~= new MapScreen(world); }),
-      Entry('D', "Debugging", null, [
-        Entry('r', "Reveal map", (ScrStack scr) {
+    return new Menu("", [
+      Entry('m', "Map", (Screen, ScrStack scr) { scr ~= new MapScreen(world); }),
+      Entry('D', "Debugging", [
+        Entry('r', "Reveal map", (Screen, ScrStack) {
           world.geos.map((wg.Geo g) {
             g.discovered = true;
             return g;
           });
           world.barMsg("Map revealed.");
         }),
-        Entry('t', "Pass time", (ScrStack scr) {
+        Entry('t', "Pass time", (Screen, ScrStack) {
           world.player.upd = new Update(Time.minutes(1), null);
           while (world.player.upd !is null)
             world.update();
         })
       ]),
-      Entry('Q', "Quit game", (ScrStack scr) { scr.pop(); })
+      Entry('Q', "Quit game", (Screen, ScrStack scr) { scr.pop(); })
     ]);
   }
 }
 
 abstract class Controls {
-  bool runUpdates;
-  void update(World, ControlStack);
-}
-
-class RunCommand : Controls {
-  Command cmd;
-  bool gotUsing, gotTo, gotDest, gotDir;
-  bool stacked;
-  
-  this(Command cmd) {
-    this.cmd = cmd;
-  }
-  
-  void update(World world, ControlStack stack) {
-    if (!stacked) {
-      if (cmd.takesUsing) {
-        //TODO
-      }
-      if (cmd.takesTo) {
-        //TODO
-      }
-      if (cmd.takesDest) {
-        stack ~= new ChooseDest(&cmd.dest);
-      }
-      if (cmd.takesDir) {
-        //stack ~= new ChooseDir(&cmd.dir);
-      }
-      stacked = true;
-    } else {
-      cmd.run(world);
-      stack.pop();
-    }
-  }
-}
-
-class ChooseDest : Controls {
-  Coord *dest;
-  
-  this(Coord *dest) {
-    this.dest = dest;
-  }
-
-  void update(World world, ControlStack stack) {
-    char key = cast(char) n.getch();
-    n.flushinp();
-    
-    if (key == 27) {
-      //*succ = false;
-      stack.pop();
-    } else if (key == '\n') {
-      //*succ = true;
-      stack.pop();
-    } else {
-      dest.add(getDirKey(key));
-      
-      world.disp ~= Disp(Sym('X', Col.YELLOW), *dest);
-    }
-  }
-}
-
-class ControlStack {
-  Controls[] stack;
-  alias stack this;
-  
-  void pop() {
-    stack = stack[0 .. $-1];
-  }
+  bool update(MainScreen, ScrStack);
 }
