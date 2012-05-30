@@ -795,6 +795,7 @@ Coord getDirKey(char key, ref bool isKey) {
 abstract class Skill {
   string name;
   char key;
+  Stat level;
 
   Command cmd();
 }
@@ -808,6 +809,33 @@ abstract class Command {
   Dir dir;
   
   void run(World);
+}
+
+class Jump : Skill {
+  this() {
+    name = "Jump";
+    key = 'j';
+    level = Stat(0, 10);
+  }
+  
+  Command cmd() {
+    return new Cmd();
+  }
+
+  class Cmd : Command {
+    TakeDest dest;
+  
+    this(int range) {
+      name = "Jump";
+      dest = new TakeDest();
+      d.within = range;
+      takes ~= d;
+    }
+    
+    void run(World world) {
+      
+    }
+  }
 }
 
 struct Disp {
