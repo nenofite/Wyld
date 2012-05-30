@@ -28,6 +28,8 @@ class Menu {
     ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     n.refresh();
     
+    world.disp = [];
+    
     assert(stack.length > 0);
     auto mode = stack[$-1];
     

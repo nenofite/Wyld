@@ -143,8 +143,6 @@ class WorldView : Box {
         d.sym.draw(d.coord.y + by - cy, d.coord.x + bx - cx);
       }
     }
-    
-    world.disp = [];
   }
 }
 
