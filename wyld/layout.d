@@ -194,7 +194,6 @@ class Msgs : Box {
     int msgIndex = max(0, cast(int) world.msgs.length - dim.h);
     
     for (int i = 0; i < dim.h; i++) {
-      clearLine(dim.y + i);
       if (msgIndex < world.msgs.length) {
         n.mvprintw(dim.y + i, dim.x, toStringz(world.msgs[msgIndex]));
         msgIndex++;

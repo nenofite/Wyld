@@ -8,143 +8,84 @@ import wyld.menu;
 
 import n = ncs.ncurses;
 
-class ScrStack {
-  Screen[] stack;
-  alias stack this;
-  
-  void update() {
-    assert(stack.length > 0);
-    stack[$-1].update(this);
-  }
-  
-  void pop() {
-    assert(stack.length > 0);
-    stack = stack[0 .. $-1];
-  }
-}
-
-abstract class Screen {
-  void update(ScrStack);
-}
-
-class MainScreen : Screen {
+class MainScreen : Menu.Mode {
   World world;
-  List hud;
-  Controls[] controls;
-  Menu menu;
   
   this(World world) {
     this.world = world;
-    
-    hud = new List();
-    hud.rtl = true;
-    hud.addChild(new Msgs(world));
-    hud.addChild(new HBar(true, " - Messages -"));
+  
+    name = "Main screen";
+    key = 'M';
+    sub = makeMenu();
+    closeOnEsc = false;
+  
+    auto list = new List();
+    ui = list;
+    list.rtl = true;
+    list.addChild(new Msgs(world));
+    list.addChild(new HBar(true, " - Messages -"));
     {
-      auto menuPane = new List();
-      hud.addChild(menuPane);
-      menuPane.rtl = true;
-      menuPane.horiz = true;
-      menu = makeMenu();
-      menuPane.addChild(menu);
-      menuPane.addChild(new VBar());
+      auto timeRow = new List();
+      list.addChild(timeRow);
+      timeRow.addChild(new TimeBar(world));
       {
-        auto timeRow = new List();
-        menuPane.addChild(timeRow);
-        timeRow.addChild(new TimeBar(world));
+        auto cols = new List();
+        timeRow.addChild(cols);
+        cols.horiz = true;
         {
-          auto cols = new List();
-          timeRow.addChild(cols);
-          cols.horiz = true;
-          {
-            auto rows = new List();
-            cols.addChild(rows);
-            rows.addChild(new WorldView(world));
-            rows.addChild(new OnGround(world));
-          }
-          cols.addChild(new VBar(false));
-          {
-            auto rows = new List();
-            cols.addChild(rows);
-            rows.addChild(new Minimap(world));
-            rows.addChild(new Nearby(world));
-          }
-          cols.addChild(new VBar(false));
-          cols.addChild(new Stats(world));
+          auto rows = new List();
+          cols.addChild(rows);
+          rows.addChild(new WorldView(world));
+          rows.addChild(new OnGround(world));
         }
+        cols.addChild(new VBar(false));
+        {
+          auto rows = new List();
+          cols.addChild(rows);
+          rows.addChild(new Minimap(world));
+          rows.addChild(new Nearby(world));
+        }
+        cols.addChild(new VBar(false));
+        cols.addChild(new Stats(world));
       }
+      
     }
   }
   
-  void update(ScrStack stack) {
-    clearScreen();
-    hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
-    
-    if (controls.length > 0) {
-      auto keep = controls[$-1].update(this, stack);
-      if (!keep) {
-        controls = controls[0 .. $-1];
-      }
-    } else {
-      char key = cast(char) n.getch();
-      n.flushinp();
-      switch (key) {
-        case n.KEY_RESIZE:
-        case 154:
-          clearScreen();
-          break;
-        case '5':
-          world.player.upd = new Update(100, null);
-          break;
-        default:
-          bool isKey;
-          Coord c = getDirKey(key, isKey);
-          if (isKey) {
-            world.player.upd = world.player.chmove(c.x, c.y, world);
-          } else if (!menu.update(key, this, stack)) {
-            world.barMsg(
-              format("Unknown key: %d '%s'", cast(int) key, key)
-            );
-          }
-          break;
-      }
-      runUpdates();
+  Menu.Mode.Return update(char key, Menu menu) {
+    bool isDir;
+    auto coord = getDirKey(key, isDir);
+    if (isDir) {
+      world.player.upd = world.player.chmove(coord.x, coord.y, world);
     }
     
-    n.refresh();
+    menu.updateWorld();
+    return Menu.Mode.Return(true);
   }
   
-  void runUpdates() {
-    while (world.player.upd !is null) {
-      world.update();
-      hud.draw(Box.Dim(0, 0, n.COLS, n.LINES));
-      n.refresh();
-      Thread.sleep(dur!("nsecs")(500));
-    }
-  }
-  
-  Menu makeMenu() {
-    return new Menu("", [
-      Entry('m', "Map", (Screen, ScrStack scr) { scr ~= new MapScreen(world); }),
-      Entry('D', "Debugging", [
-        Entry('r', "Reveal map", (Screen, ScrStack) {
+  Menu.Mode[] makeMenu() {
+    return [
+      new MapScreen(),
+      cast(Menu.Mode) new BasicMode('D', "Debugging", [
+        new BasicMode('r', "Reveal map", () {
           world.geos.map((wg.Geo g) {
             g.discovered = true;
             return g;
           });
           world.barMsg("Map revealed.");
+          return Menu.Mode.Return();
         }),
-        Entry('t', "Pass time", (Screen, ScrStack) {
+        new BasicMode('t', "Pass time", (char, Menu menu) {
           world.player.upd = new Update(Time.minutes(1), null);
-          while (world.player.upd !is null)
-            world.update();
+          menu.updateWorld();
+          return Menu.Mode.Return();
         })
       ]),
-      Entry('Q', "Quit game", (Screen, ScrStack scr) { scr.pop(); })
-    ]);
+      cast(Menu.Mode) new BasicMode('Q', "Quit game", 
+      (char, Menu menu) {
+        menu.stack = [];
+        return Menu.Mode.Return();
+      })
+    ];
   }
-}
-
-abstract class Controls {
-  bool update(MainScreen, ScrStack);
 }

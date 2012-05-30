@@ -7,73 +7,41 @@ import wyld.menu;
 
 import n = ncs.curses;
 
-class MapScreen : Screen {
-  List gui;
+class MapScreen : Menu.Mode {
   World world;
-  Menu menu;
+  
   uint vx, vy;
   
-  this(World world) {
-    this.world = world;
-    vx = world.xToGeo(world.player.x);
-    vy = world.yToGeo(world.player.y);
+  this() {
+    name = "Map";
+    key = 'm';
     
-    gui = new List();
-    gui.horiz = true;
-    gui.rtl = true;
-    menu = new Menu("Map", [
-      Entry('c', "Center on player", (Screen scr, ScrStack) {
-        vx = world.xToGeo(world.player.x);
-        vy = world.yToGeo(world.player.y);
-        return cast(Entry[]) [];
-      }),
-    ]);
-    gui.addChild(menu);
-    gui.addChild(new VBar());
-    gui.addChild(new Map());
+    sub = [
+      new BasicMode('c', "Center on player", () {
+        recenter();
+        return Menu.Mode.Return();
+      })
+    ];
+    
+    ui = new Map();
   }
   
-  void update(ScrStack stack) {
-    gui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
+  void recenter() {
+    vx = world.xToGeo(world.player.x);
+    vy = world.yToGeo(world.player.y);
+  }
+  
+  Menu.Mode.Return update(char key, Menu menu) {
+    auto movement = getDirKey(key);
+    vx += movement.x;
+    vy += movement.y;
     
-    char key = cast(char) n.getch();
-    switch (key) {
-      case '8':
-        vy--;
-        break;
-      case '9':
-        vy--;
-        vx++;
-        break;
-      case '6':
-        vx++;
-        break;
-      case '3':
-        vy++;
-        vx++;
-        break;
-      case '2':
-        vy++;
-        break;
-      case '1':
-        vy++;
-        vx--;
-        break;
-      case '4':
-        vx--;
-        break;
-      case '7':
-        vy--;
-        vx--;
-        break;
-      case 27:  // 27 is the escape key
-        stack.pop();
-        break;
-      default:
-        menu.update(key, this, stack);
-        break;
-    }
-    n.flushinp();
+    return Menu.Mode.Return(true);
+  }
+  
+  void init(Menu menu) {
+    world = menu.world;
+    recenter();
   }
   
   class Map : Box {

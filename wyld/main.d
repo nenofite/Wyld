@@ -3,6 +3,7 @@ module wyld.main;
 import wyld.format;
 import wyld.layout;
 import wyld.screen;
+import wyld.menu;
 import wyld.worldgen;
 
 import core.thread: Thread, dur;
@@ -509,10 +510,15 @@ void main() {
   world.barMsg("Now run around like an idiot");
   world.barMsg("and explore!");
   
-  auto stack = new ScrStack();
-  stack ~= new MainScreen(world);
+  auto menu = new Menu(world);
+  auto ms = new MainScreen(world);
+  menu.stack ~= ms;
+  ms.init(menu);
   
-  while (stack.length > 0) stack.update();
+  assert(ms.ui !is null);
+  assert(menu.stack[$-1].ui !is null);
+  
+  while (menu.stack.length > 0) menu.update();
 }
 
 void initColor() {
@@ -796,22 +802,34 @@ abstract class ActiveSkill {
   string name;
   Stat level;
 
-  Command cmd();
+  Menu.Mode use();
 }
 
-abstract class Command {
-  string name;
-  char key;
-  
-  Controls perform();
-}
-
-abstract class Take(A) {
+abstract class Take(A) : Menu.Mode {
   A cont;
-  string name;
+}
+
+class TakeDest : Take!Coord {
+  bool setToPlayer;
   
-  void drawName(MainScreen scr) {
-    scr.menu.title = name;
+  this() {
+    name = "Choose destination";
+    setToPlayer = true;
+  }
+  this(Coord start) {
+    this();
+    setToPlayer = false;
+    cont = start;
+  }
+  
+  Menu.Mode.Return update(char key, Menu menu) {
+    if (setToPlayer) {
+      cont = Coord(menu.world.player.x, menu.world.player.y);
+      setToPlayer = false;
+    }
+    cont.add(getDirKey(key));
+    
+    return Menu.Mode.Return(true);
   }
 }
 
