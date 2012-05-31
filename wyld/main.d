@@ -64,10 +64,10 @@ class World {
   }
   
   int xToGeo(int x) {
-    return cast(int) m.round((cast(float) x) * geos.w / stat.w);
+    return cast(int) m.floor((cast(float) x) * geos.w / stat.w);
   }
   int yToGeo(int y) {
-    return cast(int) m.round((cast(float) y) * geos.h / stat.h);
+    return cast(int) m.floor((cast(float) y) * geos.h / stat.h);
   }
   
   bool inView(int x, int y) {
