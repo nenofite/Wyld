@@ -14,8 +14,7 @@ class MainScreen : Menu.Mode {
   this(World world) {
     this.world = world;
   
-    name = "Main screen";
-    key = 'M';
+    name = "";
     sub = makeMenu();
     closeOnEsc = false;
   
@@ -102,9 +101,47 @@ class SkillsMenu : Menu.Mode {
   void init(Menu menu) {
     player = menu.world.player;
     
-    sub = [];
+    sub = [new SkillsStats()];
     foreach (s; player.skills) {
       sub ~= s.use;
+    }
+  }
+  
+  Menu.Mode.Return update(char, Menu) {
+    return Menu.Mode.Return(true);
+  }
+}
+
+class SkillsStats : Menu.Mode {
+  Player player;
+  
+  this() {
+    name = "Skill stats";
+    key = 's';
+  }
+  
+  void init(Menu menu) {
+    player = menu.world.player;
+    
+    List rows = new List();
+    ui = rows;
+    
+    foreach (s; player.skills) {
+      rows.addChild(new class(s) Box {
+        ActiveSkill s;
+        
+        this(ActiveSkill s) {
+          this.s = s;
+        }
+      
+        int h() const { return 1; }
+        
+        void draw(Dim dim) {
+          n.attrset(n.COLOR_PAIR(Col.TEXT));
+          n.mvprintw(dim.y, dim.x, toStringz(s.name ~ ": "));
+          s.level.draw();
+        }
+      });
     }
   }
   
