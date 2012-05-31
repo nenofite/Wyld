@@ -822,6 +822,68 @@ abstract class ActiveSkill {
   Menu.Mode use();
 }
 
+class Jump : ActiveSkill {
+  this() {
+    name = "Jump";
+    level = Stat(0, 10);
+  }
+  
+  Menu.Mode use() {
+    return new Use();
+  }
+  
+  class Use : Menu.Mode {
+    TakeDest dest;
+  
+    this() {
+      name = "Jump";
+      key = 'j';
+      dest = new TakeDest();
+    }
+    
+    void init(Menu menu) {
+      getKeys = true;
+      dest.reset();
+      dest.init(menu);
+    }
+    
+    Menu.Mode.Return update(char key, Menu menu) {
+      static class Upd : Update {
+        Coord dest;
+        int time;
+        
+        this(Coord dest, int time) {
+          this.dest = dest;
+          this.time = time;
+          super(time);
+        }
+        
+        Update update(World world) {
+          int mx, my;
+          mx = compare(dest.x, world.player.x);
+          my = compare(dest.y, world.player.y);
+          world.player.x += mx;
+          world.player.y += my;
+          
+          if (world.player.x == dest.x && world.player.y == dest.y) {
+            return null;
+          } else {
+            return new Upd(dest, time);
+          }
+        }
+      }
+      
+      dest.update(key, menu);
+      if (dest.success) {
+        menu.world.player.upd = new Upd(dest.cont, 10);
+        menu.updateWorld();
+        return Menu.Mode.Return();
+      }
+      return Menu.Mode.Return(true);
+    }
+  }
+}
+
 abstract class Take(A) : Menu.Mode {
   A cont;
   bool success;

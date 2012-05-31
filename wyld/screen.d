@@ -85,7 +85,8 @@ class MainScreen : Menu.Mode {
       (char, Menu menu) {
         menu.stack = [];
         return Menu.Mode.Return();
-      })
+      }),
+      (new Jump()).use
     ];
   }
 }
