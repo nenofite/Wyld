@@ -85,7 +85,9 @@ class MainScreen : Menu.Mode {
         menu.stack = [];
         return Menu.Mode.Return();
       }),
-      new SkillsMenu()
+      new SkillsMenu(),
+      new Inv(),
+      new Get()
     ];
   }
 }
@@ -147,5 +149,61 @@ class SkillsStats : Menu.Mode {
   
   Menu.Mode.Return update(char, Menu) {
     return Menu.Mode.Return(true);
+  }
+}
+
+class Inv : Menu.Mode {
+  this() {
+    name = "Inventory";
+    key = 'i';
+  }
+  
+  void init(Menu menu) {
+    sub = [];
+    char k = 'a';
+    foreach (i; menu.world.player.contents) {
+      sub ~= new BasicMode(k++, i.name, []);
+    }
+  }
+  
+  Menu.Mode.Return update(char, Menu) {
+    return Menu.Mode.Return(true);
+  }
+}
+
+class Get : Menu.Mode {
+  this() {
+    name = "Get";
+    key = 'g';
+  }
+  
+  void init(Menu menu) {
+    sub = [];
+    char k = 'a';
+    foreach (i; menu.world.entsNear(menu.world.player.x, 
+        menu.world.player.y)) {
+      if (i !is menu.world.player)
+        sub ~= new class(i, k++) Menu.Mode {
+          Ent i;
+          this(Ent i, char k) {
+            this.i = i;
+            key = k;
+            name = i.name;
+            getKeys = false;
+          }
+          
+          Menu.Mode.Return update(char, Menu menu) {
+            auto res = menu.world.player.add(i);
+            if (res == wyld.main.Container.AddRet.SUCCESS) {
+              menu.world.movingEnts.remove(i);
+            }
+            return Menu.Mode.Return();
+          }
+        };
+    }
+  }
+  
+  Menu.Mode.Return update(char, Menu) {
+    return Menu.Mode.Return(false);
   }
 }

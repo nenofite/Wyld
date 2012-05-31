@@ -311,7 +311,7 @@ class Troll : Deer {
   string name() { return "troll"; }
 }
 
-class Player : Ent {
+class Player : ContainerEnt {
   ActiveSkill[] skills;
 
   this(int x, int y) {
@@ -323,6 +323,8 @@ class Player : Ent {
     sp = Stat(1000);
     hunger = Stat(Time.hours(24));  // 24 hours
     thirst = Stat(Time.hours(6));  // 6 hours
+    
+    maxSize = 100;
   }
 
   Sym sym() {
@@ -431,6 +433,17 @@ struct Terr {
         break;
       default:
         throw new Error("No moveCost for bad type.");
+        break;
+    }
+  }
+  
+  Ent contains() const {
+    switch (type) {
+      case Type.WATER:
+        return new Water(-1, -1, 1000);
+        break;
+      default:
+        return null;
         break;
     }
   }
@@ -1014,4 +1027,16 @@ abstract class ContainerEnt : Ent, Container {
     return Container.AddRet.SUCCESS;
   }
 }
+
+class Water : Ent {
+  this(int x, int y, uint size) {
+    super(x, y);
+    this.tags.size = size;
+    this.tags.drinkCo = 5;
+    this.tags.weightCo = 2;
+    this.tags.isFluid = true;
+  }
+  
+  string name() { return "water"; }
+  Sym sym() { return Sym('~', Col.BLUE); }
 }
