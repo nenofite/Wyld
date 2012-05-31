@@ -296,6 +296,8 @@ class Troll : Deer {
 }
 
 class Player : Ent {
+  ActiveSkill[] skills;
+
   this(int x, int y) {
     super(x, y);
     isBlocking = true;
@@ -493,6 +495,8 @@ void main() {
       break;
     }
   }
+  
+  world.player.skills ~= new Jump();
   
   world.movingEnts ~= world.player;
   

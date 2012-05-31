@@ -86,7 +86,29 @@ class MainScreen : Menu.Mode {
         menu.stack = [];
         return Menu.Mode.Return();
       }),
-      (new Jump()).use
+      new SkillsMenu()
     ];
+  }
+}
+
+class SkillsMenu : Menu.Mode {
+  Player player;
+  
+  this() {
+    name = "Skills";
+    key = 'k';
+  }
+  
+  void init(Menu menu) {
+    player = menu.world.player;
+    
+    sub = [];
+    foreach (s; player.skills) {
+      sub ~= s.use;
+    }
+  }
+  
+  Menu.Mode.Return update(char, Menu) {
+    return Menu.Mode.Return(true);
   }
 }
