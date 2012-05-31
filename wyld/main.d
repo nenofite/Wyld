@@ -158,9 +158,11 @@ abstract class Ent {
     if (upd is null) {
       upd = update(w);
     }
+    
     if (upd !is null) {
-      if (upd.run(w)) {
-        upd = null;
+      upd.timeReq--;
+      if (upd.timeReq <= 0) {
+        upd = upd.update(w);
       }
     }
   }
@@ -185,7 +187,7 @@ abstract class Ent {
                + w.moveCostAt(nx, ny)
                + speed
                - moveCost; //because moveCastAt() will include this too
-      return new Update(cost, (World w) {
+      return mkUpdate(cost, (World w) {
         bool succ = !w.blockAt(nx, ny);
         if (succ) {
           x = nx;
@@ -261,7 +263,7 @@ class Deer : Ent {
       });
     } else {
       int delay = uniform!("[]")(50, 1000);
-      return new Update(delay, (World w) {
+      return mkUpdate(delay, (World w) {
         for (int i = 0; i < 10; i++) {
           int dx, dy;
           dx = x + uniform!("[]")(-10, 10);
@@ -569,24 +571,39 @@ int compare(T)(T a, T b) {
     return 0;
 }
 
-class Update {
+abstract class Update {
   int timeReq;
-  void delegate(World) update;
 
-  this(int timeReq, void delegate(World) update) {
+  this(int timeReq) {
     this.timeReq = timeReq;
-    this.update = update;
   }
+  
+  Update update(World);
+}
 
-  bool run(World world) {
-    timeReq--;
-    if (timeReq <= 0) {
-      if (update !is null)
-        update(world);
-      return true;
+Update mkUpdate(int timeReq, Update delegate(World) upd) {
+  class Upd : Update {
+    this(int timeReq) {
+      super(timeReq);
     }
-    return false;
+  
+    Update update(World world) {
+      if (upd !is null)
+        return upd(world);
+      else
+        return null;
+    }
   }
+  
+  return new Upd(timeReq);
+}
+Update mkUpdate(int timeReq, void delegate(World) upd) {
+  Update f2(World world) {
+    if (upd !is null)
+      upd(world);
+    return null;
+  }
+  return mkUpdate(timeReq, &f2);
 }
 
 struct Time {

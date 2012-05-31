@@ -76,7 +76,7 @@ class MainScreen : Menu.Mode {
           return Menu.Mode.Return();
         }),
         new BasicMode('t', "Pass time", (char, Menu menu) {
-          world.player.upd = new Update(Time.minutes(1), null);
+          world.player.upd = mkUpdate(Time.minutes(1), cast(void delegate(World)) null);
           menu.updateWorld();
           return Menu.Mode.Return();
         })
