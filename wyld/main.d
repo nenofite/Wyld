@@ -43,7 +43,7 @@ struct Sym {
 }
 
 class World {
-  Ent player;
+  Player player;
   Ent[] movingEnts;
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
