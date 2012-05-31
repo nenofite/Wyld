@@ -6,7 +6,6 @@ import wyld.screen;
 import wyld.menu;
 import wyld.worldgen;
 
-import core.thread: Thread, dur;
 import n = ncs.curses;
 import std.string: toStringz;
 import std.random: uniform;

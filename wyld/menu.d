@@ -5,6 +5,8 @@ import wyld.screen;
 import wyld.main;
 
 import std.string: toStringz;
+import core.thread: Thread;
+import core.time: dur;
 
 class Menu {
   Mode[] stack;
@@ -73,7 +75,12 @@ class Menu {
       clearScreen();
       ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
       n.refresh();
-      Thread.sleep(dur!("nsecs")(500));
+      Thread.sleep(dur!"nsecs"(500));
+    }
+  }
+  void updateWorldFast() {
+    while (world.player.upd !is null) {
+      world.update();
     }
   }
   
