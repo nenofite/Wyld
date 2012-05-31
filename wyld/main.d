@@ -133,6 +133,20 @@ class World {
     foreach (m; msgs)
       barMsg(m);
   }
+  
+  Ent[] entsNear(int x, int y) {
+    Ent[] ret;
+    for (int tx = x-1; tx <= x+1; tx++) {
+      for (int ty = y-1; ty <= y+1; ty++) {
+        if (stat.inside(tx, ty)) {
+          ret ~= entsAt(tx, ty);
+          auto terrEnt = stat.get(tx, ty).terr.contains;
+          if (terrEnt !is null) ret ~= terrEnt;
+        }
+      }
+    }
+    return ret;
+  }
 }
 
 abstract class Ent {
@@ -141,6 +155,9 @@ abstract class Ent {
   int moveCost,  // cost for others on this tile
       speed;  // cost to self
   Stat hp, sp, hunger, thirst;
+  
+  Tags tags;
+  alias tags this;
 
   Update upd;
 
@@ -369,7 +386,7 @@ struct Terr {
   Type type;
   bool pocked;
 
-  Sym sym() {
+  Sym sym() const {
     switch (type) {
       case Type.DIRT:
         return Sym(pocked ? ',' : '.', Col.YELLOW);
@@ -934,4 +951,67 @@ class TakeDest : Take!Coord {
 struct Disp {
   Sym sym;
   Coord coord;
+}
+
+struct Tags {
+  uint size; // 1 is stick, 10 is rock, 100 is whole deer carcass
+  // Coefficients multiplied by size for final value
+  float drinkCo, // 0 for no, otherwise how much it refilled
+        eatCo, // same as drink
+        weightCo; // (lbs.) final weight of 1 is stick, 5 is rock, 120 is deer carcass
+  bool isFluid,
+       isSplittable; // can be split into smaller chunks
+       
+  int drink() const { return cast(int) (size * drinkCo); }
+  int eat() const { return cast(int) (size * eatCo); }
+  int weight() const { return cast(int) (size * weightCo); }
+}
+
+interface Container {
+  enum AddRet {
+    NO_ROOM,
+    WRONG_TYPE,
+    SUCCESS
+  }
+  
+  Ent[] inside();
+  bool remove(Ent);
+  AddRet add(Ent);
+}
+
+abstract class ContainerEnt : Ent, Container {
+  Ent[] contents;
+  uint maxSize;
+  bool isWatertight;
+  
+  this(int x, int y) {
+    super(x, y);
+  }
+  
+  int spaceLeft() const {
+    int space = maxSize;
+    foreach (e; contents) {
+      space -= e.size;
+    }
+    return space;
+  }
+  
+  Ent[] inside() {
+    return contents;
+  }
+  bool remove(Ent e) {
+    contents.remove(e);
+    return true;
+  }
+  Container.AddRet add(Ent e) {
+    if (e.isFluid && !isWatertight) {
+      return Container.AddRet.WRONG_TYPE;
+    }
+    if (e.size > spaceLeft) {
+      return Container.AddRet.NO_ROOM;
+    }
+    contents ~= e;
+    return Container.AddRet.SUCCESS;
+  }
+}
 }
