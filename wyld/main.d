@@ -824,6 +824,11 @@ abstract class ActiveSkill {
 
 abstract class Take(A) : Menu.Mode {
   A cont;
+  bool success;
+  
+  void reset() {
+    success = false;
+  }
 }
 
 class TakeDest : Take!Coord {
@@ -839,12 +844,23 @@ class TakeDest : Take!Coord {
     cont = start;
   }
   
-  Menu.Mode.Return update(char key, Menu menu) {
+  void init(Menu menu) {
     if (setToPlayer) {
       cont = Coord(menu.world.player.x, menu.world.player.y);
-      setToPlayer = false;
     }
+    
+    menu.world.disp ~= Disp(Sym('X', Col.YELLOW), cont);
+  }
+  
+  Menu.Mode.Return update(char key, Menu menu) {
+    if (key == '\n') {
+      success = true;
+      return Menu.Mode.Return(false);
+    }
+  
     cont.add(getDirKey(key));
+    
+    menu.world.disp ~= Disp(Sym('X', Col.YELLOW), cont);
     
     return Menu.Mode.Return(true);
   }
