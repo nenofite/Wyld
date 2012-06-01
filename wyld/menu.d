@@ -26,14 +26,17 @@ class Menu {
   }
   
   void update() {
+    assert(stack.length > 0);
+    auto mode = stack[$-1];
+    
+    mode.preUpdate(this);
+    
+  
     clearScreen();
     ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
     n.refresh();
     
-    world.disp = [];
-    
-    assert(stack.length > 0);
-    auto mode = stack[$-1];
+    world.disp = [];    
     
     char key = '\0';
     
@@ -48,25 +51,27 @@ class Menu {
       stack = stack[0 .. $-1];
       return;
     } else {
-      foreach (e; mode.sub) {
-        if (e.key == key) {
-          stack ~= e;
-          e.init(this);
-          return;
+      auto ret = mode.update(key, this);
+      Mode add;
+      if (!ret.caughtKey) {
+        foreach (e; mode.sub) {
+          if (e.key == key) {
+            add = e;
+            break;
+          }
         }
       }
+      if (!ret.keep) {
+        stack = stack[0 .. $-1];
+      }
+      if (add !is null) {
+        stack ~= add;
+        add.init(this);
+      }
+      
+      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
+      n.refresh();
     }
-    
-    auto ret = mode.update(key, this);
-    if (!ret.keep) {
-      stack = stack[0 .. $-1];
-    }
-    if (ret.add.length > 0) stack ~= ret.add;
-    foreach (added; ret.add) added.init(this);
-    //TODO do we need this?
-    
-    ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
-    n.refresh();
   }
   
   void updateWorld() {
@@ -134,12 +139,13 @@ class Menu {
     Mode[] sub;
     Box ui;
     
-    Return update(char key, Menu);
+    Return update(char key, Menu) { return Return(true); }
+    void preUpdate(Menu) {}
     void init(Menu) {}
     
     static struct Return {
-      bool keep;
-      Mode[] add;
+      bool keep,
+           caughtKey;
     }
   }
 }

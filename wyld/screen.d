@@ -80,14 +80,18 @@ class MainScreen : Menu.Mode {
           return Menu.Mode.Return();
         })
       ]),
+      new SkillsMenu(),
+      new Items('i', "Inventory", () { return world.player.contents; }),
+      new Items('g', "Ground", () { 
+        auto ret = world.entsNear(world.player.x, world.player.y); 
+        ret.remove(world.player);
+        return ret;
+      }),
       cast(Menu.Mode) new BasicMode('Q', "Quit game", 
-      (char, Menu menu) {
+          (char, Menu menu) {
         menu.stack = [];
         return Menu.Mode.Return();
       }),
-      new SkillsMenu(),
-      new Inv(),
-      new Get()
     ];
   }
 }
@@ -107,10 +111,6 @@ class SkillsMenu : Menu.Mode {
     foreach (s; player.skills) {
       sub ~= s.use;
     }
-  }
-  
-  Menu.Mode.Return update(char, Menu) {
-    return Menu.Mode.Return(true);
   }
 }
 
@@ -146,10 +146,6 @@ class SkillsStats : Menu.Mode {
       });
     }
   }
-  
-  Menu.Mode.Return update(char, Menu) {
-    return Menu.Mode.Return(true);
-  }
 }
 
 class Inv : Menu.Mode {
@@ -164,10 +160,6 @@ class Inv : Menu.Mode {
     foreach (i; menu.world.player.contents) {
       sub ~= new BasicMode(k++, i.name, []);
     }
-  }
-  
-  Menu.Mode.Return update(char, Menu) {
-    return Menu.Mode.Return(true);
   }
 }
 
@@ -205,5 +197,58 @@ class Get : Menu.Mode {
   
   Menu.Mode.Return update(char, Menu) {
     return Menu.Mode.Return(false);
+  }
+}
+
+class Items : Menu.Mode {
+  Ent[] delegate() items;
+  
+  this(char key, string name, Ent[] delegate() items) {
+    this.key = key;
+    this.name = name;
+    this.items = items;
+  }
+  
+  void preUpdate(Menu) {
+    assert(items != null);
+    sub = [];
+    char k = 'a';
+    foreach (i; items()) {
+      sub ~= new ItemInteract(i, k++);
+    }
+  }
+}
+
+class ItemInteract : Menu.Mode {
+  Ent item;
+  
+  this(Ent item, char key) {
+    this.item = item;
+    this.key = key;
+    name = item.name;
+  }
+  
+  void init(Menu menu) {
+    auto p = menu.world.player;
+    sub = [];
+    
+    sub ~= new BasicMode('g', "Get", () {
+      auto res = item.reparent(p);
+      switch (res) {
+        case wyld.main.Container.AddRet.SUCCESS:
+          menu.world.barMsg(format("You pick up the %s.", item.name));
+          break;
+        case wyld.main.Container.AddRet.NO_ROOM:
+          menu.world.barMsg("You don't have room to carry that.");
+          break;
+        case wyld.main.Container.AddRet.WRONG_TYPE:
+          menu.world.barMsg("You'll need something else to carry that.");
+          break;
+        default:
+          assert(false);
+          break;
+      }
+      return Menu.Mode.Return();
+    });
   }
 }
