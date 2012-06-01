@@ -83,7 +83,7 @@ World genWorld(int w, int h) {
         break;
     }
     
-    return World.StatCont(terr(t));
+    return new World.StatCont(terr(t));
   });
   msg("Geos converted to StatCont grid.");
   
@@ -93,7 +93,7 @@ World genWorld(int w, int h) {
       if (world.geos.inside(world.xToGeo(rx), world.yToGeo(ry)))
         world.geos.set(world.xToGeo(rx), world.yToGeo(ry), Geo(Geo.WATER));
       for (int xd = 0; xd < 3; xd++)
-        world.stat.set(rx + xd, ry, World.StatCont(terr(Terr.WATER)));
+        world.stat.get(rx + xd, ry).terr.type = Terr.WATER;
       if (ry % 5 == 0)
         rx += uniform(-1, 2);
     }
@@ -107,7 +107,7 @@ World genWorld(int w, int h) {
           int xd = x + uniform(-1, 1),
               yd = y + uniform(-1, 1);
           if (geos.inside(xd, yd) && !world.blockAt(xd, yd)) {
-            world.addStatEnt(new Tree(xd, yd));
+            world.addStatEnt(new Tree(xd, yd, null));
             break;
           }
         }
@@ -122,7 +122,7 @@ World genWorld(int w, int h) {
       if (a.type == Geo.FOREST || a.type == Geo.GRASS) {
         if (uniform(0, 50) != 0) {
           if (!world.blockAt(x, y)) {
-            world.addStatEnt(new Grass(x, y));
+            world.addStatEnt(new Grass(x, y, null));
           }
         }
       }

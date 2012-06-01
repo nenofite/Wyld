@@ -43,7 +43,7 @@ struct Sym {
 
 class World {
   Player player;
-  Ent[] movingEnts;
+  ContainerList movingEnts;
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
   string[] msgs;
@@ -51,15 +51,27 @@ class World {
   
   Time time;
   
-  struct StatCont {
+  static class StatCont {
     Terr terr;
-    Ent[] statEnts;
+    ContainerList statEnts;
+    
+    this() {
+      statEnts = new ContainerList();
+    }
+    this(Terr terr) {
+      this();
+      this.terr = terr;
+    }
   }
 
-  this() {}
+  this() {
+    movingEnts = new ContainerList();
+  }
 
   this(int w, int h) {
+    this();
     stat = new Grid!(StatCont)(w, h);
+    stat.map((StatCont) { return new StatCont(); });
   }
   
   int xToGeo(int x) {
@@ -120,10 +132,10 @@ class World {
   }
 
   void addStatEnt(Ent e) {
-    stat.modify(e.x, e.y, (StatCont c) {
-      c.statEnts ~= e;
-      return c;
-    });
+    auto s = stat.get(e.x, e.y);
+    s.statEnts.add(e);
+    assert(e.parent is null);
+    e.parent = s.statEnts;
   }
   
   void barMsg(string msg) {
@@ -156,19 +168,34 @@ abstract class Ent {
       speed;  // cost to self
   Stat hp, sp, hunger, thirst;
   
+  Container parent;
   Tags tags;
   alias tags this;
 
   Update upd;
 
-  this(int x, int y) {
+  this(int x, int y, Container parent) {
     this.x = x;
     this.y = y;
+    this.parent = parent;
   }
 
   Sym sym();
   Update update(World) { return null; }
   string name();
+  
+  Container.AddRet reparent(Container newParent) {
+    auto remRes = parent.remove(this);
+    assert(remRes); // TODO properly handle this
+    auto res = newParent.add(this);
+    if (res == Container.AddRet.SUCCESS) {
+      parent = newParent;
+    } else {
+      auto res2 = parent.add(this);
+      assert(res2 == Container.AddRet.SUCCESS);
+    }
+    return res;
+  }
 
   void runUpdate(World w) {
     if (upd is null) {
@@ -247,8 +274,8 @@ class Deer : Ent {
   bool hasDest;
   int moveFailed;
 
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
     isBlocking = true;
     speed = 150;
   }
@@ -299,8 +326,8 @@ class Deer : Ent {
 }
 
 class Troll : Deer {
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
     speed = 500;
   }
   
@@ -314,8 +341,8 @@ class Troll : Deer {
 class Player : ContainerEnt {
   ActiveSkill[] skills;
 
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
     isBlocking = true;
     speed = 50;
     
@@ -346,8 +373,8 @@ class Player : ContainerEnt {
 }
 
 class Grass : Ent {
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
     moveCost = 20;
   }
   
@@ -361,8 +388,8 @@ class Grass : Ent {
 }
 
 class Tree : Ent {
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
     isBlocking = true;
   }
 
@@ -440,7 +467,7 @@ struct Terr {
   Ent contains() const {
     switch (type) {
       case Type.WATER:
-        return new Water(-1, -1, 1000);
+        return new Water(-1, -1, new VoidContainer(), 1000);
         break;
       default:
         return null;
@@ -520,7 +547,7 @@ void main() {
     int mx = world.stat.w / 2,
         my = world.stat.h / 2;
     if (!world.blockAt(x, y)) {
-      world.player = new Player(mx + x, my + y);
+      world.player = new Player(mx + x, my + y, world.movingEnts);
       break;
     }
   }
@@ -534,7 +561,7 @@ void main() {
       int x = uniform(0, world.stat.w),
           y = uniform(0, world.stat.h);
       if (!world.blockAt(x, y)) {
-        world.movingEnts ~= new Deer(x, y);
+        world.movingEnts ~= new Deer(x, y, world.movingEnts);
         break;
       }
     }
@@ -997,8 +1024,8 @@ abstract class ContainerEnt : Ent, Container {
   uint maxSize;
   bool isWatertight;
   
-  this(int x, int y) {
-    super(x, y);
+  this(int x, int y, Container parent) {
+    super(x, y, parent);
   }
   
   int spaceLeft() const {
@@ -1029,8 +1056,8 @@ abstract class ContainerEnt : Ent, Container {
 }
 
 class Water : Ent {
-  this(int x, int y, uint size) {
-    super(x, y);
+  this(int x, int y, Container parent, uint size) {
+    super(x, y, parent);
     this.tags.size = size;
     this.tags.drinkCo = 5;
     this.tags.weightCo = 2;
@@ -1039,4 +1066,33 @@ class Water : Ent {
   
   string name() { return "water"; }
   Sym sym() { return Sym('~', Col.BLUE); }
+}
+
+class ContainerList : Container {
+  Ent[] list;
+  alias list this;
+  
+  Ent[] inside() {
+    return list;
+  }
+  Container.AddRet add(Ent e) {
+    list ~= e;
+    return Container.AddRet.SUCCESS;
+  }
+  bool remove(Ent e) {
+    list.remove(e);
+    return true;
+  }
+}
+
+class VoidContainer : Container {
+  Ent[] inside() {
+    return [];
+  }
+  Container.AddRet add(Ent e) {
+    return Container.AddRet.SUCCESS;
+  }
+  bool remove(Ent e) {
+    return true;
+  }
 }
