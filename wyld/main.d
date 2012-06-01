@@ -126,7 +126,7 @@ class World {
   void update() {
     foreach (e; movingEnts) {
       e.runUpdate(this);
-      e.statUpdate();
+      e.statUpdate(this);
     }
     time.elapse(1);
   }
@@ -210,7 +210,7 @@ abstract class Ent {
     }
   }
   
-  void statUpdate() {}
+  void statUpdate(World) {}
 
   void collMove(int nx, int ny, World w) {
     if (!w.blockAt(nx, ny)) {
@@ -349,7 +349,7 @@ class Player : ContainerEnt {
     hp = Stat(200);
     sp = Stat(1000);
     hunger = Stat(Time.hours(24));  // 24 hours
-    thirst = Stat(Time.hours(6));  // 6 hours
+    thirst = Stat(100);  // 6 hours
     
     maxSize = 100;
   }
@@ -362,10 +362,10 @@ class Player : ContainerEnt {
     return null;
   }
   
-  void statUpdate() {
+  void statUpdate(World world) {
     if (hunger > 0)
       hunger--;
-    if (thirst > 0)
+    if (thirst > 0 && world.time.pticks % 10000 == 0)
       thirst--;
   }
   
@@ -996,9 +996,9 @@ struct Disp {
 struct Tags {
   uint size; // 1 is stick, 10 is rock, 100 is whole deer carcass
   // Coefficients multiplied by size for final value
-  float drinkCo, // 0 for no, otherwise how much it refilled
-        eatCo, // same as drink
-        weightCo; // (lbs.) final weight of 1 is stick, 5 is rock, 120 is deer carcass
+  float drinkCo = 0, // 0 for no, otherwise how much it refilled
+        eatCo = 0, // same as drink
+        weightCo = 0; // (lbs.) final weight of 1 is stick, 5 is rock, 120 is deer carcass
   bool isFluid,
        isSplittable; // can be split into smaller chunks
        

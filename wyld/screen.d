@@ -7,6 +7,7 @@ import wyld.map;
 import wyld.menu;
 
 import n = ncs.ncurses;
+import std.algorithm: min;
 
 class MainScreen : Menu.Mode {
   World world;
@@ -250,5 +251,18 @@ class ItemInteract : Menu.Mode {
       }
       return Menu.Mode.Return();
     });
+    
+    if (item.drinkCo != 0) {
+      sub ~= new BasicMode('q', "Drink", () {
+        auto drinkAmt = min(item.drink, p.thirst.max - p.thirst);
+        assert(drinkAmt >= 0);
+        p.thirst += drinkAmt;
+        item.size -= drinkAmt / item.drinkCo;
+        assert(item.size >= 0);
+        //TODO give units in message
+        menu.world.barMsg(format("You drink %d of the %s.", drinkAmt, item.name));
+        return Menu.Mode.Return();
+      });
+    }
   }
 }
