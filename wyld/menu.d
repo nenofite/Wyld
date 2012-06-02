@@ -40,7 +40,6 @@ class Menu {
     
     world.disp = [];    
     
-    n.flushinp();
     auto keyi = n.getch();
     n.flushinp();
     
@@ -58,6 +57,7 @@ class Menu {
     } else {
       if (!mode.getKeys || key != '\0') {
         auto ret = mode.update(key, this);
+        n.flushinp();
         Mode add;
         if (!ret.caughtKey) {
           foreach (e; mode.sub) {
@@ -77,8 +77,6 @@ class Menu {
       }
       
       drawTick++;
-      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
-      n.refresh();
     }
   }
   
