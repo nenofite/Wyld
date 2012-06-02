@@ -537,6 +537,7 @@ void main() {
   n.cbreak();
   n.noecho();
   n.keypad(n.stdscr, false);
+  n.timeout(10);
   n.curs_set(false);
   initColor();
   

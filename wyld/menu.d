@@ -6,11 +6,12 @@ import wyld.main;
 
 import std.string: toStringz;
 import core.thread: Thread;
-import core.time: dur;
+import core.time: TickDuration, dur;
 
 class Menu {
   Mode[] stack;
   World world;
+  uint drawTick;
   
   List ui;
   
@@ -29,21 +30,25 @@ class Menu {
     assert(stack.length > 0);
     auto mode = stack[$-1];
     
-    mode.preUpdate(this);
+    drawTick = TickDuration.currSystemTick.to!("msecs", int) / 10;
     
+    mode.preUpdate(this);
   
     clearScreen();
-    ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
+    ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
     n.refresh();
     
     world.disp = [];    
     
-    char key = '\0';
+    n.flushinp();
+    auto keyi = n.getch();
+    n.flushinp();
     
-    if (mode.getKeys) {
-      n.flushinp();
-      key = cast(char) n.getch();
-      n.flushinp();
+    char key;
+    if (keyi == n.ERR) {
+      key = '\0';
+    } else {
+      key = cast(char) keyi;
     }
     
     if (key == 27 // 27 is the escape key
@@ -51,25 +56,28 @@ class Menu {
       stack = stack[0 .. $-1];
       return;
     } else {
-      auto ret = mode.update(key, this);
-      Mode add;
-      if (!ret.caughtKey) {
-        foreach (e; mode.sub) {
-          if (e.key == key) {
-            add = e;
-            break;
+      if (!mode.getKeys || key != '\0') {
+        auto ret = mode.update(key, this);
+        Mode add;
+        if (!ret.caughtKey) {
+          foreach (e; mode.sub) {
+            if (e.key == key) {
+              add = e;
+              break;
+            }
           }
         }
-      }
-      if (!ret.keep) {
-        stack = stack[0 .. $-1];
-      }
-      if (add !is null) {
-        stack ~= add;
-        add.init(this);
+        if (!ret.keep) {
+          stack = stack[0 .. $-1];
+        }
+        if (add !is null) {
+          stack ~= add;
+          add.init(this);
+        }
       }
       
-      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
+      drawTick++;
+      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
       n.refresh();
     }
   }
@@ -78,7 +86,7 @@ class Menu {
     while (world.player.upd !is null) {
       world.update();
       clearScreen();
-      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES));
+      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
       n.refresh();
       Thread.sleep(dur!"nsecs"(500));
     }

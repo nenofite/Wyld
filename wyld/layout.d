@@ -18,6 +18,17 @@ abstract class Box {
   
   struct Dim {
     int x, y, w, h;
+    uint drawTick;
+    
+    //Explicitly define constructor to make sure that all fields are
+    // given
+    this(int x, int y, int w, int h, uint drawTick) {
+      this.x = x;
+      this.y = y;
+      this.w = w;
+      this.h = h;
+      this.drawTick = drawTick;
+    }
     
     int x2() const {
       return x + w - 1;
@@ -62,23 +73,23 @@ class List : Container {
       for (int i = 0; i < children.length - 1; i++) {
         auto b = children[i];
         if (rtl) x -= b.w;
-        b.draw(Dim(x, dim.y, b.w, dim.h));
+        b.draw(Dim(x, dim.y, b.w, dim.h, dim.drawTick));
         if (!rtl) x += b.w;
       }
       int width = (rtl ? x - dim.x : dim.x2() - x + 1);
       if (rtl) x = dim.x;
-      children[$-1].draw(Dim(x, dim.y, width, dim.h));
+      children[$-1].draw(Dim(x, dim.y, width, dim.h, dim.drawTick));
     } else {
       int y = rtl ? dim.y2() + 1 : dim.y;
       for (int i = 0; i < children.length - 1; i++) {
         auto b = children[i];
         if (rtl) y -= b.h;
-        b.draw(Dim(dim.x, y, dim.w, b.h));
+        b.draw(Dim(dim.x, y, dim.w, b.h, dim.drawTick));
         if (!rtl) y += b.h;
       }
       int height = (rtl ? y - dim.y : dim.y2() - y + 1);
       if (rtl) y = dim.y;
-      children[$-1].draw(Dim(dim.x, y, dim.w, height));
+      children[$-1].draw(Dim(dim.x, y, dim.w, height, dim.drawTick));
     }
   }
   
@@ -316,7 +327,8 @@ class Minimap : Box {
     }
     
     n.attrset(n.COLOR_PAIR(Col.TEXT));
-    n.mvprintw(dim.y + padH, dim.x + padW, "X");
+    if (dim.drawTick % 100 < 50)
+      n.mvprintw(dim.y + padH, dim.x + padW, "X");
   }
 }
 
