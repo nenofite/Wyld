@@ -77,7 +77,7 @@ class World {
   }
   
   void addTracks(Ent source, Dir dir) {
-    stat.get(source.x, source.y).tracks = Tracks(time.pticks, source, dir);
+    stat.get(source.x, source.y).tracks = Tracks(time.pticks, source, dir, source.trackNum++);
   }
   
   int xToGeo(int x) {
@@ -184,6 +184,7 @@ abstract class Ent {
   int moveCost,  // cost for others on this tile
       speed;  // cost to self
   Stat hp, sp, hunger, thirst;
+  uint trackNum;
   
   Container parent;
   Tags tags;
@@ -570,7 +571,7 @@ void main() {
   
   auto world = genWorld(7, 7);
   
-  for (int i = 0; i < 1000; i++) {
+  for (int i = 0; i < 2; i++) {
     while (true) {
       int x = uniform(0, world.stat.w),
           y = uniform(0, world.stat.h);
@@ -581,7 +582,7 @@ void main() {
     }
   }
   
-  for (int u = 0; u < Time.minutes(1); u++) {
+  for (int u = 0; u < Time.minutes(30); u++) {
     world.update();
   }
   
@@ -1149,6 +1150,7 @@ struct Tracks {
   uint start;
   Ent source;
   Dir dir;
+  uint num;
   
   static const maxAge = Time.days(1);
   static const sym = Sym('"', Col.YELLOW_BBG);

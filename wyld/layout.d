@@ -138,10 +138,13 @@ class WorldView : Box {
           auto stat = world.stat.get(cx + x, cy + y);
           if (stat.statEnts.length > 0)
             s = stat.statEnts[$-1].sym();
-          if (menu.drawTick % 100 < 50
-              && m.abs(x - viewWidth / 2) <= 3 && m.abs(y - viewHeight / 2) <= 3
-              && stat.tracks.source !is null)
-            s = Tracks.sym;
+          if (m.abs(x - viewWidth / 2) <= 3 && m.abs(y - viewHeight / 2) <= 3
+              && stat.tracks.source !is null
+              && stat.tracks.source !is world.player)
+            if (stat.tracks.num % 10
+                == (menu.drawTick / 10) % 10) {
+              s = Tracks.sym;
+            }
         }
         n.attrset(n.COLOR_PAIR(s.color));
         n.addch(s.ch);
