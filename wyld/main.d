@@ -302,6 +302,7 @@ class Deer : Ent {
     super(x, y, parent);
     isBlocking = true;
     speed = 150;
+    tags.isWalking = true;
   }
 
   Sym sym() {
@@ -376,6 +377,7 @@ class Player : ContainerEnt {
     thirst = Stat(100);  // 6 hours
     
     maxSize = 100;
+    tags.isWalking = true;
   }
 
   Sym sym() {
@@ -604,7 +606,7 @@ void main() {
   world.barMsg("and explore!");
   
   auto menu = new Menu(world);
-  auto ms = new MainScreen(world);
+  auto ms = new MainScreen(world, menu);
   menu.stack ~= ms;
   ms.init(menu);
   

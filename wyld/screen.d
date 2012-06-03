@@ -12,7 +12,7 @@ import std.algorithm: min;
 class MainScreen : Menu.Mode {
   World world;
   
-  this(World world) {
+  this(World world, Menu menu) {
     this.world = world;
   
     name = "";
@@ -35,7 +35,7 @@ class MainScreen : Menu.Mode {
         {
           auto rows = new List();
           cols.addChild(rows);
-          rows.addChild(new WorldView(world));
+          rows.addChild(new WorldView(world, menu));
           rows.addChild(new OnGround(world));
         }
         cols.addChild(new VBar(false));

@@ -113,9 +113,11 @@ class List : Container {
 
 class WorldView : Box {
   World world;
+  Menu menu;
 
-  this(World world) {
+  this(World world, Menu menu) {
     this.world = world;
+    this.menu = menu;
   }
   
   int w() const { return viewWidth; }
@@ -136,7 +138,9 @@ class WorldView : Box {
           auto stat = world.stat.get(cx + x, cy + y);
           if (stat.statEnts.length > 0)
             s = stat.statEnts[$-1].sym();
-          if (stat.tracks.source !is null)
+          if (menu.drawTick % 100 < 50
+              && m.abs(x - viewWidth / 2) <= 3 && m.abs(y - viewHeight / 2) <= 3
+              && stat.tracks.source !is null)
             s = Tracks.sym;
         }
         n.attrset(n.COLOR_PAIR(s.color));
