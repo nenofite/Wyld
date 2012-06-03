@@ -75,8 +75,6 @@ class Menu {
           add.init(this);
         }
       }
-      
-      drawTick++;
     }
   }
   
