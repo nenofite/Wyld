@@ -133,9 +133,11 @@ class WorldView : Box {
       for (int x = 0; x < viewWidth; x++) {
         s = world.baseAt(cx + x, cy + y);
         if (world.stat.inside(cx + x, cy + y)) {
-          auto se = world.stat.get(cx + x, cy + y).statEnts;
-          if (se.length > 0)
-            s = se[$-1].sym();
+          auto stat = world.stat.get(cx + x, cy + y);
+          if (stat.statEnts.length > 0)
+            s = stat.statEnts[$-1].sym();
+          if (stat.tracks.source !is null)
+            s = Tracks.sym;
         }
         n.attrset(n.COLOR_PAIR(s.color));
         n.addch(s.ch);

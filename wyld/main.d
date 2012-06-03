@@ -28,6 +28,7 @@ enum Col {
   WHITE,
   BLUE_BG,
   YELLOW_BG,
+  YELLOW_BBG,
   RED_BG
 }
 
@@ -54,6 +55,7 @@ class World {
   static class StatCont {
     Terr terr;
     ContainerList statEnts;
+    Tracks tracks;
     
     this() {
       statEnts = new ContainerList();
@@ -72,6 +74,10 @@ class World {
     this();
     stat = new Grid!(StatCont)(w, h);
     stat.map((StatCont) { return new StatCont(); });
+  }
+  
+  void addTracks(Ent source, Dir dir) {
+    stat.get(source.x, source.y).tracks = Tracks(time.pticks, source, dir);
   }
   
   int xToGeo(int x) {
@@ -124,11 +130,22 @@ class World {
   }
 
   void update() {
+    Ent[] newEnts;
+  
     foreach (e; movingEnts) {
-      e.runUpdate(this);
-      e.statUpdate(this);
+      auto res = e.runUpdate(this);
+      auto keep = res.keep;
+      newEnts ~= res.add;
+      
+      res = e.statUpdate(this);
+      newEnts ~= res.add;
+      assert(res.next is null);
+      keep = keep && res.keep;
+      
+      if (keep) newEnts ~= e;
     }
     time.elapse(1);
+    movingEnts = newEnts;
   }
 
   void addStatEnt(Ent e) {
@@ -197,7 +214,7 @@ abstract class Ent {
     return res;
   }
 
-  void runUpdate(World w) {
+  Update.Ret runUpdate(World w) {
     if (upd is null) {
       upd = update(w);
     }
@@ -205,12 +222,16 @@ abstract class Ent {
     if (upd !is null) {
       upd.timeReq--;
       if (upd.timeReq <= 0) {
-        upd = upd.update(w);
+        auto res = upd.update(w);
+        upd = res.next;
+        return res;
       }
     }
+    
+    return Update.Ret();
   }
   
-  void statUpdate(World) {}
+  Update.Ret statUpdate(World) { return Update.Ret(); }
 
   void collMove(int nx, int ny, World w) {
     if (!w.blockAt(nx, ny)) {
@@ -233,11 +254,14 @@ abstract class Ent {
       return mkUpdate(cost, (World w) {
         bool succ = !w.blockAt(nx, ny);
         if (succ) {
+          if (tags.isWalking)
+            w.addTracks(this, coordToDir(Coord(dx, dy)));
           x = nx;
           y = ny;
         }
         if (callback !is null)
           callback(succ);
+        return Update.Ret();
       });
     }
     if (callback !is null)
@@ -362,11 +386,12 @@ class Player : ContainerEnt {
     return null;
   }
   
-  void statUpdate(World world) {
+  Update.Ret statUpdate(World world) {
     if (hunger > 0)
       hunger--;
     if (thirst > 0 && world.time.pticks % 10000 == 0)
       thirst--;
+    return Update.Ret();
   }
   
   string name() { return "you"; }
@@ -542,6 +567,22 @@ void main() {
   initColor();
   
   auto world = genWorld(7, 7);
+  
+  for (int i = 0; i < 1000; i++) {
+    while (true) {
+      int x = uniform(0, world.stat.w),
+          y = uniform(0, world.stat.h);
+      if (!world.blockAt(x, y)) {
+        world.movingEnts ~= new Deer(x, y, world.movingEnts);
+        break;
+      }
+    }
+  }
+  
+  for (int u = 0; u < Time.minutes(1); u++) {
+    world.update();
+  }
+  
   while (true) {
     int x = uniform(-100, 100),
         y = uniform(-100, 100);
@@ -556,17 +597,6 @@ void main() {
   world.player.skills ~= new Jump();
   
   world.movingEnts ~= world.player;
-  
-  for (int i = 0; i < 1000; i++) {
-    while (true) {
-      int x = uniform(0, world.stat.w),
-          y = uniform(0, world.stat.h);
-      if (!world.blockAt(x, y)) {
-        world.movingEnts ~= new Deer(x, y, world.movingEnts);
-        break;
-      }
-    }
-  }
   
   world.barMsg("One thousand deer");
   world.barMsg("roam this random spread.");
@@ -596,6 +626,7 @@ void initColor() {
     n.init_pair(Col.WHITE, n.COLOR_WHITE, n.COLOR_BLACK);
     n.init_pair(Col.BLUE_BG, n.COLOR_WHITE, n.COLOR_BLUE);
     n.init_pair(Col.YELLOW_BG, n.COLOR_WHITE, n.COLOR_YELLOW);
+    n.init_pair(Col.YELLOW_BBG, n.COLOR_BLACK, n.COLOR_YELLOW);
     n.init_pair(Col.RED_BG, n.COLOR_WHITE, n.COLOR_RED);
   } else {
     throw new Error("No color.");
@@ -639,30 +670,36 @@ abstract class Update {
     this.timeReq = timeReq;
   }
   
-  Update update(World);
+  Ret update(World);
+  
+  static struct Ret {
+    bool keep = true;
+    Ent[] add;
+    Update next;
+  }
 }
 
-Update mkUpdate(int timeReq, Update delegate(World) upd) {
+Update mkUpdate(int timeReq, Update.Ret delegate(World) upd) {
   class Upd : Update {
     this(int timeReq) {
       super(timeReq);
     }
   
-    Update update(World world) {
+    Update.Ret update(World world) {
       if (upd !is null)
         return upd(world);
       else
-        return null;
+        return Update.Ret();
     }
   }
   
   return new Upd(timeReq);
 }
 Update mkUpdate(int timeReq, void delegate(World) upd) {
-  Update f2(World world) {
+  Update.Ret f2(World world) {
     if (upd !is null)
       upd(world);
-    return null;
+    return Update.Ret();
   }
   return mkUpdate(timeReq, &f2);
 }
@@ -705,6 +742,9 @@ struct Time {
     return (periods / periodsPerMoon + moonOffset) % sunMoonMax;
   }
   
+  static int days(int days) {
+    return days * 24 * 60 * 60 * 100;
+  }
   static int hours(int hrs) {
     return hrs * 60 * 60 * 100;
   }
@@ -919,7 +959,7 @@ class Jump : ActiveSkill {
           super(time);
         }
         
-        Update update(World world) {
+        Update.Ret update(World world) {
           int mx, my;
           mx = compare(dest.x, world.player.x);
           my = compare(dest.y, world.player.y);
@@ -927,9 +967,9 @@ class Jump : ActiveSkill {
           world.player.y += my;
           
           if (world.player.x == dest.x && world.player.y == dest.y) {
-            return null;
+            return Update.Ret();
           } else {
-            return new Upd(dest, time);
+            return Update.Ret(true, [], new Upd(dest, time));
           }
         }
       }
@@ -1001,7 +1041,8 @@ struct Tags {
         eatCo = 0, // same as drink
         weightCo = 0; // (lbs.) final weight of 1 is stick, 5 is rock, 120 is deer carcass
   bool isFluid,
-       isSplittable; // can be split into smaller chunks
+       isSplittable, // can be split into smaller chunks
+       isWalking; // walks on the ground, leaves tracks...
        
   int drink() const { return cast(int) (size * drinkCo); }
   int eat() const { return cast(int) (size * eatCo); }
@@ -1095,5 +1136,38 @@ class VoidContainer : Container {
   }
   bool remove(Ent e) {
     return true;
+  }
+}
+
+struct Tracks {
+  uint start;
+  Ent source;
+  Dir dir;
+  
+  static const maxAge = Time.days(1);
+  static const sym = Sym('"', Col.YELLOW_BBG);
+}
+
+Dir coordToDir(Coord c) {
+  assert(c.x != 0 || c.y != 0);
+  
+  if (c == Coord(0, -1)) {
+    return Dir.N;
+  } else if (c == Coord(1, -1)) {
+    return Dir.NE;
+  } else if (c == Coord(1, 0)) {
+    return Dir.E;
+  } else if (c == Coord(1, 1)) {
+    return Dir.SE;
+  } else if (c == Coord(0, 1)) {
+    return Dir.S;
+  } else if (c == Coord(-1, 1)) {
+    return Dir.SW;
+  } else if (c == Coord(-1, 0)) {
+    return Dir.W;
+  } else if (c == Coord(-1, -1)) {
+    return Dir.NW;
+  } else {
+    assert(false);
   }
 }
