@@ -81,12 +81,15 @@ class Menu {
   }
   
   void updateWorld() {
+    int u;
     while (world.player.upd !is null) {
       world.update();
-      clearScreen();
-      ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
-      n.refresh();
-      Thread.sleep(dur!"nsecs"(500));
+      if (u % 10 == 0) {
+        clearScreen();
+        ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
+        n.refresh();
+      }
+      u++;
     }
   }
   void updateWorldFast() {

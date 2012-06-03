@@ -948,6 +948,10 @@ class Jump : ActiveSkill {
       dest.init(menu);
     }
     
+    void preUpdate(Menu menu) {
+      dest.preUpdate(menu);
+    }
+    
     Menu.Mode.Return update(char key, Menu menu) {
       static class Upd : Update {
         Coord dest;
@@ -1010,8 +1014,10 @@ class TakeDest : Take!Coord {
   void init(Menu menu) {
     if (setToPlayer) {
       cont = Coord(menu.world.player.x, menu.world.player.y);
-    }
-    
+    }    
+  }
+  
+  void preUpdate(Menu menu) {
     menu.world.disp ~= Disp(Sym('X', Col.YELLOW), cont);
   }
   
@@ -1022,8 +1028,6 @@ class TakeDest : Take!Coord {
     }
   
     cont.add(getDirKey(key));
-    
-    menu.world.disp ~= Disp(Sym('X', Col.YELLOW), cont);
     
     return Menu.Mode.Return(true);
   }
