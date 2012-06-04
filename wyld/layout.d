@@ -152,8 +152,12 @@ class WorldView : Box {
     
     foreach (overlay; overlays) {
       foreach (disp; overlay.sparse(menu)) {
-        disp.sym.draw(disp.coord.y + by - cy,
-                      disp.coord.x + bx - cx);
+        auto x = disp.coord.x + bx - cx,
+             y = disp.coord.y + by - cy;
+        if (x >= dim.x && x <= dim.x2
+            && y >= dim.y && y <= dim.y2) {
+          disp.sym.draw(y, x);
+        }
       }
     }
     
