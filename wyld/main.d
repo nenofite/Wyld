@@ -588,7 +588,7 @@ void main() {
     }
   }
   
-  for (int u = 0; u < Time.minutes(30); u++) {
+  for (int u = 0; u < Time.hours(6); u++) {
     world.update();
   }
   
