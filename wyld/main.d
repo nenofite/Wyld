@@ -48,7 +48,6 @@ class World {
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
   string[] msgs;
-  Disp[] disp;
   
   Time time;
   
@@ -63,6 +62,13 @@ class World {
     this(Terr terr) {
       this();
       this.terr = terr;
+    }
+    
+    Tracks updateTracks(Time time) {
+      if (tracks.age(time) > Tracks.maxAge) {
+        tracks.source = null;
+      }
+      return tracks;
     }
   }
 
@@ -597,7 +603,9 @@ void main() {
     }
   }
   
-  world.player.skills ~= new Jump();
+  world.player.skills ~= [ new Tracking()
+                         , cast(ActiveSkill) new Jump()
+                         ];
   
   world.movingEnts ~= world.player;
   
@@ -922,8 +930,21 @@ Coord getDirKey(char key, ref bool isKey) {
 abstract class ActiveSkill {
   string name;
   Stat level;
+  PassiveSkill passive;
 
   Menu.Mode use();
+}
+
+abstract class PassiveSkill {
+  string name;
+  char key;
+  bool canToggle,
+       isOn;
+       
+  void update(Menu) {}
+  WorldView.Overlay overlay() {
+    return null;
+  }
 }
 
 class Jump : ActiveSkill {
@@ -992,6 +1013,85 @@ class Jump : ActiveSkill {
   }
 }
 
+class Tracking : ActiveSkill {
+  Stat exp;
+  
+  this() {
+    level = Stat(0, 10);
+    exp = Stat(0, 100);
+    name = "Tracking";
+    passive = new Passive(this);
+  }
+  
+  uint viewRadius() {
+    return level / 2 + 1;
+  }
+  
+  Menu.Mode use() {
+    return new class(this) Menu.Mode {
+      this(Tracking t) {
+        name = "Track";
+        key = 't';
+      }
+      
+      void preUpdate(Menu menu) {
+        bool[Ent] entsFound;
+        for (int x = -1; x <= 1; x++) {
+          for (int y = -1; y <= 1; y++) {
+            auto track = menu.world.stat.get(
+              x + menu.world.player.x,
+              y + menu.world.player.y)
+              .tracks;
+            if (track.source !is null && track.source !is menu.world.player) {
+              entsFound[track.source] = true;
+            }
+          }
+        }
+        sub = [];
+        char k = 'a';
+        foreach (e, _; entsFound) {
+          sub ~= new BasicMode(k++, e.name ~ " tracks", []);
+        }
+      }
+    };
+  }
+  
+  class Passive : PassiveSkill {
+    Tracking active;
+  
+    this(Tracking active) {
+      this.active = active;
+      name = active.name;
+      key = 't';
+      canToggle = true;
+      isOn = true;
+    }
+    
+    WorldView.Overlay overlay() {
+      return new class(active) WorldView.Overlay {
+        Tracking active;
+        
+        this(Tracking active) {
+          this.active = active;
+        }
+        
+        tc.Nullable!Sym dense(Coord c, Menu menu) {
+          if (m.abs(c.x - menu.world.player.x) <= active.viewRadius
+              && m.abs(c.y - menu.world.player.y) <= active.viewRadius) {
+            auto tracks = menu.world.stat.get(c.x, c.y).updateTracks(menu.world.time);
+            if (tracks.source !is null && tracks.source !is menu.world.player) {
+              if (tracks.num % 10 == (menu.drawTick / 10) % 10) {
+                return tc.Nullable!Sym(Tracks.sym);
+              }
+            }
+          }
+          return tc.Nullable!Sym();
+        }
+      };
+    }
+  }
+}
+
 abstract class Take(A) : Menu.Mode {
   A cont;
   bool success;
@@ -1003,6 +1103,7 @@ abstract class Take(A) : Menu.Mode {
 
 class TakeDest : Take!Coord {
   bool setToPlayer;
+  MainScreen mainScreen;
   
   this() {
     name = "Choose destination";
@@ -1017,11 +1118,29 @@ class TakeDest : Take!Coord {
   void init(Menu menu) {
     if (setToPlayer) {
       cont = Coord(menu.world.player.x, menu.world.player.y);
-    }    
+    }
+    
+    foreach (mode; menu.stack) {
+      mainScreen = cast(MainScreen) mode;
+      if (mainScreen !is null)
+        break;
+    }
+    assert(mainScreen !is null);
   }
   
   void preUpdate(Menu menu) {
-    menu.world.disp ~= Disp(Sym('X', Col.YELLOW), cont);
+    mainScreen.worldView.overlays ~=
+      new class(cont) WorldView.Overlay {
+        Coord cont;
+        
+        this(Coord cont) {
+          this.cont = cont;
+        }
+      
+        CoordSym[] sparse(Menu) {
+          return [CoordSym(cont, Sym('X', Col.YELLOW))];
+        }
+      };
   }
   
   Menu.Mode.Return update(char key, Menu menu) {
@@ -1036,9 +1155,9 @@ class TakeDest : Take!Coord {
   }
 }
 
-struct Disp {
-  Sym sym;
+struct CoordSym {
   Coord coord;
+  Sym sym;
 }
 
 struct Tags {
@@ -1154,6 +1273,10 @@ struct Tracks {
   
   static const maxAge = Time.days(1);
   static const sym = Sym('"', Col.YELLOW_BBG);
+  
+  int age(Time time) {
+    return time.pticks - start;
+  }
 }
 
 Dir coordToDir(Coord c) {

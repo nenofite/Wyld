@@ -26,6 +26,15 @@ class Menu {
     ui.addChild(new DelegateBox());
   }
   
+  Box topUi() {
+    foreach_reverse (mode; stack) {
+      if (mode.ui !is null) {
+        return mode.ui;
+      }
+    }
+    assert(false);
+  }
+  
   void update() {
     assert(stack.length > 0);
     auto mode = stack[$-1];
@@ -37,8 +46,6 @@ class Menu {
     clearScreen();
     ui.draw(Box.Dim(0, 0, n.COLS, n.LINES, drawTick));
     n.refresh();
-    
-    world.disp = [];    
     
     auto keyi = n.getch();
     n.flushinp();

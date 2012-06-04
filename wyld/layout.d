@@ -9,6 +9,7 @@ import wyld.format;
 
 import std.algorithm: reduce, map, max, sort;
 import std.string: toStringz;
+import tc = std.typecons;
 
 abstract class Box {
   int w() const { return 0; }
@@ -114,10 +115,12 @@ class List : Container {
 class WorldView : Box {
   World world;
   Menu menu;
+  Overlay[] overlays;
 
   this(World world, Menu menu) {
     this.world = world;
     this.menu = menu;
+    overlays = [new BaseDraw()];
   }
   
   int w() const { return viewWidth; }
@@ -126,42 +129,74 @@ class WorldView : Box {
   void draw(Dim dim) {
     int cx = world.player.x - (viewWidth / 2),
         cy = world.player.y - (viewHeight / 2);
-    int bx = dim.x, by = dim.y;
-    Sym s;
-    int drawn;  // TODO can be removed?
+    int bx = dim.x,
+        by = dim.y;
 
     for (int y = 0; y < viewHeight; y++) {
       n.move(y + by, bx);
       for (int x = 0; x < viewWidth; x++) {
-        s = world.baseAt(cx + x, cy + y);
-        if (world.stat.inside(cx + x, cy + y)) {
-          auto stat = world.stat.get(cx + x, cy + y);
-          if (stat.statEnts.length > 0)
-            s = stat.statEnts[$-1].sym();
-          if (m.abs(x - viewWidth / 2) <= 3 && m.abs(y - viewHeight / 2) <= 3
-              && stat.tracks.source !is null
-              && stat.tracks.source !is world.player)
-            if (stat.tracks.num % 10
-                == (menu.drawTick / 10) % 10) {
-              s = Tracks.sym;
+        Sym s = Sym(' ', Col.TEXT);
+        if (menu.world.stat.inside(cx + x, cy + y)) {
+          foreach_reverse (overlay; overlays) {
+            auto sn = overlay.dense(Coord(cx + x, cy + y), menu);
+            if (!sn.isNull) {
+              s = sn;
+              break;
             }
+          }
         }
         n.attrset(n.COLOR_PAIR(s.color));
         n.addch(s.ch);
       }
     }
-
-    foreach (e; world.movingEnts) {
-      if (world.inView(e.x, e.y)) {
-        e.sym().draw(e.y + by - cy, e.x + bx - cx);
-        drawn++;
+    
+    foreach (overlay; overlays) {
+      foreach (disp; overlay.sparse(menu)) {
+        disp.sym.draw(disp.coord.y + by - cy,
+                      disp.coord.x + bx - cx);
       }
     }
     
-    foreach (d; world.disp) {
-      if (world.inView(d.coord.x, d.coord.y)) {
-        d.sym.draw(d.coord.y + by - cy, d.coord.x + bx - cx);
+    overlays = [new BaseDraw()];
+    
+    foreach (skill; world.player.skills) {
+      if (skill.passive !is null) {
+        if (skill.passive.isOn) {
+          auto overlay = skill.passive.overlay();
+          if (overlay !is null)
+            overlays ~= skill.passive.overlay;
+        }
       }
+    }
+  }
+  
+  static abstract class Overlay {
+    tc.Nullable!Sym dense(Coord, Menu) { 
+      return tc.Nullable!Sym(); 
+    }
+    
+    CoordSym[] sparse(Menu) { 
+      return [];
+    }
+  }
+  
+  static class BaseDraw : Overlay {
+    tc.Nullable!Sym dense(Coord c, Menu menu) {
+      tc.Nullable!Sym sym;
+      sym = menu.world.baseAt(c.x, c.y);
+      auto s = menu.world.stat.get(c.x, c.y).statEnts;
+      if (s.length > 0) sym = s[$-1].sym;
+      return sym;
+    }
+    
+    CoordSym[] sparse(Menu menu) {
+      CoordSym[] entSyms;
+      foreach (ent; menu.world.movingEnts) {
+        if (menu.world.stat.inside(ent.x, ent.y)) {
+          entSyms ~= CoordSym(Coord(ent.x, ent.y), ent.sym);
+        }
+      }
+      return entSyms;
     }
   }
 }
