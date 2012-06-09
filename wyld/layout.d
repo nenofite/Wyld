@@ -115,12 +115,12 @@ class List : Container {
 class WorldView : Box {
   World world;
   Menu menu;
-  Overlay[] overlays;
+  WorldView.Overlay[] baseOverlays;
 
   this(World world, Menu menu) {
     this.world = world;
     this.menu = menu;
-    overlays = [new BaseDraw()];
+    world.overlays = [new BaseDraw()];
   }
   
   int w() const { return viewWidth; }
@@ -131,13 +131,17 @@ class WorldView : Box {
         cy = world.player.y - (viewHeight / 2);
     int bx = dim.x,
         by = dim.y;
+        
+    foreach (overlay; world.overlays) {
+      overlay.update(menu);
+    }
 
     for (int y = 0; y < viewHeight; y++) {
       n.move(y + by, bx);
       for (int x = 0; x < viewWidth; x++) {
         Sym s = Sym(' ', Col.TEXT);
         if (menu.world.stat.inside(cx + x, cy + y)) {
-          foreach_reverse (overlay; overlays) {
+          foreach_reverse (overlay; world.overlays) {
             auto sn = overlay.dense(Coord(cx + x, cy + y), menu);
             if (!sn.isNull) {
               s = sn;
@@ -150,7 +154,7 @@ class WorldView : Box {
       }
     }
     
-    foreach (overlay; overlays) {
+    foreach (overlay; world.overlays) {
       foreach (disp; overlay.sparse(menu)) {
         auto x = disp.coord.x + bx - cx,
              y = disp.coord.y + by - cy;
@@ -161,14 +165,19 @@ class WorldView : Box {
       }
     }
     
-    overlays = [new BaseDraw()];
+    WorldView.Overlay[] newOverlays;
+    foreach (overlay; world.overlays) {
+      if (overlay.keep(menu))
+        newOverlays ~= overlay;
+    }
+    world.overlays = newOverlays;
     
     foreach (skill; world.player.skills) {
       if (skill.passive !is null) {
         if (skill.passive.isOn) {
           auto overlay = skill.passive.overlay();
           if (overlay !is null)
-            overlays ~= skill.passive.overlay;
+            world.overlays ~= overlay;
         }
       }
     }
@@ -181,6 +190,11 @@ class WorldView : Box {
     
     CoordSym[] sparse(Menu) { 
       return [];
+    }
+    
+    void update(Menu) {}
+    bool keep(Menu) {
+      return false;
     }
   }
   
@@ -201,6 +215,10 @@ class WorldView : Box {
         }
       }
       return entSyms;
+    }
+    
+    bool keep(Menu) {
+      return true;
     }
   }
 }

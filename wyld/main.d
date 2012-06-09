@@ -29,7 +29,8 @@ enum Col {
   BLUE_BG,
   YELLOW_BG,
   YELLOW_BBG,
-  RED_BG
+  RED_BG,
+  RED_BBG
 }
 
 struct Sym {
@@ -48,6 +49,7 @@ class World {
   Grid!(StatCont) stat;
   Grid!(Geo) geos;
   string[] msgs;
+  WorldView.Overlay[] overlays;
   
   Time time;
   
@@ -639,6 +641,7 @@ void initColor() {
     n.init_pair(Col.YELLOW_BG, n.COLOR_WHITE, n.COLOR_YELLOW);
     n.init_pair(Col.YELLOW_BBG, n.COLOR_BLACK, n.COLOR_YELLOW);
     n.init_pair(Col.RED_BG, n.COLOR_WHITE, n.COLOR_RED);
+    n.init_pair(Col.RED_BBG, n.COLOR_BLACK, n.COLOR_RED);
   } else {
     throw new Error("No color.");
   }
@@ -1024,14 +1027,17 @@ class Tracking : ActiveSkill {
   }
   
   uint viewRadius() {
-    return level / 2 + 1;
+    return level / 2 + 2;
   }
   
   Menu.Mode use() {
     return new class(this) Menu.Mode {
+      Tracking tracking;
+    
       this(Tracking t) {
         name = "Track";
         key = 't';
+        tracking = t;
       }
       
       void preUpdate(Menu menu) {
@@ -1050,9 +1056,48 @@ class Tracking : ActiveSkill {
         sub = [];
         char k = 'a';
         foreach (e, _; entsFound) {
-          sub ~= new BasicMode(k++, e.name ~ " tracks", []);
+          sub ~= new BasicMode(k++, e.name ~ " tracks", () {
+            menu.world.overlays ~= new class() WorldView.Overlay {
+              Coord coord;
+              bool _keep = true;
+              
+              void update(Menu menu) {
+                uint biggestNum;
+                int viewRadius = tracking.viewRadius;
+                _keep = false;
+                for (int dx = -viewRadius; dx <= viewRadius; dx++) {
+                  for (int dy = -viewRadius; dy <= viewRadius; dy++) {
+                    int x = dx + menu.world.player.x,
+                        y = dy + menu.world.player.y;
+                    auto t = menu.world.stat.get(x, y).tracks;
+                    if (t.source is e) {
+                      if (t.num >= biggestNum) {
+                        coord = Coord(x, y);
+                        biggestNum = t.num;
+                        _keep = true;
+                      }
+                    }
+                  }
+                }
+              }
+            
+              CoordSym[] sparse(Menu menu) {
+                if (menu.drawTick % 100 < 50) {
+                  return [CoordSym(coord, Sym('"', Col.RED_BBG))];
+                } else {
+                  return [];
+                }
+              }
+              
+              bool keep(Menu) {
+                return _keep;
+              }
+            };
+            return Menu.Mode.Return();
+          });
         }
       }
+      
     };
   }
   
@@ -1129,7 +1174,7 @@ class TakeDest : Take!Coord {
   }
   
   void preUpdate(Menu menu) {
-    mainScreen.worldView.overlays ~=
+    menu.world.overlays ~=
       new class(cont) WorldView.Overlay {
         Coord cont;
         
