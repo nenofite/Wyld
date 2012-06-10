@@ -23,7 +23,17 @@ class MapScreen : Menu.Mode {
       })
     ];
     
-    ui = new Map();
+    ui = new class(this) Menu.Ui {
+      this(MapScreen screen) {
+        ui = new Map(screen);
+      }
+      
+      void update(char key, Menu menu) {
+        auto movement = getDirKey(key);
+        vx += movement.x;
+        vy += movement.y;
+      }
+    };
   }
   
   void recenter() {
@@ -32,10 +42,6 @@ class MapScreen : Menu.Mode {
   }
   
   Menu.Mode.Return update(char key, Menu menu) {
-    auto movement = getDirKey(key);
-    vx += movement.x;
-    vy += movement.y;
-    
     return Menu.Mode.Return(true);
   }
   
@@ -44,19 +50,25 @@ class MapScreen : Menu.Mode {
     recenter();
   }
   
-  class Map : Box {
+  static class Map : Box {
+    MapScreen screen;
+    
+    this(MapScreen screen) {
+      this.screen = screen;
+    }
+  
     void draw(Box.Dim dim) {
-      uint cx = vx - dim.w / 2,
-           cy = vy - dim.h / 2;
+      uint cx = screen.vx - dim.w / 2,
+           cy = screen.vy - dim.h / 2;
            
       for (int y = 0; y < dim.h; y++) {
         for (int x = 0; x < dim.w; x++) {
-          if (cx + x == world.xToGeo(world.player.x) 
-          && cy + y == world.yToGeo(world.player.y)
+          if (cx + x == screen.world.xToGeo(screen.world.player.x) 
+          && cy + y == screen.world.yToGeo(screen.world.player.y)
           && dim.drawTick % 100 < 50) {
             Sym('X', Col.TEXT).draw(dim.y + y, dim.x + x);
-          } else if (world.geos.inside(cx + x, cy + y)) {
-            auto geo = world.geos.get(cx + x, cy + y);
+          } else if (screen.world.geos.inside(cx + x, cy + y)) {
+            auto geo = screen.world.geos.get(cx + x, cy + y);
             if (geo.discovered) {
               geo.sym().draw(dim.y + y, dim.x + x);
             } else {

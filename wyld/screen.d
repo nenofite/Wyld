@@ -20,48 +20,10 @@ class MainScreen : Menu.Mode {
     sub = makeMenu();
     closeOnEsc = false;
   
-    auto list = new List();
-    ui = list;
-    list.rtl = true;
-    list.addChild(new Msgs(world));
-    list.addChild(new HBar(true, " - Messages -"));
-    {
-      auto timeRow = new List();
-      list.addChild(timeRow);
-      timeRow.addChild(new TimeBar(world));
-      {
-        auto cols = new List();
-        timeRow.addChild(cols);
-        cols.horiz = true;
-        {
-          auto rows = new List();
-          cols.addChild(rows);
-          worldView = new WorldView(world, menu);
-          rows.addChild(worldView);
-          rows.addChild(new OnGround(world));
-        }
-        cols.addChild(new VBar(false));
-        {
-          auto rows = new List();
-          cols.addChild(rows);
-          rows.addChild(new Minimap(world));
-          rows.addChild(new Nearby(world));
-        }
-        cols.addChild(new VBar(false));
-        cols.addChild(new Stats(world));
-      }
-      
-    }
+    ui = new Ui(menu);
   }
   
   Menu.Mode.Return update(char key, Menu menu) {
-    bool isDir;
-    auto coord = getDirKey(key, isDir);
-    if (isDir) {
-      world.player.upd = world.player.chmove(coord.x, coord.y, world);
-    }
-    
-    menu.updateWorld();
     return Menu.Mode.Return(true);
   }
   
@@ -97,6 +59,53 @@ class MainScreen : Menu.Mode {
       }),
     ];
   }
+  
+  class Ui : Menu.Ui {
+    this(Menu menu) {
+      auto list = new List();
+      ui = list;
+      list.rtl = true;
+      list.addChild(new Msgs(world));
+      list.addChild(new HBar(true, " - Messages -"));
+      {
+        auto timeRow = new List();
+        list.addChild(timeRow);
+        timeRow.addChild(new TimeBar(world));
+        {
+          auto cols = new List();
+          timeRow.addChild(cols);
+          cols.horiz = true;
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            worldView = new WorldView(world, menu);
+            rows.addChild(worldView);
+            rows.addChild(new OnGround(world));
+          }
+          cols.addChild(new VBar(false));
+          {
+            auto rows = new List();
+            cols.addChild(rows);
+            rows.addChild(new Minimap(world));
+            rows.addChild(new Nearby(world));
+          }
+          cols.addChild(new VBar(false));
+          cols.addChild(new Stats(world));
+        }
+      }
+    }
+    
+    void update(char key, Menu menu) {
+      bool isDir;
+      auto dir = getDirKey(key, isDir);
+      if (isDir) {
+        menu.world.player.upd = menu.world.player.chmove(dir.x, dir.y, menu.world);
+      } else if (key == '5') {
+      }
+      
+      menu.updateWorld();
+    }
+  }
 }
 
 class SkillsMenu : Menu.Mode {
@@ -128,26 +137,32 @@ class SkillsStats : Menu.Mode {
   void init(Menu menu) {
     player = menu.world.player;
     
-    List rows = new List();
-    ui = rows;
-    
-    foreach (s; player.skills) {
-      rows.addChild(new class(s) Box {
-        ActiveSkill s;
+    ui = new class() Menu.Ui {
+      this() {
+        List rows = new List();
+        ui = rows;
         
-        this(ActiveSkill s) {
-          this.s = s;
+        foreach (s; player.skills) {
+          rows.addChild(new class(s) Box {
+            ActiveSkill s;
+            
+            this(ActiveSkill s) {
+              this.s = s;
+            }
+          
+            int h() const { return 1; }
+            
+            void draw(Dim dim) {
+              n.attrset(n.COLOR_PAIR(Col.TEXT));
+              n.mvprintw(dim.y, dim.x, toStringz(s.name ~ ": "));
+              s.level.draw();
+            }
+          });
         }
+      }
       
-        int h() const { return 1; }
-        
-        void draw(Dim dim) {
-          n.attrset(n.COLOR_PAIR(Col.TEXT));
-          n.mvprintw(dim.y, dim.x, toStringz(s.name ~ ": "));
-          s.level.draw();
-        }
-      });
-    }
+      void update(char key, Menu) {}
+    };
   }
 }
 

@@ -1005,13 +1005,13 @@ class Jump : ActiveSkill {
         }
       }
       
-      dest.update(key, menu);
+      auto ret = dest.update(key, menu);
       if (dest.success) {
         menu.world.player.upd = new Upd(dest.cont, 10);
         menu.updateWorld();
         return Menu.Mode.Return();
       }
-      return Menu.Mode.Return(true);
+      return ret;
     }
   }
 }
@@ -1191,12 +1191,13 @@ class TakeDest : Take!Coord {
   Menu.Mode.Return update(char key, Menu menu) {
     if (key == '\n') {
       success = true;
-      return Menu.Mode.Return(false);
+      return Menu.Mode.Return(false, true);
     }
-  
-    cont.add(getDirKey(key));
     
-    return Menu.Mode.Return(true);
+    bool isDir;
+    cont.add(getDirKey(key, isDir));
+    
+    return Menu.Mode.Return(true, isDir);
   }
 }
 

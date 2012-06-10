@@ -26,7 +26,7 @@ class Menu {
     ui.addChild(new DelegateBox());
   }
   
-  Box topUi() {
+  Ui topUi() {
     foreach_reverse (mode; stack) {
       if (mode.ui !is null) {
         return mode.ui;
@@ -72,7 +72,8 @@ class Menu {
               add = e;
               break;
             }
-          }
+          }        
+          topUi.update(key, this);
         }
         if (!ret.keep) {
           stack = stack[0 .. $-1];
@@ -136,7 +137,7 @@ class Menu {
     void draw(Dim dim) {
       foreach_reverse (m; stack) {
         if (m.ui !is null) {
-          m.ui.draw(dim);
+          m.ui.ui.draw(dim);
           return;
         }
       }
@@ -151,7 +152,7 @@ class Menu {
          closeOnEsc = true;
     
     Mode[] sub;
-    Box ui;
+    Ui ui;
     
     Return update(char key, Menu) { return Return(true); }
     void preUpdate(Menu) {}
@@ -161,6 +162,12 @@ class Menu {
       bool keep,
            caughtKey;
     }
+  }
+  
+  static abstract class Ui {
+    Box ui;
+    
+    void update(char key, Menu);
   }
 }
 
