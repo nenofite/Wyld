@@ -1042,8 +1042,9 @@ class Tracking : ActiveSkill {
       
       void preUpdate(Menu menu) {
         bool[Ent] entsFound;
-        for (int x = -1; x <= 1; x++) {
-          for (int y = -1; y <= 1; y++) {
+        int radius = tracking.viewRadius;
+        for (int x = -radius; x <= radius; x++) {
+          for (int y = -radius; y <= radius; y++) {
             auto track = menu.world.stat.get(
               x + menu.world.player.x,
               y + menu.world.player.y)
@@ -1056,48 +1057,72 @@ class Tracking : ActiveSkill {
         sub = [];
         char k = 'a';
         foreach (e, _; entsFound) {
-          sub ~= new BasicMode(k++, e.name ~ " tracks", () {
-            menu.world.overlays ~= new class() WorldView.Overlay {
-              Coord coord;
-              bool _keep = true;
-              
-              void update(Menu menu) {
-                uint biggestNum;
-                int viewRadius = tracking.viewRadius;
-                _keep = false;
-                for (int dx = -viewRadius; dx <= viewRadius; dx++) {
-                  for (int dy = -viewRadius; dy <= viewRadius; dy++) {
-                    int x = dx + menu.world.player.x,
-                        y = dy + menu.world.player.y;
-                    auto t = menu.world.stat.get(x, y).tracks;
-                    if (t.source is e) {
-                      if (t.num >= biggestNum) {
-                        coord = Coord(x, y);
-                        biggestNum = t.num;
-                        _keep = true;
-                      }
-                    }
-                  }
+          sub ~= new TracksEntry(e, k, tracking);
+        }
+      }
+      
+      static class TracksEntry : Menu.Mode {
+        Ent focus;
+        bool keep = true;
+        Tracking tracking;
+      
+        this(Ent focus, char key, Tracking tracking) {
+          this.focus = focus;
+          this.key = key;
+          name = focus.name ~ " tracks";
+          this.tracking = tracking;
+        }
+        
+        auto tracksInRange(Menu menu) {
+          struct TracksCoord {
+            Tracks tracks;
+            Coord coord;
+          }
+        
+          TracksCoord[] tracks;
+          int radius = tracking.viewRadius;
+          for (int x = -radius; x <= radius; x++) {
+            for (int y = -radius; y <= radius; y++) {
+              int px = x + menu.world.player.x,
+                  py = y + menu.world.player.y;
+              if (menu.world.stat.inside(px, py)) {
+                auto g = menu.world.stat.get(px, py).tracks;
+                if (g.source is focus) {
+                  tracks ~= TracksCoord(g, Coord(px, py));
                 }
               }
+            }
+          }
+          return tracks;
+        }
+        
+        void preUpdate(Menu menu) {
+          auto sorted = sort!("a.tracks.num > b.tracks.num")(tracksInRange(menu));
+          if (sorted.length > 0) {
+            menu.world.overlays ~= new class(sorted[0].coord) WorldView.Overlay {
+              Coord coord;
             
-              CoordSym[] sparse(Menu menu) {
+              this(Coord coord) {
+                this.coord = coord;
+              }
+              
+              CoordSym[] sparse(Menu) {
                 if (menu.drawTick % 100 < 50) {
                   return [CoordSym(coord, Sym('"', Col.RED_BBG))];
                 } else {
                   return [];
                 }
               }
-              
-              bool keep(Menu) {
-                return _keep;
-              }
             };
-            return Menu.Mode.Return();
-          });
+          } else {
+            keep = false;
+          }
+        }
+        
+        Menu.Mode.Return update(char key, Menu menu) {
+          return Menu.Mode.Return(keep);
         }
       }
-      
     };
   }
   
