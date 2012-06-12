@@ -53,6 +53,8 @@ class World {
   
   Time time;
   
+  static World world;
+  
   static class StatCont {
     Terr terr;
     ContainerList statEnts;
@@ -578,6 +580,7 @@ void main() {
   initColor();
   
   auto world = genWorld(7, 7);
+  World.world = world;
   
   for (int i = 0; i < 2; i++) {
     while (true) {
@@ -946,7 +949,7 @@ Coord getDirKey(char key, ref bool isKey) {
 
 abstract class ActiveSkill {
   string name;
-  Stat level;
+  Level level;
   PassiveSkill passive;
 
   Menu.Mode use();
@@ -967,7 +970,7 @@ abstract class PassiveSkill {
 class Jump : ActiveSkill {
   this() {
     name = "Jump";
-    level = Stat(0, 10);
+    level = Level("jumping", 5);
   }
   
   Menu.Mode use() {
@@ -1034,7 +1037,7 @@ class Tracking : ActiveSkill {
   Stat exp;
   
   this() {
-    level = Stat(0, 10);
+    level = Level("tracking", 10);
     exp = Stat(0, 100);
     name = "Tracking";
     passive = new Passive(this);
@@ -1042,6 +1045,10 @@ class Tracking : ActiveSkill {
   
   uint viewRadius() {
     return level.get / 2 + 2;
+  }
+  
+  int trackTime() {
+    return 1000 - level.get * 95;
   }
   
   Menu.Mode use() {
@@ -1110,10 +1117,11 @@ class Tracking : ActiveSkill {
           return tracks;
         }
         
+        
         void init(Menu menu) {
-          menu.world.player.upd = mkUpdate(1000, cast(void delegate(World)) null);
-          tracking.level++;
+          menu.world.player.upd = mkUpdate(tracking.trackTime, cast(void delegate(World)) null);
           menu.updateWorld();
+          tracking.level.inc();
         }
         
         void preUpdate(Menu menu) {
@@ -1391,5 +1399,50 @@ Dir coordToDir(Coord c) {
     return Dir.NW;
   } else {
     assert(false);
+  }
+}
+
+struct Level {
+  string name;
+  Stat level, exp;
+  
+  this(string name, int maxLvl) {
+    this.name = name;
+    level = Stat(0, maxLvl);
+    resetExp();
+  }
+  
+  void inc() {
+    clip();
+    if (exp == exp.max) {
+      incLvl();
+    } else {
+      exp++;
+    }
+  }
+  
+  void incLvl() {
+    level++;
+    resetExp();
+    World.world.barMsg(format("You are now level %d in %s.", level.val, name));
+  }
+  
+  void resetExp() {
+    exp = Stat(0, 100);
+  }
+  
+  void clip() {
+    exp.clip();
+    level.clip();
+  }
+  
+  int get() {
+    return level.get;
+  }
+  
+  void draw() {
+    level.draw(level.max);
+    n.attrset(n.COLOR_PAIR(Col.TEXT));
+    n.printw(" %d/%d", level.val, level.max);
   }
 }
