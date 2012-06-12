@@ -865,8 +865,22 @@ struct Stat {
     this(max, max);
   }
   
-  void draw(uint w = 10) const {
-    uint gw = cast(int) (cast(float) val / max * w);
+  void clip() {
+    if (val < 0) {
+      val = 0;
+    } else if (val > max) {
+      val = max;
+    }
+  }
+  
+  uint get() {
+    clip();
+    return val;
+  }
+  
+  void draw(int w = 10) {
+    clip();
+    int gw = cast(int) m.ceil(cast(float) val / max * w);
     n.attrset(n.COLOR_PAIR(Col.GREEN));
     for (int i = 0; i < gw; i++) {
       n.addch('=');
@@ -1027,7 +1041,7 @@ class Tracking : ActiveSkill {
   }
   
   uint viewRadius() {
-    return level / 2 + 2;
+    return level.get / 2 + 2;
   }
   
   Menu.Mode use() {
@@ -1057,7 +1071,7 @@ class Tracking : ActiveSkill {
         sub = [];
         char k = 'a';
         foreach (e, _; entsFound) {
-          sub ~= new TracksEntry(e, k, tracking);
+          sub ~= new TracksEntry(e, k++, tracking);
         }
       }
       
@@ -1094,6 +1108,12 @@ class Tracking : ActiveSkill {
             }
           }
           return tracks;
+        }
+        
+        void init(Menu menu) {
+          menu.world.player.upd = mkUpdate(1000, cast(void delegate(World)) null);
+          tracking.level++;
+          menu.updateWorld();
         }
         
         void preUpdate(Menu menu) {
