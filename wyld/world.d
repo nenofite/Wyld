@@ -2,6 +2,7 @@
 module wyld.world;
 
 import wyld.common;
+import wyld.ent;
 
 
 /// Contains the terrain, ents, map, time, etc. of the in-game world
@@ -16,21 +17,29 @@ class World {
   
   
   /// A grid of static terrain, ents, and tracks
-  static class StaticGrid : Grid!(StaticGrid.Contents) {
-    static struct Contents {
-      Terrain terrain;
-      Ent[] ents;
-      Tracks tracks;
+  static class StaticGrid : Grid!(StaticGridContents) {
+    this(int width, int height) {
+      super(width, height);
     }
+  }
+  
+  static struct StaticGridContents {
+    Terrain terrain;
+    Ent[] ents;
+    Tracks tracks;
   }
   
   
   /// The map of the world, used for map screen and minimap
-  static class Map : Grid!(Map.Contents) {
-    static struct Contents {
-      Geo geo;
-      bool isDiscovered;
+  static class Map : Grid!(MapContents) {
+    this(int width, int height) {
+      super(width, height);
     }
+  }
+  
+  static struct MapContents {
+    Geo geo;
+    bool isDiscovered;
   }
   
   
@@ -43,7 +52,7 @@ class World {
                           moonOffset = sunMoonResolution / 3, /// Where the moon starts
                           /// How many intervals along the sky the sun and moon will travel by
                           sunMoonResolution = 200,  
-                          dawnDuskTicks = minutes(12); /// How long dawn/dusk last
+                          dawnDuskTicks = fromMinutes(12); /// How long dawn/dusk last
          
     /// Moves time forward, defaulting to a single tick
     void increment(int newTicks = 1) {
@@ -77,13 +86,13 @@ class World {
     
     /// If it is currently dusk
     bool isDusk() const {
-      return isDay && (fromPeriod(1) - periodTicks) <= dawnDuskTicks;
+      return isDay && (fromPeriods(1) - periodTicks) <= dawnDuskTicks;
     }
     
     
     /// The sun's position in the sky
     int sunPosition() const {
-      return periodTicks / ticksPerPeriod * sunMoonResolution;
+      return periodTicks / fromPeriods(1) * sunMoonResolution;
     }
     
     

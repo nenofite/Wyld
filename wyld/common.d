@@ -1,6 +1,8 @@
 /// Various types and utility functions that are used among several modules
 module wyld.common;
 
+import wyld.ent;
+
 /// Some utility functions deal with ncurses
 import ncs = ncs.ncurses;
 
@@ -45,7 +47,7 @@ enum Color {
 
 /// Sets the color in ncurses to the given pair
 void setColor(Color color) {
-  ncs.setattr(ncs.COLOR_PAIR(color));
+  ncs.attrset(ncs.COLOR_PAIR(color));
 }
 
 
@@ -74,12 +76,12 @@ class Grid(T) {
   
   
   int width() const {
-    return grid.length;
+    return cast(int) grid.length;
   }
   
   
   int height() const {
-    return grid[0].length;
+    return cast(int) grid[0].length;
   }
 }
 
@@ -95,13 +97,13 @@ struct Terrain {
   Sym sym() const {
     switch (type) {
       case Type.Dirt:
-        return Sym(pocked ? ',' : '.', Color.Yellow);
+        return Sym(isPocked ? ',' : '.', Color.Yellow);
         
       case Type.Mud:
-        return Sym(pocked ? '~' : '-', Color.Yellow);
+        return Sym(isPocked ? '~' : '-', Color.Yellow);
         
       case Type.Rock:
-        return Sym(pocked ? ',' : '.', Color.White);
+        return Sym(isPocked ? ',' : '.', Color.White);
         
       case Type.Water:
         return Sym('~', Color.Blue);
