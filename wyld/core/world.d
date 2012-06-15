@@ -1,8 +1,8 @@
 /// Contains the data structure of the in-game world
-module wyld.world;
+module wyld.core.world;
 
-import wyld.common;
-import wyld.ent;
+import wyld.core.common;
+import wyld.core.ent;
 
 
 /// Contains the terrain, ents, map, time, etc. of the in-game world

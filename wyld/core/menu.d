@@ -1,7 +1,7 @@
 /// Contains code used for the user interface
-module wyld.menu;
+module wyld.core.menu;
 
-import wyld.layout;
+import wyld.core.layout;
 
 import ncs = ncs.ncurses;
 
@@ -217,19 +217,4 @@ class TextEntry : Menu.Entry {
   }
   
   void select() {}
-}
-
-
-void main() {
-  ncs.initscr();
-  scope (exit) ncs.endwin();
-  ncs.cbreak();
-  ncs.keypad(ncs.stdscr, true);
-  ncs.noecho();
-
-  auto m = new Menu();
-  m.addScreen(new ScreenSequence("seqr Tar!!", [
-    
-  ]));
-  m.loop();
 }

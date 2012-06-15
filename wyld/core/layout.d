@@ -1,5 +1,5 @@
 /// Used to dynamically lay out the ui
-module wyld.layout;
+module wyld.core.layout;
 
 import alg = std.algorithm;
 import ncs = ncs.ncurses;

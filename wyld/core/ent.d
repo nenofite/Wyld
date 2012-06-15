@@ -1,7 +1,7 @@
 /// Contains things directly concerning the Ent system
-module wyld.ent;
+module wyld.core.ent;
 
-import wyld.common;
+import wyld.core.common;
 
 
 /// Represents an object within the game that is interactive

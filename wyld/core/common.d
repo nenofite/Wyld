@@ -1,7 +1,7 @@
 /// Various types and utility functions that are used among several modules
-module wyld.common;
+module wyld.core.common;
 
-import wyld.ent;
+import wyld.core.ent;
 
 /// Some utility functions deal with ncurses
 import ncs = ncs.ncurses;
