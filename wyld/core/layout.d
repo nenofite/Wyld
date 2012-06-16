@@ -8,8 +8,15 @@ import std.string: toStringz;
 
 /// The building block of the ui layout
 abstract class Box {
-  int width();  /// Minimum width
-  int height(); /// Minimum height
+  /// Minimum width
+  int width() {
+    return 0;
+  }
+  
+  /// Minimum height
+  int height() {
+    return 0;
+  } 
   
   /// This draws the box inside the given dimensions
   void draw(Dimension);

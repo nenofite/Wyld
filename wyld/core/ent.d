@@ -6,16 +6,31 @@ import wyld.core.common;
 
 /// Represents an object within the game that is interactive
 abstract class Ent {
-  Link location; /// This ent's current Location
   Tags tags;  /// Tags describing this Ent's characteristics
+  Link location; /// This ent's current Location, or null if inside World itself
+  Coord coord; /// Coord inside of World, if this Ent is inside of World
   
   /// Remove this Ent from current parent, attempt to add to new one
   void relocate(Location newLocation) {
     if (location !is null) {
       location.remove();
+    } else {
+      World.remove(this);
     }
     
-    location = newLocation.add(this);
+    if (newLocation !is null) {
+      location = newLocation.add(this);
+    } else {
+      location = null;
+    }
+  }
+  
+  
+  /// If this Ent is currently inside a location
+  ///
+  /// Return: true if its inside a location, false if it is just inside World
+  bool isInside() {
+    return (location !is null);
   }
   
   
@@ -31,6 +46,9 @@ abstract class Ent {
   /// Represents something that can contain Ents
   static interface Location {
     /// How much room there is for more Ents
+    ///
+    /// Return: the available space in cubic inches or -1 if infinite
+    ///         room is available
     int availableRoom();
     
     /// If this Location can hold fluid Ents
@@ -58,6 +76,30 @@ abstract class Ent {
 /// An Ent that constantly updates in the world
 abstract class DynamicEnt : Ent {
   Update update;  /// The Ent's currently running update
+  
+  void move(Coord deltaCoord) {
+    assert(!isInside);
+  
+    auto newCoord = coord.add(deltaCoord);
+    
+    if (World.world.isBlockingAt(newCoord)) {
+    } else {
+      update = new class() Update {
+        this() {
+          auto time = World.movementCostAt(newCoord) + 
+                      World.movementCostAt(coord) + 
+                      speed - 
+                      movementCost;
+          super(time, [], [StatRequirement(&player.stamina, time)]);
+        }
+        
+        
+        void apply() {
+          loc.coord = newCoord;
+        }
+      };
+    }
+  }
 }
 
 

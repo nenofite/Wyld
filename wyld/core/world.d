@@ -6,7 +6,7 @@ import wyld.core.ent;
 
 
 /// Contains the terrain, ents, map, time, etc. of the in-game world
-class World {
+class World : Ent.Location {
   DynamicEnt[] dynamicEnts; /// The Ents that need updating
   StaticGrid staticGrid;    /// A grid of static terrain, ents, and tracks
   Map map;    /// The map of the world, used for map screen and minimap
@@ -14,6 +14,75 @@ class World {
   
   /// The current game world, available for easy access
   static World world;
+  
+  static alias world this; // TODO use this everywhere
+  
+  
+  /// Add the given Ent to the World
+  ///
+  /// Return: the Ent location Link for the Ent to use
+  Ent.Link add(Ent ent, Coord coord) {
+    return new Link(ent, coord, ((cast(DynamicEnt) ent) is null));
+  }
+  
+  
+  /// All of the Ents, both static and dynamic, at the given Coord
+  Ent[] entsAt(Coord coord) {
+    Ent[] ents;
+    
+    ents = at(coord).ents.dup;
+    
+    foreach (ent; dynamicEnts) {
+      if (ent.coord == coord) {
+        ents ~= ent;
+      }
+    }
+    
+    return ents;
+  }
+  
+  
+  /// The Ents within nearbyRadius of the given Coord
+  Ent[] nearbyEntsAt(Coord coord) {
+    Ent[] ents;
+  
+    foreach (ent; dynamicEnts) {
+      if (ent.coord.x >= coord.x - nearbyRadius &&
+          ent.coord.x <= coord.x + nearbyRadius &&
+          ent.coord.y >= coord.y - nearbyRadius &&
+          ent.coord.y <= coord.y + nearbyRadius) {
+        ents ~= ent;
+      }
+    }
+    
+    return ents;
+  }
+  
+  /// The Ents within nearbyRadius of the given Coord, along with their
+  /// direct distance from that Coord and sorted, closest to farthest
+  ///
+  /// Return: a struct that is aliased to the Ent, but that also includes
+  ///         int distance
+  auto nearbyEntsDistancesAt(Coord coord) {
+    struct EntDistance {
+      Ent _ent;
+      int distance;
+      
+      alias _ent this;
+    }
+    
+    auto ents = nearbyEntsAt(coord);
+    EntDistance[] entsDistances = new EntDistance[](ents.length);
+    
+    foreach (i, ent; ents) {
+      entsDistances[i] = 
+        EntDistance(ent, distanceBetween(ent.coord, coord));
+    }
+    
+    entsDistances.sort!("a.distance < b.distance")();
+    
+    return entsDistances;
+  }
   
   
   /// A grid of static terrain, ents, and tracks
@@ -48,11 +117,9 @@ class World {
     int ticks;    /// How many ticks have elapsed in the game
          
     private immutable int ticksPerSecond = 100, /// How many ticks in a single second
-                          moonSpeed = 1,  /// How many periods before the moon moves
-                          moonOffset = sunMoonResolution / 3, /// Where the moon starts
-                          /// How many intervals along the sky the sun and moon will travel by
-                          sunMoonResolution = 200,  
                           dawnDuskTicks = fromMinutes(12); /// How long dawn/dusk last
+    private immutable float moonSpeed = .01,  /// How much the moon moves per period
+                            moonOffset = .4; /// Where the moon starts 
          
     /// Moves time forward, defaulting to a single tick
     void increment(int newTicks = 1) {
@@ -91,14 +158,18 @@ class World {
     
     
     /// The sun's position in the sky
-    int sunPosition() const {
-      return periodTicks / fromPeriods(1) * sunMoonResolution;
+    ///
+    /// Return: the sun's position between 0.0 and 1.0
+    float sunPosition() const {
+      return periodTicks / fromPeriods(1);
     }
     
     
     /// The moon's position in the sky
-    int moonPosition() const {
-      return (periods * moonSpeed + moonOffset) % sunMoonResolution;
+    ///
+    /// Return: the moon's position between 0.0 and 1.0
+    float moonPosition() const {
+      return (periods * moonSpeed + moonOffset) % 1;
     }
     
     
@@ -122,9 +193,33 @@ class World {
       return fromHours(pers * 12);
     }
   }
+  
+  
+  /// World's Ent location Link, including info on whether the Ent is
+  /// static or dynamic and what its Coords are
+  static class Link : Ent.Link {
+    Coord coord;
+    bool isStatic;
+    
+    this(Ent ent, Coord coord, bool isStatic) {
+      super(ent);
+      this.coord = coord;
+      this.isStatic = isStatic;
+    }
+    
+    
+    void remove() {
+      if (isStatic) {
+        World.world.staticGrid.at(coord).ents.remove(ent);
+      } else {
+        World.world.dynamicEnts.remove(ent);
+      }
+    }
+  }
 }
 
 
+/// The footprint tracks left by a walking Ent
 struct Tracks {
   Ent ent;
   int timeMade;

@@ -3,6 +3,8 @@ module wyld.core.common;
 
 import wyld.core.ent;
 
+import math = std.math;
+
 /// Some utility functions deal with ncurses
 import ncs = ncs.ncurses;
 
@@ -158,15 +160,170 @@ struct Terrain {
 }
 
 
-/** A basic type of region, which includes the terrain and Ents
-*   naturally present there
-*
-*   This is used during world generation as well as in the world map.
-*/
+/// A basic type of region, which includes the terrain and Ents
+/// naturally present there
+///
+/// This is used during world generation as well as in the world map.
 enum Geo {
   Rock,
   Grass,
   Forest,
   Marsh,
   Water
+}
+
+
+/// The eight basic directions
+enum Direction {
+  N,
+  Ne,
+  E,
+  Se,
+  S,
+  Sw,
+  W,
+  Nw
+}
+
+
+
+/// Converts the given number from the numpad into a Direction
+/// Parameters:
+///   isKey = set to whether the given key was a numpad direction
+/// Return: the represented Direction, or a nonsensical value if the given
+///         key didn't represent a direction
+Direction directionFromKey(char key, out bool isKey) {
+  isKey = true;
+  switch (key) {
+    case '8':
+      return Direction.N;
+    case '9':
+      return Direction.Ne;
+    case '6':
+      return Direction.E;
+    case '3':
+      return Direciotn.Se;
+    case '2':
+      return Direction.S;
+    case '1':
+      return Direction.Sw;
+    case '4':
+      return Direction.W;
+    case '7':
+      return Direction.Nw;
+    default:
+      isKey = false;
+      return Direction.N;
+  }
+}
+
+
+/// Converts the given Direction into a Coord
+///
+/// For example:
+/// ---
+/// auto coord = coordFromDirection(Direction.N);
+/// assert(coord == Coord(0, -1));  /// This will pass
+/// ---
+Coord coordFromDirection(Direction dir) {
+  switch (dir) {
+    case N:
+      return Coord(0, -1);
+    case Ne:
+      return Coord(1, -1);
+    case E:
+      return Coord(1, 0);
+    case Se:
+      return Coord(1, 1);
+    case S:
+      return Coord(0, 1);
+    case Sw:
+      return Coord(-1, 1);
+    case W:
+      return Coord(-1, 0);
+    case Nw:
+      return Coord(-1, -1);
+    default:
+      assert(false);
+  }
+}
+
+
+/// Calculate the direct distance between the two Coords
+int distanceBetween(Coord a, Coord b) {
+  return cast(int) math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+}
+
+
+/// Calculate the direction from the first Coord to the second Coord
+Direction directionBetween(Coord from, Coord to) {
+  /// Calculate the angle between the two using right triangle witchcraft
+  auto angle = math.atan2(cast(real) to.y - from.y, 
+                          cast(real) to.x - from.x);
+  
+  /// Convert that into one of eight directions, which happen to align with
+  /// the directions of Direction
+  int octant = cast(int) math.round(angle * 4 / math.PI);
+  
+  /// Convert that direction into a proper Direction
+  switch (octant) {
+    case -2:
+      return Dir.N;
+      
+    case -1:
+      return Dir.Ne;
+      
+    case 0:
+      return Dir.E;
+      
+    case 1:
+      return Dir.Se;
+      
+    case 2:
+      return Dir.S;
+      
+    case 3:
+      return Dir.Sw;
+      
+    case 4:
+    case -4:
+      return Dir.W;
+      
+    case -3:
+      return Dir.Nw;
+      
+    default:
+      assert(false);
+  }
+}
+
+
+/// The longhand name of the given direction
+///
+/// This gives the name as a string in all uppercase
+/// For example, this assertion would pass:
+/// ---
+/// assert(directionName(Direction.Se) == "SOUTHEAST");
+/// ---
+string directionName(Direction dir) {
+  switch (dir) {
+    case N:
+      return "NORTH";
+    case Ne:
+      return "NORTHEAST";
+    case E:
+      return "EAST";
+    case Se:
+      return "SOUTHEAST";
+    case S:
+      return "SOUTH";
+    case Sw:
+      return "SOUTHWEST";
+    case W:
+      return "WEST";
+    case Nw:
+      return "NORTHWEST";
+    default:
+      assert(false);
+  }
 }

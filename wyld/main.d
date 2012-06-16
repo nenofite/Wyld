@@ -1,3 +1,4 @@
+/// The main code for starting up the game
 module wyld.main;
 
 import wyld.core.menu;
@@ -5,16 +6,22 @@ import wyld.core.menu;
 import ncs = ncs.ncurses;
 
 
+Player player;
+
+
+/// Start the game
 void main() {
+  /// Start up ncurses
   ncs.initscr();
   scope (exit) ncs.endwin();
   ncs.cbreak();
   ncs.keypad(ncs.stdscr, true);
   ncs.noecho();
 
-  auto m = new Menu();
-  m.addScreen(new ScreenSequence("seqr Tar!!", [
+  /// Create the menu and set it globally
+  Menu.menu = new Menu();
+  Menu.menu.addScreen(new ScreenSequence("seqr Tar!!", [
     
   ]));
-  m.loop();
+  Menu.menu.loop();
 }
