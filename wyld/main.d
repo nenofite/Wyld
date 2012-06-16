@@ -2,6 +2,7 @@
 module wyld.main;
 
 import wyld.core.menu;
+import wyld.ent;
 
 import ncs = ncs.ncurses;
 
