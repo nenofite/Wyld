@@ -1,3 +1,8 @@
+/// The concrete UI for the game
+///
+/// This is the concrete code, whereas the code in wyld.core.menu and
+/// wyld.core.layout is the abstract stuff forming the base of the 
+/// code in here.
 module wyld.ui;
 
 import wyld.core.layout;
@@ -7,6 +12,11 @@ import ncs = ncs.ncurses;
 import std.string: toStringz;
 
 
+/// The main UI that the player sees while playing the game
+///
+/// This includes the world view, time of day, player stats, etc.
+///
+/// Not to be confused with the main menu
 class MainScreen : Menu.Screen {
   this() {
     super("Main", new Ui());
@@ -17,6 +27,7 @@ class MainScreen : Menu.Screen {
   }
   
 
+  /// The visible part of the UI
   static class Ui : Menu.Ui {
     this() {
       ui = new List(false, false, [
@@ -37,6 +48,11 @@ class MainScreen : Menu.Screen {
     }
     
     
+    /// This catches the numpad keys used for movement
+    ///
+    /// By placing this code in here, all submenus of MainScreen can
+    /// still pass on user input to it so the player can still move
+    /// while inside a submenu
     bool input(char key) {
       bool isDir;
       auto dir = directionFromKey(key, isDir);
