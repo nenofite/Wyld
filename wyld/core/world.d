@@ -4,6 +4,9 @@ module wyld.core.world;
 import wyld.core.common;
 import wyld.core.ent;
 
+/// The current game world, available for easy access
+World world;
+
 
 /// Contains the terrain, ents, map, time, etc. of the in-game world
 class World : Ent.Location {
@@ -11,12 +14,6 @@ class World : Ent.Location {
   StaticGrid staticGrid;    /// A grid of static terrain, ents, and tracks
   Map map;    /// The map of the world, used for map screen and minimap
   Time time;  /// The in-game time
-  
-  /// The current game world, available for easy access
-  static World world;
-  
-  static alias world this; // TODO use this everywhere
-  
   
   /// Add the given Ent to the World
   ///
@@ -112,87 +109,6 @@ class World : Ent.Location {
   }
   
   
-  /// Keeps track of in-game time and offers some utility functions
-  static struct Time {
-    int ticks;    /// How many ticks have elapsed in the game
-         
-    private immutable int ticksPerSecond = 100, /// How many ticks in a single second
-                          dawnDuskTicks = fromMinutes(12); /// How long dawn/dusk last
-    private immutable float moonSpeed = .01,  /// How much the moon moves per period
-                            moonOffset = .4; /// Where the moon starts 
-         
-    /// Moves time forward, defaulting to a single tick
-    void increment(int newTicks = 1) {
-      ticks += newTicks;
-    }
-    
-    
-    /// How many periods have elapsed in the game
-    int periods() const {
-      return ticks / fromPeriods(1);
-    }
-    
-    
-    /// How many ticks have passed in the current period
-    int periodTicks() const {
-      return ticks % fromPeriods(1);
-    }
-    
-    
-    /// If it is currently daytime
-    bool isDay() const {
-      return (periods % 2) == 0;
-    }
-    
-    
-    /// If it is currently dawn
-    bool isDawn() const {
-      return isDay && periodTicks <= dawnDuskTicks;
-    }
-    
-    
-    /// If it is currently dusk
-    bool isDusk() const {
-      return isDay && (fromPeriods(1) - periodTicks) <= dawnDuskTicks;
-    }
-    
-    
-    /// The sun's position in the sky
-    ///
-    /// Return: the sun's position between 0.0 and 1.0
-    float sunPosition() const {
-      return periodTicks / fromPeriods(1);
-    }
-    
-    
-    /// The moon's position in the sky
-    ///
-    /// Return: the moon's position between 0.0 and 1.0
-    float moonPosition() const {
-      return (periods * moonSpeed + moonOffset) % 1;
-    }
-    
-    
-    /// Converts into ticks
-    static int fromSeconds(int secs) {
-      return secs * ticksPerSecond;
-    }
-    
-    /// ditto
-    static int fromMinutes(int mins) {
-      return fromSeconds(mins * 60);
-    }
-    
-    /// ditto
-    static int fromHours(int hrs) {
-      return fromMinutes(hrs * 60);
-    }
-    
-    /// ditto
-    static int fromPeriods(int pers) {
-      return fromHours(pers * 12);
-    }
-  }
   
   
   /// World's Ent location Link, including info on whether the Ent is
@@ -210,9 +126,9 @@ class World : Ent.Location {
     
     void remove() {
       if (isStatic) {
-        World.world.staticGrid.at(coord).ents.remove(ent);
+        world.staticGrid.at(coord).ents.remove(ent);
       } else {
-        World.world.dynamicEnts.remove(ent);
+        world.dynamicEnts.remove(ent);
       }
     }
   }
@@ -226,6 +142,89 @@ struct Tracks {
   int relativeAge;
   
   int age() const {
-    return World.world.time.ticks - timeMade;
+    return world.time.ticks - timeMade;
+  }
+}
+
+
+/// Keeps track of in-game time and offers some utility functions
+struct Time {
+  int ticks;    /// How many ticks have elapsed in the game
+       
+  private immutable int ticksPerSecond = 100, /// How many ticks in a single second
+                        dawnDuskTicks = fromMinutes(12); /// How long dawn/dusk last
+  private immutable float moonSpeed = .01,  /// How much the moon moves per period
+                          moonOffset = .4; /// Where the moon starts 
+       
+  /// Moves time forward, defaulting to a single tick
+  void increment(int newTicks = 1) {
+    ticks += newTicks;
+  }
+  
+  
+  /// How many periods have elapsed in the game
+  int periods() const {
+    return ticks / fromPeriods(1);
+  }
+  
+  
+  /// How many ticks have passed in the current period
+  int periodTicks() const {
+    return ticks % fromPeriods(1);
+  }
+  
+  
+  /// If it is currently daytime
+  bool isDay() const {
+    return (periods % 2) == 0;
+  }
+  
+  
+  /// If it is currently dawn
+  bool isDawn() const {
+    return isDay && periodTicks <= dawnDuskTicks;
+  }
+  
+  
+  /// If it is currently dusk
+  bool isDusk() const {
+    return isDay && (fromPeriods(1) - periodTicks) <= dawnDuskTicks;
+  }
+  
+  
+  /// The sun's position in the sky
+  ///
+  /// Return: the sun's position between 0.0 and 1.0
+  float sunPosition() const {
+    return periodTicks / fromPeriods(1);
+  }
+  
+  
+  /// The moon's position in the sky
+  ///
+  /// Return: the moon's position between 0.0 and 1.0
+  float moonPosition() const {
+    return (periods * moonSpeed + moonOffset) % 1;
+  }
+  
+  
+  /// Converts into ticks
+  static int fromSeconds(int secs) {
+    return secs * ticksPerSecond;
+  }
+  
+  /// ditto
+  static int fromMinutes(int mins) {
+    return fromSeconds(mins * 60);
+  }
+  
+  /// ditto
+  static int fromHours(int hrs) {
+    return fromMinutes(hrs * 60);
+  }
+  
+  /// ditto
+  static int fromPeriods(int pers) {
+    return fromHours(pers * 12);
   }
 }

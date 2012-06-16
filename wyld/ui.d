@@ -78,8 +78,8 @@ class TimeBar : Box {
   
   void draw(Dimension dim) {
     /// Figure out which color to paint the sky
-    if (World.time.isDay) {
-      if (World.time.isDawn || World.time.isDusk) {
+    if (world.time.isDay) {
+      if (world.time.isDawn || world.time.isDusk) {
         setColor(Color.RedBg);
       } else {
         setColor(Color.BlueBg);
@@ -92,12 +92,12 @@ class TimeBar : Box {
     dim.fill();
     
     /// Figure out where the sun and moon are and paint them
-    int sun = cast(int) (World.time.sunPosition * dim.width);
-    int moon = cast(int) (World.time.moonPosition * dim.width);
+    int sun = cast(int) (world.time.sunPosition * dim.width);
+    int moon = cast(int) (world.time.moonPosition * dim.width);
     
     ncs.mvaddch(dim.y, dim.x + moon, 'C');
     
-    if (World.time.isDay) {
+    if (world.time.isDay) {
       ncs.move(dim.y, dim.x + sun);
       Sym('O', Col.YellowBg).draw();
     }
@@ -118,7 +118,7 @@ class OnGround : Box {
     /// Make sure the player isn't inside a location
     assert(!player.isInside);
     /// Find the names of all the ents on the same space as the player
-    foreach (ent; World.entsAt(player.coord)) {
+    foreach (ent; world.entsAt(player.coord)) {
       if (ent !is player) {
         ents ~= ent.name;
       }
@@ -152,14 +152,14 @@ class Nearby : Box {
   
   void draw(Dimension dim) {
     /// First, get the nearby Ents, sorted by closest to farthest
-    auto nearbyEnts = World.nearbyEntsDistancesAt(player.coord);
+    auto nearbyEnts = world.nearbyEntsDistancesAt(player.coord);
     
     /// Sort the nearby Ents into directions from the player
     Ent[] nearby; /// If they're inside the view, they go in here
     Ent[][Dir] far;
     
     foreach (ent; nearbyEnts) {
-      if (World.isInView(ent.coord)) {
+      if (world.isInView(ent.coord)) {
         nearby ~= ent;
       } else {
         far[directionBetween(player.coord, ent.coord)] ~= ent;

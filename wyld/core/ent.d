@@ -15,7 +15,7 @@ abstract class Ent {
     if (location !is null) {
       location.remove();
     } else {
-      World.remove(this);
+      world.remove(this);
     }
     
     if (newLocation !is null) {
@@ -77,17 +77,21 @@ abstract class Ent {
 abstract class DynamicEnt : Ent {
   Update update;  /// The Ent's currently running update
   
+  /// Called once every tick to update simple things such as Stats
+  void tickUpdate() {}
+  
+  
   void move(Coord deltaCoord) {
     assert(!isInside);
   
     auto newCoord = coord.add(deltaCoord);
     
-    if (World.world.isBlockingAt(newCoord)) {
+    if (world.isBlockingAt(newCoord)) {
     } else {
       update = new class() Update {
         this() {
-          auto time = World.movementCostAt(newCoord) + 
-                      World.movementCostAt(coord) + 
+          auto time = world.movementCostAt(newCoord) + 
+                      world.movementCostAt(coord) + 
                       speed - 
                       movementCost;
           super(time, [], [StatRequirement(&player.stamina, time)]);
@@ -147,7 +151,31 @@ abstract class Update {
 
 /// A Stat for an Ent, containing a current value and a maximum value
 struct Stat {
-  int amount, max;
+  private int _amount;
+  int max;
+  
+  alias amount this;
+  
+  this(int amount, int max) {
+    _amount = amount;
+    this.max = max;
+  }
+  
+  this(int max) {
+    this(max, max);
+  }
+  
+  
+  @property ref int amount() {
+    /// Clip _amount to 0 <= _amount <= max
+    if (_amount < 0) {
+      _amount = 0;
+    } else if (_amount > max) {
+      _amount = max;
+    }
+    
+    return _amount;
+  }
 }
 
 
