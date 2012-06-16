@@ -136,13 +136,33 @@ class World : Ent.Location {
 
 
 /// The footprint tracks left by a walking Ent
+///
+/// If ent is null, there are no tracks here.
 struct Tracks {
-  Ent ent;
+  private Ent _ent;
   int timeMade;
   int relativeAge;
   
+  /// The maximum age a track can reach before it disappears
+  immutable int maxAge = Time.fromHours(6);
+  
   int age() const {
     return world.time.ticks - timeMade;
+  }
+  
+  
+  /// Updates the Track before return a reference to ent
+  ///
+  /// Checks if the track has surpassed the maximum age, and if so
+  /// sets ent to null
+  @property ref Ent ent() {
+    if (_ent !is null) {
+      if (age > maxAge) {
+        _ent = null;
+      }
+    }
+  
+    return _ent;
   }
 }
 

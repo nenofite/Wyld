@@ -5,6 +5,7 @@
 /// code in here.
 module wyld.ui;
 
+import wyld.core.common;
 import wyld.core.layout;
 import wyld.core.menu;
 
@@ -32,17 +33,17 @@ class MainScreen : Menu.Screen {
     this() {
       ui = new List(false, false, [
         new TimeBar(),
-        new List(true, false, [
+        cast(Box) new List(true, false, [
           new List(false, false, [
             new WorldView(),
-            new OnGround()
+            cast(Box) new OnGround()
           ]),
           new Separator(false),
           new List(false, false, [
             new Minimap(),
-            new Nearby()
+            cast(Box) new Nearby()
           ]),
-          new Stats()
+          cast(Box) new Stats()
         ])
       ]);
     }
@@ -223,5 +224,136 @@ class Stats : Box {
     ncs.mvprintw(y, dim.x, "Hunger: ");
     player.hunger.draw();
     ++y;
+  }
+}
+
+
+/// Displays the world from the player's viewpoint
+class WorldView : Box {
+  /// The radius of the view around the player
+  ///
+  /// This techinacally isn't the radius, because it doesn't count the
+  /// player's square.  This is actually one less than the radius.
+  immutable int viewRadius = 12;
+  
+  int width() {
+    return viewRadius * 2 + 1;
+  }
+  
+  int height() {
+    return viewRadius * 2 + 1;
+  }
+  
+  
+  void draw(Dimension dim) {
+    /// Calculate the in-world coordinates of the top-left corner of
+    /// the view
+    auto corner = Coord(world.player.coord.x - viewRadius, 
+                        world.player.coord.y - viewRadius);
+        
+    /// First do all the dense overlaying
+    for (int y = 0; y <= dim.height; ++y) {
+      ncs.move(dim.y + y, dim.x);
+      
+      for (int x = 0; x <= dim.width; ++x) {
+        /// Calculate the in-world coordinate
+        auto worldCoord = Coord(x, y) + corner;
+      
+        /// Start the sym as the terrain and static Ents at the 
+        /// current coord
+        Sym sym = baseDense(worldCoord);
+        
+        /// Go through the screen stack and let all OverlayScreens
+        /// submit to the Sym
+        foreach (screen; menu.stack) {
+          auto overlay = cast(Overlay) screen;
+          
+          if (overlay !is null) {
+            overlay.dense(worldCoord, sym);
+          }
+        }
+        
+        sym.draw();
+      }
+    }
+    
+    /// Next draw all the dynamic Ents
+    foreach (ent; world.dynamicEnts) {
+      /// Convert the coordinate from a world coordinate to a
+      /// screen coordinate
+      auto screenCoord = ent.coord - corner;
+      
+      /// Make sure the coord is inside the view before drawing it
+      if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
+          screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
+        ncs.move(coordSym.coord.y, coordSym.coord.x);
+        ent.sym.draw();
+      }
+    }
+    
+    /// Then go through the stack and draw all the sparse CoordSyms
+    foreach (screen; menu.stack) {
+      auto overlay = cast(Overlay) screen;
+      
+      if (overlay !is null) {
+        foreach (coordSym; overlay.sparse) {
+          /// Convert the coordinate from a world coordinate to a
+          /// screen coordinate
+          auto screenCoord = coordSym.coord - corner;
+          
+          /// Make sure the coord is inside the view before drawing it
+          if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
+              screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
+            ncs.move(coordSym.coord.y, coordSym.coord.x);
+            coordSym.sym.draw();
+          }
+        }
+      }
+    }
+  }
+  
+  
+  /// Gets the Sym for the current coord, taking terrain, static ents,
+  /// and tracks into account
+  Sym baseDense(Coord coord) {
+    auto stat = world.staticGrid.at(coord);
+    
+    /// If there are tracks here and it is their turn to blink, return
+    /// their Sym
+    if (stat.tracks.ent !is null) {
+      if (menu.ticks % 10 == stat.tracks.relativeAge % 10) {
+        return stat.tracks.sym;
+      }
+    }
+    
+    /// If there are static Ents, return the Sym of the one on top
+    if (stat.ents.length > 0) {
+      return stat.ents[$-1].sym;
+    } else {
+      /// Otherwise, return the terrain's Sym
+      return stat.terrain.sym;
+    }
+  }
+  
+  
+  /// Draws on the WorldView
+  static interface Overlay {
+    /// This gets called on every Coord in the player's view
+    ///
+    /// Change 'sym' in order to draw something there, otherwise leave
+    /// 'sym' the same to show the overlay beneath this
+    ///
+    /// Params:
+    ///   coord = the world coordinate being drawn (*not* the view
+    ///           coordinate)
+    ///   sym = a mutable reference to the Sym to be drawn at the
+    ///         location
+    void dense(Coord coord, ref Sym sym);
+    
+    /// This draws a few sparse Syms
+    ///
+    /// This is usefel for things that may not be in the view and that
+    /// are sparse across the map, such as Ents or location markers
+    CoordSym[] sparse();
   }
 }

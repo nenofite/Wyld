@@ -12,6 +12,28 @@ import ncs = ncs.ncurses;
 /// A standard coordinate pair
 struct Coord {
   int x, y;
+  
+  /// Overload binary operators to work on Coords
+  ///
+  /// ---
+  /// auto coord = Coord(1, 4) * 2;
+  /// assert(coord == Coord(2, 8);
+  /// ---
+  Coord opBinary(string op)(int a) {
+    return Coord(mixin("x " ~ op ~ " a"), 
+                 mixin("y " ~ op ~ " a"));
+  }
+  
+  /// Overload binary operators to work on Coords
+  ///
+  /// ---
+  /// auto coord = Coord(1, 3) + Coord(3, 7);
+  /// assert(coord == Coord(4, 10));
+  /// ---
+  Coord opBinary(string op)(Coord a) {
+    return Coord(mixin("x " ~ op ~ " a.x"), 
+                 mixin("y " ~ op ~ " a.y"));
+  }
 }
 
 
@@ -326,4 +348,11 @@ string directionName(Direction dir) {
     default:
       assert(false);
   }
+}
+
+
+/// A combination of a Coord and a Sym
+struct CoordSym {
+  Coord coord;
+  Sym sym;
 }

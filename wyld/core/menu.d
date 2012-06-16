@@ -12,6 +12,11 @@ class Menu {
   Screen[] stack;   /// A first in, last out stack of screens to display
   /// The screen to display when the ESC key is pressed from the bottom screen
   Screen escScreen;
+  /// The current draw tick, used for animation
+  ///
+  /// Not to be confused with world.time.ticks, which is the current
+  /// world update tick
+  int ticks;
   
   /// The menu in use, made easily accessible
   static Menu menu;
@@ -79,6 +84,8 @@ class Menu {
       }
       
       ncs.refresh();
+      
+      ++ticks;
     }
   }
   
