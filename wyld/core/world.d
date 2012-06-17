@@ -20,6 +20,14 @@ class World {
   Map map;    /// The map of the world, used for map screen and minimap
   Time time;  /// The in-game time
   
+  this(DynamicEnt[] dynamicEnts, StaticGrid staticGrid, Map map, Time time) {
+    this.dynamicEnts = dynamicEnts;
+    this.staticGrid = staticGrid;
+    this.map = map;
+    this.time = time;
+  }
+  
+  
   /// All of the Ents, both static and dynamic, at the given Coord
   Ent[] entsAt(Coord coord) {
     Ent[] ents;

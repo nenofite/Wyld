@@ -7,6 +7,7 @@ import math = std.math;
 
 /// Some utility functions deal with ncurses
 import ncs = ncs.ncurses;
+import rand = std.random;
 
 
 /// A standard coordinate pair
@@ -89,6 +90,53 @@ class Grid(T) {
   ref T at(Coord coord) {
     assert(isInside(coord));
     return grid[coord.x][coord.y];
+  }
+  
+  
+  /// Maps the given function over the elements of the grid
+  void map(void delegate(ref T, Coord) f) {
+    for (int x = 0; x < width; ++x) {
+      for (int y = 0; y < height; ++y) {
+        auto coord = Coord(x, y);
+        
+        f(at(coord), coord);
+      }
+    }
+  }
+  
+  
+  /// Maps the given function over the elements of the grid, while
+  /// constructing a new grid of a different type based on what it
+  /// returns
+  ///
+  /// ---
+  /// Grid!int a; /// Assuming this has already been 
+  ///             ///constructed and filled in...
+  ///
+  /// /// This sets b to a grid full of the ints converted to strings,
+  /// /// while incrementing all the values of a at the same time.
+  /// Grid!string b = a.map2(
+  ///   (ref int val, Coord) {
+  ///     string name = [cast(char) val] ~ " loves pie.";
+  ///     
+  ///     ++val;
+  ///     
+  ///     return name;
+  ///   }
+  /// );
+  /// ---
+  Grid!A map2(A)(A delegate(ref T, Coord) f) {
+    auto newGrid = new Grid!A(width, height);
+    
+    for (int x = 0; x < width; ++x) {
+      for (int y = 0; y < height; ++y) {
+        auto coord = Coord(x, y);
+        
+        newGrid.at(coord) = f(at(coord), coord);
+      }
+    }
+    
+    return newGrid;
   }
   
   
@@ -193,6 +241,15 @@ struct Terrain {
 }
 
 
+/// Generates the given terrain type and fills in the pocked value
+/// using the standard probability for a terrain being pocked
+Terrain pockedTerrain(Terrain.Type type) {
+  auto pocked = rand.uniform(0, 5) == 0;
+  
+  return Terrain(type, pocked);
+}
+
+
 /// A basic type of region, which includes the terrain and Ents
 /// naturally present there
 ///
@@ -219,6 +276,34 @@ Sym geoSym(Geo geo) {
       return Sym('~', Color.Yellow);
     case Geo.Water:
       return Sym('~', Color.Blue);
+    default:
+      assert(false);
+  }
+}
+
+
+/// Returns the Terrain corresponding to the given Geo
+Terrain geoTerrain(Geo geo) {
+  switch (geo) {
+    case Geo.Rock:
+      auto type = Terrain.Rock;
+      
+      if (rand.uniform(0, 20) == 0) {
+        type = Terrain.Dirt;
+      }
+      
+      return pockedTerrain(type);
+      
+    case Geo.Grass:
+    case Geo.Forest:
+      return pockedTerrain(Terrain.Dirt);
+      
+    case Geo.Marsh:
+      return pockedTerrain(Terrain.Mud);
+      
+    case Geo.Water:
+      return pockedTerrain(Terrain.Water);
+      
     default:
       assert(false);
   }

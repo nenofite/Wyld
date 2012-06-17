@@ -2,8 +2,10 @@
 module wyld.main;
 
 import wyld.core.menu;
+import wyld.core.world;
 import wyld.ent;
 import wyld.ui;
+import wyld.worldgen;
 
 import ncs = ncs.ncurses;
 
@@ -19,6 +21,9 @@ void main() {
   ncs.cbreak();
   ncs.keypad(ncs.stdscr, true);
   ncs.noecho();
+
+  /// Generate the world
+  world = generateWorld(7, 7, 3, 4);
 
   /// Create the menu and set it globally
   menu = new Menu();
