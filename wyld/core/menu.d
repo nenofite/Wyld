@@ -5,6 +5,9 @@ import wyld.core.layout;
 
 import ncs = ncs.ncurses;
 
+/// The menu in use, made easily accessible
+Menu menu;
+
 
 // TODO clarify this description
 /// The main hub around which all ui is built
@@ -17,9 +20,6 @@ class Menu {
   /// Not to be confused with world.time.ticks, which is the current
   /// world update tick
   int ticks;
-  
-  /// The menu in use, made easily accessible
-  static Menu menu;
   
   /// Add a screen to the top of the stack
   void addScreen(Screen screen) {
@@ -106,7 +106,9 @@ class Menu {
     
     /// This is ran when the user presses a key when in this screen
     /// Return: false if the input key wasn't caught
-    bool input(char key);
+    bool input(char key) {
+      return false;
+    }
   }
   
   
@@ -157,7 +159,7 @@ class Menu {
     
     
     void select() {
-      Menu.menu.addScreen(sub);
+      menu.addScreen(sub);
     }
   }
 }

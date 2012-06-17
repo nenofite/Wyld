@@ -3,6 +3,7 @@ module wyld.main;
 
 import wyld.core.menu;
 import wyld.ent;
+import wyld.ui;
 
 import ncs = ncs.ncurses;
 
@@ -20,9 +21,7 @@ void main() {
   ncs.noecho();
 
   /// Create the menu and set it globally
-  Menu.menu = new Menu();
-  Menu.menu.addScreen(new ScreenSequence("seqr Tar!!", [
-    
-  ]));
-  Menu.menu.loop();
+  menu = new Menu();
+  menu.addScreen(new MainScreen());
+  menu.loop();
 }

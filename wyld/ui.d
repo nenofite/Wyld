@@ -6,8 +6,11 @@
 module wyld.ui;
 
 import wyld.core.common;
+import wyld.core.ent;
 import wyld.core.layout;
 import wyld.core.menu;
+import wyld.core.world;
+import wyld.main;
 
 import ncs = ncs.ncurses;
 import std.string: toStringz;
@@ -31,21 +34,23 @@ class MainScreen : Menu.Screen {
   /// The visible part of the UI
   static class Ui : Menu.Ui {
     this() {
-      ui = new List(false, false, [
-        new TimeBar(),
-        cast(Box) new List(true, false, [
-          new List(false, false, [
-            new WorldView(),
-            cast(Box) new OnGround()
-          ]),
-          new Separator(false),
-          new List(false, false, [
-            new Minimap(),
-            cast(Box) new Nearby()
-          ]),
-          cast(Box) new Stats()
+      super(
+        new List(false, false, [
+          new TimeBar(),
+          cast(Box) new List(true, false, [
+            new List(false, false, [
+              new WorldView(),
+              cast(Box) new OnGround()
+            ]),
+            new Separator(false),
+            new List(false, false, [
+              new Minimap(),
+              cast(Box) new Nearby()
+            ]),
+            cast(Box) new Stats()
+          ])
         ])
-      ]);
+      );
     }
     
     
@@ -59,8 +64,8 @@ class MainScreen : Menu.Screen {
       auto dir = directionFromKey(key, isDir);
       
       if (isDir) {
-        player.update = player.move(coordFromDirection(dir));
-        //Menu.menu.updateWorld();
+        player.move(coordFromDirection(dir));
+        //menu.updateWorld();
         // TODO when to update world?
       }
       
@@ -100,7 +105,7 @@ class TimeBar : Box {
     
     if (world.time.isDay) {
       ncs.move(dim.y, dim.x + sun);
-      Sym('O', Col.YellowBg).draw();
+      Sym('O', Color.YellowBg).draw();
     }
   }
 }
@@ -153,11 +158,11 @@ class Nearby : Box {
   
   void draw(Dimension dim) {
     /// First, get the nearby Ents, sorted by closest to farthest
-    auto nearbyEnts = world.nearbyEntsDistancesAt(player.coord);
+    auto nearbyEnts = world.nearbyEntsDistances(player);
     
     /// Sort the nearby Ents into directions from the player
     Ent[] nearby; /// If they're inside the view, they go in here
-    Ent[][Dir] far;
+    Ent[][Direction] far;
     
     foreach (ent; nearbyEnts) {
       if (world.isInView(ent.coord)) {
@@ -184,7 +189,7 @@ class Nearby : Box {
       }
     }
     
-    foreach (Dir dir, ents; far) {
+    foreach (Direction dir, ents; far) {
       setColor(Color.Blue);
       ncs.mvprintw(y, dim.x, toStringz(directionName(dir)));
       ++y;
@@ -207,22 +212,22 @@ class Stats : Box {
     
     setColor(Color.Text);
     ncs.mvprintw(y, dim.x, "HP: ");
-    player.hp.draw();
+    player.hp.drawBar();
     ++y;
     
     setColor(Color.Text);
     ncs.mvprintw(y, dim.x, "SP: ");
-    player.sp.draw();
+    player.sp.drawBar();
     ++y;
     
     setColor(Color.Text);
     ncs.mvprintw(y, dim.x, "Thirst: ");
-    player.thirst.draw();
+    player.thirst.drawBar();
     ++y;
     
     setColor(Color.Text);
     ncs.mvprintw(y, dim.x, "Hunger: ");
-    player.hunger.draw();
+    player.hunger.drawBar();
     ++y;
   }
 }
@@ -230,26 +235,20 @@ class Stats : Box {
 
 /// Displays the world from the player's viewpoint
 class WorldView : Box {
-  /// The radius of the view around the player
-  ///
-  /// This techinacally isn't the radius, because it doesn't count the
-  /// player's square.  This is actually one less than the radius.
-  immutable int viewRadius = 12;
-  
   int width() {
-    return viewRadius * 2 + 1;
+    return player.viewRadius * 2 + 1;
   }
   
   int height() {
-    return viewRadius * 2 + 1;
+    return player.viewRadius * 2 + 1;
   }
   
   
   void draw(Dimension dim) {
     /// Calculate the in-world coordinates of the top-left corner of
     /// the view
-    auto corner = Coord(world.player.coord.x - viewRadius, 
-                        world.player.coord.y - viewRadius);
+    auto corner = Coord(player.coord.x - player.viewRadius, 
+                        player.coord.y - player.viewRadius);
         
     /// First do all the dense overlaying
     for (int y = 0; y <= dim.height; ++y) {
@@ -286,7 +285,7 @@ class WorldView : Box {
       /// Make sure the coord is inside the view before drawing it
       if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
           screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
-        ncs.move(coordSym.coord.y, coordSym.coord.x);
+        ncs.move(screenCoord.y, screenCoord.x);
         ent.sym.draw();
       }
     }
@@ -355,5 +354,52 @@ class WorldView : Box {
     /// This is usefel for things that may not be in the view and that
     /// are sparse across the map, such as Ents or location markers
     CoordSym[] sparse();
+  }
+}
+
+
+class Minimap : Box {
+  /// The radius of the view around the player
+  ///
+  /// This technically isn't the radius, because it doesn't count the
+  /// player's square.  This is actually one less than the radius.
+  immutable int viewRadius = 5;
+  
+  int width() {
+    return viewRadius * 2 + 1;
+  }
+  
+  int height() {
+    return viewRadius * 2 + 1;
+  }
+  
+  
+  void draw(Dimension dim) {
+    /// Calculate where the player is on the map
+    auto playerCoord = world.map.mapCoord(player.coord);
+  
+    /// Calculate the in-world coordinates of the top-left corner of
+    /// the view
+    auto corner = playerCoord - viewRadius;
+  
+    for (int y = 0; y <= height; ++y) {
+      ncs.move(dim.y + y, dim.x);
+    
+      for (int x = 0; x <= width; ++x) {
+        /// Calculate the in-world coordinates of the current screen
+        /// coordinate
+        auto mapCoord = Coord(x, y) + corner;
+        
+        geoSym(world.map.at(mapCoord).geo).draw();
+        world.map.at(mapCoord).isDiscovered = true;
+      }
+    }
+    
+    /// Blink the player's position over the minimap
+    if (menu.ticks % 100 < 50) {
+      ncs.move(dim.y + viewRadius + 1,
+               dim.x + viewRadius + 1);
+      Sym('X', Color.Text).draw();
+    }
   }
 }

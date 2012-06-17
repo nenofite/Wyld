@@ -171,6 +171,17 @@ struct Terrain {
   }
   
   
+  /// If the terrain blocks movement entirely
+  bool isBlocking() const {
+    switch (type) {
+      case Type.Water:
+        return true;
+      default:
+        return false;
+    }
+  }
+  
+  
   alias Type this;
   
   enum Type {
@@ -192,6 +203,25 @@ enum Geo {
   Forest,
   Marsh,
   Water
+}
+
+
+/// The Sym corresponding to the given Geo
+Sym geoSym(Geo geo) {
+  switch (geo) {
+    case Geo.Rock:
+      return Sym('-', Color.White);
+    case Geo.Grass:
+      return Sym('"', Color.Green);
+    case Geo.Forest:
+      return Sym('t', Color.Green);
+    case Geo.Marsh:
+      return Sym('~', Color.Yellow);
+    case Geo.Water:
+      return Sym('~', Color.Blue);
+    default:
+      assert(false);
+  }
 }
 
 
@@ -224,7 +254,7 @@ Direction directionFromKey(char key, out bool isKey) {
     case '6':
       return Direction.E;
     case '3':
-      return Direciotn.Se;
+      return Direction.Se;
     case '2':
       return Direction.S;
     case '1':
@@ -249,21 +279,21 @@ Direction directionFromKey(char key, out bool isKey) {
 /// ---
 Coord coordFromDirection(Direction dir) {
   switch (dir) {
-    case N:
+    case Direction.N:
       return Coord(0, -1);
-    case Ne:
+    case Direction.Ne:
       return Coord(1, -1);
-    case E:
+    case Direction.E:
       return Coord(1, 0);
-    case Se:
+    case Direction.Se:
       return Coord(1, 1);
-    case S:
+    case Direction.S:
       return Coord(0, 1);
-    case Sw:
+    case Direction.Sw:
       return Coord(-1, 1);
-    case W:
+    case Direction.W:
       return Coord(-1, 0);
-    case Nw:
+    case Direction.Nw:
       return Coord(-1, -1);
     default:
       assert(false);
@@ -273,7 +303,7 @@ Coord coordFromDirection(Direction dir) {
 
 /// Calculate the direct distance between the two Coords
 int distanceBetween(Coord a, Coord b) {
-  return cast(int) math.sqrt((b.x - a.x) ** 2 + (b.y - a.y) ** 2);
+  return cast(int) math.sqrt((b.x - a.x) ^^ 2 + (b.y - a.y) ^^ 2);
 }
 
 
@@ -290,29 +320,29 @@ Direction directionBetween(Coord from, Coord to) {
   /// Convert that direction into a proper Direction
   switch (octant) {
     case -2:
-      return Dir.N;
+      return Direction.N;
       
     case -1:
-      return Dir.Ne;
+      return Direction.Ne;
       
     case 0:
-      return Dir.E;
+      return Direction.E;
       
     case 1:
-      return Dir.Se;
+      return Direction.Se;
       
     case 2:
-      return Dir.S;
+      return Direction.S;
       
     case 3:
-      return Dir.Sw;
+      return Direction.Sw;
       
     case 4:
     case -4:
-      return Dir.W;
+      return Direction.W;
       
     case -3:
-      return Dir.Nw;
+      return Direction.Nw;
       
     default:
       assert(false);
@@ -329,21 +359,21 @@ Direction directionBetween(Coord from, Coord to) {
 /// ---
 string directionName(Direction dir) {
   switch (dir) {
-    case N:
+    case Direction.N:
       return "NORTH";
-    case Ne:
+    case Direction.Ne:
       return "NORTHEAST";
-    case E:
+    case Direction.E:
       return "EAST";
-    case Se:
+    case Direction.Se:
       return "SOUTHEAST";
-    case S:
+    case Direction.S:
       return "SOUTH";
-    case Sw:
+    case Direction.Sw:
       return "SOUTHWEST";
-    case W:
+    case Direction.W:
       return "WEST";
-    case Nw:
+    case Direction.Nw:
       return "NORTHWEST";
     default:
       assert(false);
@@ -355,4 +385,23 @@ string directionName(Direction dir) {
 struct CoordSym {
   Coord coord;
   Sym sym;
+}
+
+
+/// Removes the first occurence of the given item from the list
+void remove(T)(ref T[] list, T item) {
+  T[] newList = new T[](list.length - 1);
+  
+  bool found;
+  foreach (i, a; list) {
+    if (!found && a is item) {
+      found = true;
+    } else {
+      newList[i] = a;
+    }
+  }
+  
+  assert(found, "Element not found in list.");
+  
+  list = newList;
 }

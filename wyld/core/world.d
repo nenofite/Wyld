@@ -3,31 +3,28 @@ module wyld.core.world;
 
 import wyld.core.common;
 import wyld.core.ent;
+import wyld.ent;
+import wyld.main;
+
+import alg = std.algorithm;
+import math = std.math;
 
 /// The current game world, available for easy access
 World world;
 
 
 /// Contains the terrain, ents, map, time, etc. of the in-game world
-class World : Ent.Location {
+class World {
   DynamicEnt[] dynamicEnts; /// The Ents that need updating
   StaticGrid staticGrid;    /// A grid of static terrain, ents, and tracks
   Map map;    /// The map of the world, used for map screen and minimap
   Time time;  /// The in-game time
   
-  /// Add the given Ent to the World
-  ///
-  /// Return: the Ent location Link for the Ent to use
-  Ent.Link add(Ent ent, Coord coord) {
-    return new Link(ent, coord, ((cast(DynamicEnt) ent) is null));
-  }
-  
-  
   /// All of the Ents, both static and dynamic, at the given Coord
   Ent[] entsAt(Coord coord) {
     Ent[] ents;
     
-    ents = at(coord).ents.dup;
+    ents = staticGrid.at(coord).ents.dup;
     
     foreach (ent; dynamicEnts) {
       if (ent.coord == coord) {
@@ -39,15 +36,15 @@ class World : Ent.Location {
   }
   
   
-  /// The Ents within nearbyRadius of the given Coord
-  Ent[] nearbyEntsAt(Coord coord) {
+  /// The Ents within nearbyRadius of the given StatEnt
+  Ent[] nearbyEnts(StatEnt statEnt) {
     Ent[] ents;
   
     foreach (ent; dynamicEnts) {
-      if (ent.coord.x >= coord.x - nearbyRadius &&
-          ent.coord.x <= coord.x + nearbyRadius &&
-          ent.coord.y >= coord.y - nearbyRadius &&
-          ent.coord.y <= coord.y + nearbyRadius) {
+      if (ent.coord.x >= statEnt.coord.x - statEnt.nearbyRadius &&
+          ent.coord.x <= statEnt.coord.x + statEnt.nearbyRadius &&
+          ent.coord.y >= statEnt.coord.y - statEnt.nearbyRadius &&
+          ent.coord.y <= statEnt.coord.y + statEnt.nearbyRadius) {
         ents ~= ent;
       }
     }
@@ -55,12 +52,12 @@ class World : Ent.Location {
     return ents;
   }
   
-  /// The Ents within nearbyRadius of the given Coord, along with their
+  /// The Ents within nearbyRadius of the given StatEnt, along with their
   /// direct distance from that Coord and sorted, closest to farthest
   ///
   /// Return: a struct that is aliased to the Ent, but that also includes
   ///         int distance
-  auto nearbyEntsDistancesAt(Coord coord) {
+  auto nearbyEntsDistances(StatEnt statEnt) {
     struct EntDistance {
       Ent _ent;
       int distance;
@@ -68,15 +65,15 @@ class World : Ent.Location {
       alias _ent this;
     }
     
-    auto ents = nearbyEntsAt(coord);
+    auto ents = nearbyEnts(statEnt);
     EntDistance[] entsDistances = new EntDistance[](ents.length);
     
     foreach (i, ent; ents) {
       entsDistances[i] = 
-        EntDistance(ent, distanceBetween(ent.coord, coord));
+        EntDistance(ent, distanceBetween(ent.coord, statEnt.coord));
     }
     
-    entsDistances.sort!("a.distance < b.distance")();
+    alg.sort!("a.distance < b.distance")(entsDistances);
     
     return entsDistances;
   }
@@ -101,6 +98,16 @@ class World : Ent.Location {
     this(int width, int height) {
       super(width, height);
     }
+    
+    Coord mapCoord(Coord coord) const {
+      float x = coord.x,
+            y = coord.y;
+            
+      return Coord(cast(int) math.floor(x * width / 
+                                        world.staticGrid.width), 
+                   cast(int) math.floor(y * height / 
+                                        world.staticGrid.height));
+    }
   }
   
   static struct MapContents {
@@ -109,27 +116,78 @@ class World : Ent.Location {
   }
   
   
-  
-  
-  /// World's Ent location Link, including info on whether the Ent is
-  /// static or dynamic and what its Coords are
-  static class Link : Ent.Link {
-    Coord coord;
-    bool isStatic;
+  /// Returns true if the given Coord is visible to the player
+  bool isInView(Coord coord) {
+    auto diff = coord - player.coord;
     
-    this(Ent ent, Coord coord, bool isStatic) {
-      super(ent);
-      this.coord = coord;
-      this.isStatic = isStatic;
+    return math.abs(diff.x) < player.viewRadius &&
+           math.abs(diff.y) < player.viewRadius;
+  }
+  
+  
+  /// Checks if there is anything blocking movement at the given coord
+  bool isBlockingAt(Coord coord) {
+    auto stat = staticGrid.at(coord);
+    
+    if (stat.terrain.isBlocking) {
+      return true;
+    } else {
+      foreach (ent; stat.ents) {
+        if (ent.isBlocking) {
+          return true;
+        }
+      }
     }
     
-    
-    void remove() {
-      if (isStatic) {
-        world.staticGrid.at(coord).ents.remove(ent);
-      } else {
-        world.dynamicEnts.remove(ent);
+    foreach (ent; world.dynamicEnts) {
+      if (ent.coord == coord && ent.isBlocking) {
+        return true;
       }
+    }
+    
+    return false;
+  }
+  
+  
+  /// Calculates the movement cost at the given coord
+  int movementCostAt(Coord coord) {
+    int cost;
+  
+    auto ents = entsAt(coord);
+    auto terrain = staticGrid.at(coord).terrain;
+    
+    foreach (ent; ents) {
+      cost += ent.movementCost;
+    }
+    
+    cost += terrain.movementCost;
+    
+    return cost;
+  }
+  
+  
+  /// Add the given Ent to the world
+  void add(Ent ent) {
+    /// Find out if it's a DynamicEnt so we know where to add it
+    auto dynamic = cast(DynamicEnt) ent;
+    
+    if (dynamic !is null) {
+      dynamicEnts ~= dynamic;
+    } else {
+      staticGrid.at(ent.coord).ents ~= ent;
+    }
+  }
+  
+  
+  /// Remove the given ent from the world
+  void remove(Ent ent) {
+    /// Find out if it's a DynamicEnt so we know where to remove it from
+    auto dynamic = cast(DynamicEnt) ent;
+    
+    if (dynamic !is null) {
+      dynamicEnts.remove(dynamic);
+    } else {
+      staticGrid.at(ent.coord).ents.remove(ent);
     }
   }
 }
@@ -145,6 +203,8 @@ struct Tracks {
   
   /// The maximum age a track can reach before it disappears
   immutable int maxAge = Time.fromHours(6);
+  
+  static immutable Sym sym = Sym('"', Color.YellowBBg);
   
   int age() const {
     return world.time.ticks - timeMade;

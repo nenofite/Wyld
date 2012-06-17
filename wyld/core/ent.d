@@ -2,13 +2,20 @@
 module wyld.core.ent;
 
 import wyld.core.common;
+import wyld.core.world;
+import wyld.main;
 
 
 /// Represents an object within the game that is interactive
 abstract class Ent {
+  string name;  /// Human-readable in-game name of this Ent
+  Sym sym;  /// Graphical representation of the Ent
   Tags tags;  /// Tags describing this Ent's characteristics
   Link location; /// This ent's current Location, or null if inside World itself
   Coord coord; /// Coord inside of World, if this Ent is inside of World
+  int movementCost; /// How long it takes other Ents to move by this Ent
+  /// If the Ent blocks movement entirely
+  bool isBlocking;
   
   /// Remove this Ent from current parent, attempt to add to new one
   void relocate(Location newLocation) {
@@ -67,6 +74,11 @@ abstract class Ent {
   static abstract class Link {
     Ent ent;
     
+    this(Ent ent) {
+      this.ent = ent;
+    }
+    
+    
     /// Remove the Ent from the linked Location
     void remove();
   }
@@ -76,32 +88,41 @@ abstract class Ent {
 /// An Ent that constantly updates in the world
 abstract class DynamicEnt : Ent {
   Update update;  /// The Ent's currently running update
+  /// How long it takes the Ent to move one space, not including
+  /// the movement cost of the surroundings
+  int speed;
   
   /// Called once every tick to update simple things such as Stats
   void tickUpdate() {}
   
   
   void move(Coord deltaCoord) {
+    class Upd : Update {
+      Coord newCoord;
+    
+      this(Coord newCoord) {
+        this.newCoord = coord;
+        
+        auto time = world.movementCostAt(newCoord) + 
+                    world.movementCostAt(coord) + 
+                    speed - 
+                    movementCost;
+        super(time, [], []);
+      }
+      
+      
+      void apply() {
+        coord = newCoord;
+      }
+    }
+    
     assert(!isInside);
+    auto newCoord = coord + deltaCoord;
   
-    auto newCoord = coord.add(deltaCoord);
     
     if (world.isBlockingAt(newCoord)) {
     } else {
-      update = new class() Update {
-        this() {
-          auto time = world.movementCostAt(newCoord) + 
-                      world.movementCostAt(coord) + 
-                      speed - 
-                      movementCost;
-          super(time, [], [StatRequirement(&player.stamina, time)]);
-        }
-        
-        
-        void apply() {
-          loc.coord = newCoord;
-        }
-      };
+      update = new Upd(newCoord);
     }
   }
 }
@@ -109,9 +130,9 @@ abstract class DynamicEnt : Ent {
 
 /// An action performed by an Ent, involving time and Stat requirements
 abstract class Update {
-  private int consumeTime;  /// The amount of ticks needed to perform this
-  private StatRequirement[] requireStats, /// Stats that must be at a certain amount
-                            consumeStats; /// Stats that will be used up by this
+  int consumeTime;  /// The amount of ticks needed to perform this
+  StatRequirement[] requireStats, /// Stats that must be at a certain amount
+                    consumeStats; /// Stats that will be used up by this
              
   this(int consumeTime, 
        StatRequirement[] requireStats, 
@@ -175,6 +196,26 @@ struct Stat {
     }
     
     return _amount;
+  }
+  
+  
+  /// Draw a bar representing this stat's value
+  void drawBar(int width = 10) {
+    /// Calculate how much of the bar is filled in
+    int filledWidth = cast(int) 
+      math.ceil(cast(float) amount / max * width);
+    
+    /// Draw the filled in part
+    setColor(Color.Green);
+    for (int i = 0; i <= filledWidth; ++i) {
+      ncs.addch('=');
+    }
+    
+    /// Draw the rest
+    setColor(Color.Red);
+    for (int i = 0; i <= width - filledWidth; ++i) {
+      ncs.addch('-');
+    }
   }
 }
 
