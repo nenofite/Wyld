@@ -16,15 +16,32 @@ World world;
 /// Contains the terrain, ents, map, time, etc. of the in-game world
 class World {
   DynamicEnt[] dynamicEnts; /// The Ents that need updating
-  StaticGrid staticGrid;    /// A grid of static terrain, ents, and tracks
-  Map map;    /// The map of the world, used for map screen and minimap
+  Grid!StaticContents staticGrid;    /// A grid of static terrain, ents, and tracks
+  Grid!MapContents map;    /// The map of the world, used for map screen and minimap
   Time time;  /// The in-game time
   
-  this(DynamicEnt[] dynamicEnts, StaticGrid staticGrid, Map map, Time time) {
+  this(DynamicEnt[] dynamicEnts, Grid!StaticContents staticGrid, Grid!MapContents map, Time time) {
     this.dynamicEnts = dynamicEnts;
     this.staticGrid = staticGrid;
     this.map = map;
     this.time = time;
+  }
+  
+  
+  void update() {
+    foreach (ent; dynamicEnts) {
+      ent.tickUpdate();
+      
+      if (ent.update !is null) {
+        auto keep = ent.update.run();
+        
+        if (!keep) {
+          ent.update = null;
+        }
+      }
+    }
+    
+    time.increment();
   }
   
   
@@ -87,40 +104,27 @@ class World {
   }
   
   
-  /// A grid of static terrain, ents, and tracks
-  static class StaticGrid : Grid!(StaticGridContents) {
-    this(int width, int height) {
-      super(width, height);
-    }
-  }
-  
-  static struct StaticGridContents {
+  static struct StaticContents {
     Terrain terrain;
     Ent[] ents;
     Tracks tracks;
   }
   
   
-  /// The map of the world, used for map screen and minimap
-  static class Map : Grid!(MapContents) {
-    this(int width, int height) {
-      super(width, height);
-    }
-    
-    Coord mapCoord(Coord coord) const {
-      float x = coord.x,
-            y = coord.y;
-            
-      return Coord(cast(int) math.floor(x * width / 
-                                        world.staticGrid.width), 
-                   cast(int) math.floor(y * height / 
-                                        world.staticGrid.height));
-    }
-  }
-  
   static struct MapContents {
     Geo geo;
     bool isDiscovered;
+  }
+  
+  
+  Coord mapCoord(Coord coord) const {
+    float x = coord.x,
+          y = coord.y;
+          
+    return Coord(cast(int) math.floor(x * map.width / 
+                                      staticGrid.width), 
+                 cast(int) math.floor(y * map.height / 
+                                      staticGrid.height));
   }
   
   

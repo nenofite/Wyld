@@ -2,6 +2,8 @@
 module wyld.core.menu;
 
 import wyld.core.layout;
+import wyld.core.world;
+import wyld.main;
 
 import ncs = ncs.ncurses;
 
@@ -43,12 +45,19 @@ class Menu {
   }
   
   
+  void draw() {
+    auto dim = Box.Dimension(0, 0, ncs.COLS, ncs.LINES);
+    dim.fill();
+    topUi.ui.draw(dim);
+  }
+  
+  
   /// This runs the ui continuously until the user quits
   void loop() {
     while (true) {
-      auto dim = Box.Dimension(0, 0, ncs.COLS, ncs.LINES);
-      dim.fill();
-      topUi.ui.draw(dim);
+      updateWorld();
+    
+      draw();
     
       auto screen = stack[$-1];
       
@@ -79,12 +88,24 @@ class Menu {
           caughtKey = topUi.input(input);
         }
         if (!caughtKey) {
-          assert(false);
+          //assert(false);
         }
       }
       
       ncs.refresh();
       
+      ++ticks;
+    }
+  }
+  
+  
+  void updateWorld() {
+    while (player.update !is null) {
+      world.update();
+      
+      draw();
+      
+      ncs.refresh();
       ++ticks;
     }
   }

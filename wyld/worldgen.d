@@ -55,14 +55,14 @@ static World generateWorld(int p1Width, int p1Height,
   
   /// Create the world's staticGrid by mapping phase 3 grid into
   /// StaticGridContents
-  auto staticGrid = cast(World.StaticGrid) p3Grid.map2(
+  auto staticGrid = p3Grid.map2(
     (ref Terrain terrain, Coord) {
-      return World.StaticGridContents(terrain, [], Tracks());
+      return World.StaticContents(terrain, [], Tracks());
     }
   );
   
   /// Make the map by mapping phase 2 into MapContents
-  auto map = cast(World.Map) p2Grid.map2(
+  auto map = p2Grid.map2(
     (ref Geo geo, Coord) {
       return World.MapContents(geo, false);
     }

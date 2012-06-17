@@ -49,7 +49,7 @@ abstract class StatEnt : DynamicEnt {
     DynamicEnt.move(deltaCoord);
     
     if (update !is null) {
-      update.consumeStats ~= StatRequirement(&sp, update.consumeTime);
+      update.consumeStats ~= StatRequirement(&sp, update.consumeTime / 10);
     }
   }
 }
@@ -58,5 +58,8 @@ abstract class StatEnt : DynamicEnt {
 class Player : StatEnt {
   this() {
     super(Stat(500), Stat(200), Stat(400), Stat(200), 12);
+    
+    name = "you";
+    sym = Sym('@', Color.Blue);
   }
 }

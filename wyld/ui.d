@@ -257,18 +257,22 @@ class WorldView : Box {
       for (int x = 0; x <= dim.width; ++x) {
         /// Calculate the in-world coordinate
         auto worldCoord = Coord(x, y) + corner;
-      
-        /// Start the sym as the terrain and static Ents at the 
-        /// current coord
-        Sym sym = baseDense(worldCoord);
         
-        /// Go through the screen stack and let all OverlayScreens
-        /// submit to the Sym
-        foreach (screen; menu.stack) {
-          auto overlay = cast(Overlay) screen;
+        Sym sym = Sym(' ', Color.Text);
+        
+        if (world.staticGrid.isInside(worldCoord)) {
+          /// Start the sym as the terrain and static Ents at the 
+          /// current coord
+          sym = baseDense(worldCoord);
           
-          if (overlay !is null) {
-            overlay.dense(worldCoord, sym);
+          /// Go through the screen stack and let all OverlayScreens
+          /// submit to the Sym
+          foreach (screen; menu.stack) {
+            auto overlay = cast(Overlay) screen;
+            
+            if (overlay !is null) {
+              overlay.dense(worldCoord, sym);
+            }
           }
         }
         
@@ -376,7 +380,7 @@ class Minimap : Box {
   
   void draw(Dimension dim) {
     /// Calculate where the player is on the map
-    auto playerCoord = world.map.mapCoord(player.coord);
+    auto playerCoord = world.mapCoord(player.coord);
   
     /// Calculate the in-world coordinates of the top-left corner of
     /// the view
@@ -390,8 +394,11 @@ class Minimap : Box {
         /// coordinate
         auto mapCoord = Coord(x, y) + corner;
         
-        geoSym(world.map.at(mapCoord).geo).draw();
-        world.map.at(mapCoord).isDiscovered = true;
+        if (world.map.isInside(mapCoord)) {
+          geoSym(world.map.at(mapCoord).geo).draw();
+          
+          world.map.at(mapCoord).isDiscovered = true;
+        }
       }
     }
     

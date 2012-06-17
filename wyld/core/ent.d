@@ -97,22 +97,24 @@ abstract class DynamicEnt : Ent {
   
   
   void move(Coord deltaCoord) {
-    class Upd : Update {
+    static class Upd : Update {
       Coord newCoord;
+      DynamicEnt ent;
     
-      this(Coord newCoord) {
-        this.newCoord = coord;
+      this(Coord newCoord, DynamicEnt ent) {
+        this.newCoord = newCoord;
+        this.ent = ent;
         
         auto time = world.movementCostAt(newCoord) + 
-                    world.movementCostAt(coord) + 
-                    speed - 
-                    movementCost;
+                    world.movementCostAt(ent.coord) + 
+                    ent.speed - 
+                    ent.movementCost;
         super(time, [], []);
       }
       
       
       void apply() {
-        coord = newCoord;
+        ent.coord = newCoord;
       }
     }
     
@@ -122,7 +124,7 @@ abstract class DynamicEnt : Ent {
     
     if (world.isBlockingAt(newCoord)) {
     } else {
-      update = new Upd(newCoord);
+      update = new Upd(newCoord, this);
     }
   }
 }

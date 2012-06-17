@@ -88,7 +88,11 @@ class Grid(T) {
   
   /// Returns a reference to the given coordinate of the grid
   ref T at(Coord coord) {
-    assert(isInside(coord));
+    //assert(isInside(coord));
+    if (!isInside(coord)) {
+      int* b;
+      *b = 5;
+    }
     return grid[coord.x][coord.y];
   }
   
