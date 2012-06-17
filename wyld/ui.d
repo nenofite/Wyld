@@ -251,10 +251,10 @@ class WorldView : Box {
                         player.coord.y - player.viewRadius);
         
     /// First do all the dense overlaying
-    for (int y = 0; y <= dim.height; ++y) {
+    for (int y = 0; y < height; ++y) {
       ncs.move(dim.y + y, dim.x);
       
-      for (int x = 0; x <= dim.width; ++x) {
+      for (int x = 0; x < width; ++x) {
         /// Calculate the in-world coordinate
         auto worldCoord = Coord(x, y) + corner;
         
@@ -289,7 +289,7 @@ class WorldView : Box {
       /// Make sure the coord is inside the view before drawing it
       if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
           screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
-        ncs.move(screenCoord.y, screenCoord.x);
+        ncs.move(screenCoord.y + dim.y, screenCoord.x + dim.x);
         ent.sym.draw();
       }
     }
@@ -386,10 +386,10 @@ class Minimap : Box {
     /// the view
     auto corner = playerCoord - viewRadius;
   
-    for (int y = 0; y <= height; ++y) {
+    for (int y = 0; y < height; ++y) {
       ncs.move(dim.y + y, dim.x);
     
-      for (int x = 0; x <= width; ++x) {
+      for (int x = 0; x < width; ++x) {
         /// Calculate the in-world coordinates of the current screen
         /// coordinate
         auto mapCoord = Coord(x, y) + corner;
@@ -398,14 +398,16 @@ class Minimap : Box {
           geoSym(world.map.at(mapCoord).geo).draw();
           
           world.map.at(mapCoord).isDiscovered = true;
+        } else {
+          ncs.addch(' ');
         }
       }
     }
     
     /// Blink the player's position over the minimap
     if (menu.ticks % 100 < 50) {
-      ncs.move(dim.y + viewRadius + 1,
-               dim.x + viewRadius + 1);
+      ncs.move(dim.y + viewRadius,
+               dim.x + viewRadius);
       Sym('X', Color.Text).draw();
     }
   }
