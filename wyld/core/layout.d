@@ -1,6 +1,8 @@
 /// Used to dynamically lay out the ui
 module wyld.core.layout;
 
+import wyld.core.common;
+
 import alg = std.algorithm;
 import ncs = ncs.ncurses;
 import std.string: toStringz;
@@ -69,11 +71,11 @@ class Separator : Box {
   /// If this separator line is horizontal
   bool isHorizontal = true;
   /// If this separator will draw itself opaque
-  bool isVisible = true;
+  bool isVisible = false;
   /// The optional text to display on the separator
   string title;
   
-  this(bool isHorizontal, bool isVisible = true, string title = "") {
+  this(bool isHorizontal, bool isVisible = false, string title = "") {
     this.isHorizontal = isHorizontal;
     this.isVisible = isVisible;
     this.title = title;
@@ -91,7 +93,7 @@ class Separator : Box {
   
   void draw(Dimension dim) {
     if (isVisible) {
-      //setColor(Color.Border);
+      setColor(Color.Border);
       dim.fill(); /// This effectively fills in the line regardless of orientation
       
       ncs.move(dim.y, dim.x);

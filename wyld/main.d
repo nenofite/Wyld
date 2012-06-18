@@ -21,7 +21,7 @@ void main() {
   scope (exit) ncs.endwin();
   ncs.cbreak();
   ncs.noecho();
-  ncs.keypad(ncs.stdscr, false);
+  ncs.keypad(ncs.stdscr, true);
   ncs.curs_set(false);
   initColor();
 
@@ -37,7 +37,7 @@ void main() {
   assert(world.staticGrid !is null);
 
   /// Create the menu and set it globally
-  menu = new Menu();
+  menu = new Menu([], null);
   menu.addScreen(new MainScreen());
   menu.loop();
 }

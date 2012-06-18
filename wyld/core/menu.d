@@ -1,6 +1,7 @@
 /// Contains code used for the user interface
 module wyld.core.menu;
 
+import wyld.core.common;
 import wyld.core.layout;
 import wyld.core.world;
 import wyld.main;
@@ -26,6 +27,21 @@ class Menu {
   /// world update tick
   int ticks;
   
+  List ui;
+  
+  this(Screen[] stack, Screen escScreen) {
+    this.stack = stack;
+    this.escScreen = escScreen;
+    
+    ui = new List(true, true, [
+      new MenuBox(),
+      new Separator(false, false),
+      new Separator(false, true),
+      cast(Box) new TopUiBox()
+    ]);
+  }
+  
+  
   /// Add a screen to the top of the stack
   void addScreen(Screen screen) {
     stack ~= screen;
@@ -38,6 +54,7 @@ class Menu {
   }
   
   
+  /// Goes down the stack to find the first non-null Ui
   Ui topUi() {
     foreach_reverse (screen; stack) {
       if (screen.ui !is null) {
@@ -54,7 +71,7 @@ class Menu {
   
     auto dim = Box.Dimension(0, 0, ncs.COLS, ncs.LINES);
     dim.fill();
-    topUi.ui.draw(dim);
+    ui.draw(dim);
   }
   
   
@@ -185,6 +202,55 @@ class Menu {
     
     void select() {
       menu.addScreen(sub);
+    }
+  }
+  
+  
+  static class MenuBox : Box {
+    int width() {
+      return 30;
+    }
+    
+  
+    void draw(Dimension dim) {
+      auto topScreen = menu.stack[$-1];
+      int y = dim.y;
+      
+      setColor(Color.Text);
+      
+      ncs.attron(ncs.A_BOLD);
+      ncs.mvprintw(y, dim.x, toStringz(topScreen.title));
+      ncs.attroff(ncs.A_BOLD);
+      ++y;
+      
+      foreach (entry; topScreen.entries) {
+        ncs.move(y, dim.x);
+        
+        setColor(Color.Green);
+        ncs.addch(entry.key);
+        ncs.addch(' ');
+        
+        setColor(Color.Text);
+        ncs.printw(toStringz(entry.title));
+        
+        ++y;
+      }
+    }
+  }
+  
+  
+  static class TopUiBox : Box {
+    int width() {
+      return menu.topUi.ui.width;
+    }
+    
+    int height() {
+      return menu.topUi.ui.height;
+    }
+    
+  
+    void draw(Dimension dim) {
+      menu.topUi.ui.draw(dim);
     }
   }
 }
