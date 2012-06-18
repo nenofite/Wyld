@@ -32,13 +32,16 @@ abstract class StatEnt : DynamicEnt {
   }
   
   
+  /// Regenerate (and degrade) certain stats over time
   void tickUpdate() {
-    /// Every minute
-    if (world.time.ticks % Time.fromMinutes(1) == 0) {
-      --thirst;
+    if (world.time.ticks % Time.fromSeconds(1) == 0) {
       ++sp;
     }
-    /// Every ten minutes
+    
+    if (world.time.ticks % Time.fromMinutes(1) == 0) {
+      --thirst;
+    }
+    
     if (world.time.ticks % Time.fromMinutes(10) == 0) {
       --hunger;
     }
@@ -49,7 +52,7 @@ abstract class StatEnt : DynamicEnt {
     DynamicEnt.move(deltaCoord);
     
     if (update !is null) {
-      update.consumeStats ~= StatRequirement(&sp, update.consumeTime / 10);
+      update.consumeStats ~= StatRequirement(&sp, 1);
     }
   }
 }
@@ -57,11 +60,12 @@ abstract class StatEnt : DynamicEnt {
 
 class Player : StatEnt {
   this() {
-    super(Stat(500), Stat(200), Stat(400), Stat(200), 12);
+    super(Stat(500), Stat(500), Stat(400), Stat(200), 12);
     
     name = "you";
     sym = Sym('@', Color.Blue);
   }
+}
 
 
 class Grass : Ent {
