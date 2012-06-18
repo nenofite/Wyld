@@ -70,7 +70,9 @@ class World {
           ent.coord.x <= statEnt.coord.x + statEnt.nearbyRadius &&
           ent.coord.y >= statEnt.coord.y - statEnt.nearbyRadius &&
           ent.coord.y <= statEnt.coord.y + statEnt.nearbyRadius) {
-        ents ~= ent;
+        if (ent !is statEnt) {
+          ents ~= ent;
+        }
       }
     }
     

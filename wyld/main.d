@@ -33,20 +33,23 @@ void main() {
   player = new Player();
   
   world.add(player);
-  
-  assert(world.staticGrid !is null);
 
   /// Create the menu and set it globally
-  menu = new Menu([], null);
-  menu.addScreen(new MainScreen());
+  menu = new Menu([new MainScreen()], null);
+  
   menu.loop();
 }
 
 
+/// Initialize everything color-related in ncurses
+///
+/// This includes starting the color system as well as initializing all
+/// the color pairs in the Color enum
 void initColor() {
   assert(ncs.has_colors(), "Couldn't get color support.");
 
   ncs.start_color();
+  
   ncs.init_pair(Color.Text, ncs.COLOR_WHITE, ncs.COLOR_BLACK);
   ncs.init_pair(Color.Border, ncs.COLOR_BLACK, ncs.COLOR_WHITE);
   ncs.init_pair(Color.Blue, ncs.COLOR_BLUE, ncs.COLOR_BLACK);
