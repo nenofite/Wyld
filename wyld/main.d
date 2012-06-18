@@ -30,9 +30,9 @@ void main() {
   /// Generate the world
   world = generateWorld(7, 7, 3, 4);
   
-  player = new Player();
+  placePlayer();
   
-  world.add(player);
+  placeDeer();
 
   /// Create the menu and set it globally
   menu = new Menu([new MainScreen()], null);

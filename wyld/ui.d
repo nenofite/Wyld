@@ -284,12 +284,12 @@ class WorldView : Box {
     foreach (ent; world.dynamicEnts) {
       /// Convert the coordinate from a world coordinate to a
       /// screen coordinate
-      auto screenCoord = ent.coord - corner;
+      auto screenCoord = ent.coord - corner + Coord(dim.x, dim.y);
       
       /// Make sure the coord is inside the view before drawing it
       if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
           screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
-        ncs.move(screenCoord.y + dim.y, screenCoord.x + dim.x);
+        ncs.move(screenCoord.y, screenCoord.x);
         ent.sym.draw();
       }
     }
@@ -302,12 +302,12 @@ class WorldView : Box {
         foreach (coordSym; overlay.sparse) {
           /// Convert the coordinate from a world coordinate to a
           /// screen coordinate
-          auto screenCoord = coordSym.coord - corner;
+          auto screenCoord = coordSym.coord - corner + Coord(dim.x, dim.y);
           
           /// Make sure the coord is inside the view before drawing it
           if (screenCoord.x >= dim.x && screenCoord.x <= dim.x2 &&
               screenCoord.y >= dim.y && screenCoord.y <= dim.y2) {
-            ncs.move(coordSym.coord.y, coordSym.coord.x);
+            ncs.move(screenCoord.y, screenCoord.x);
             coordSym.sym.draw();
           }
         }

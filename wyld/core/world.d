@@ -134,8 +134,8 @@ class World {
   bool isInView(Coord coord) {
     auto diff = coord - player.coord;
     
-    return math.abs(diff.x) < player.viewRadius &&
-           math.abs(diff.y) < player.viewRadius;
+    return math.abs(diff.x) <= player.viewRadius &&
+           math.abs(diff.y) <= player.viewRadius;
   }
   
   
@@ -149,14 +149,14 @@ class World {
       return true;
     } else {
       foreach (ent; stat.ents) {
-        if (ent.isBlocking) {
+        if (ent.tags.isBlocking) {
           return true;
         }
       }
     }
     
     foreach (ent; world.dynamicEnts) {
-      if (ent.coord == coord && ent.isBlocking) {
+      if (ent.coord == coord && ent.tags.isBlocking) {
         return true;
       }
     }
@@ -173,7 +173,7 @@ class World {
     auto terrain = staticGrid.at(coord).terrain;
     
     foreach (ent; ents) {
-      cost += ent.movementCost;
+      cost += ent.tags.movementCost;
     }
     
     cost += terrain.movementCost;

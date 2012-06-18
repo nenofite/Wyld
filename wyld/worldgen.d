@@ -4,6 +4,7 @@ import wyld.core.common;
 import wyld.core.ent;
 import wyld.core.world;
 import wyld.ent;
+import wyld.main;
 
 import rand = std.random;
 
@@ -193,4 +194,41 @@ Grid!A subdivide(A)(Grid!A old) {
   
   /// And finally, we're done
   return newGrid;
+}
+
+
+void placePlayer() {
+  for (int tryNum = 0; tryNum < 10; ++tryNum) {
+    auto coord = Coord(rand.uniform(world.staticGrid.width / 4, 
+                                    world.staticGrid.width * 3 / 4), 
+                       rand.uniform(world.staticGrid.height / 4, 
+                                    world.staticGrid.height * 3 / 4));
+    
+    if (!world.isBlockingAt(coord)) {
+      if (world.map.at(world.mapCoord(coord)).geo != Geo.Water) {
+        player = new Player(coord);
+        
+        world.add(player);
+        
+        return;
+      }
+    }
+  }
+  
+  assert(false, "Player placement took over 10 tries.  Failed.");
+}
+
+
+void placeDeer(int num = 20) {
+  for (int i = 0; i < num; ++i) {
+    for (int tryNum = 0; tryNum < 10; ++tryNum) {
+      auto coord = Coord(rand.uniform(0, world.staticGrid.width), 
+                         rand.uniform(0, world.staticGrid.height));
+      
+      if (!world.isBlockingAt(coord)) {
+        world.add(new Deer(coord));
+        break;
+      }
+    }
+  }
 }

@@ -8,14 +8,29 @@ import wyld.main;
 
 /// Represents an object within the game that is interactive
 abstract class Ent {
-  string name;  /// Human-readable in-game name of this Ent
-  Sym sym;  /// Graphical representation of the Ent
-  Tags tags;  /// Tags describing this Ent's characteristics
-  Link location; /// This ent's current Location, or null if inside World itself
-  Coord coord; /// Coord inside of World, if this Ent is inside of World
-  int movementCost; /// How long it takes other Ents to move by this Ent
-  /// If the Ent blocks movement entirely
-  bool isBlocking;
+  /// Human-readable in-game name of this Ent
+  string name;  
+  /// Graphical representation of the Ent
+  Sym sym;  
+  /// Tags describing this Ent's characteristics
+  Tags tags;  
+  /// This ent's current Location, or null if inside World itself
+  Link location; 
+  /// Coord inside of World, if this Ent is inside of World
+  Coord coord;
+  
+  this(string name, 
+       Sym sym, 
+       Tags tags, 
+       Link location, 
+       Coord coord) {
+    this.name = name;
+    this.sym = sym;
+    this.tags = tags;
+    this.location = location;
+    this.coord = coord;
+  }
+  
   
   /// Remove this Ent from current parent, attempt to add to new one
   void relocate(Location newLocation) {
@@ -43,10 +58,22 @@ abstract class Ent {
   
   /// Tags contain various Ent characteristics used for interactivity
   static struct Tags {
-    int weight; /// Weight of this Ent in pounds
-    int size; /// Size of this Ent in cubic inches
-    bool isFluid; /// If this Ent is fluid
-    //TODO finish transferring tags
+    /// Size of this Ent in cubic inches
+    int size; 
+    /// Weight of this Ent in pounds
+    int weight; 
+    /// If this Ent is fluid
+    bool isFluid; 
+    
+    /// If this Ent blocks others' movement entirely
+    bool isBlocking; 
+    /// How long it takes other Ents to move by this Ent
+    int movementCost; 
+    /// How long it takes the Ent to move one space, not including
+    /// the movement cost of the surroundings
+    int speed; 
+    
+    // TODO finish transferring tags
   }
   
   
@@ -88,9 +115,15 @@ abstract class Ent {
 /// An Ent that constantly updates in the world
 abstract class DynamicEnt : Ent {
   Update update;  /// The Ent's currently running update
-  /// How long it takes the Ent to move one space, not including
-  /// the movement cost of the surroundings
-  int speed;
+  
+  this(string name, 
+       Sym sym, 
+       Tags tags, 
+       Link location, 
+       Coord coord) {
+    super(name, sym, tags, location, coord);
+  }
+  
   
   /// Called once every tick to update simple things such as Stats
   void tickUpdate() {}
@@ -107,8 +140,8 @@ abstract class DynamicEnt : Ent {
         
         auto time = world.movementCostAt(newCoord) + 
                     world.movementCostAt(ent.coord) + 
-                    ent.speed - 
-                    ent.movementCost;
+                    ent.tags.speed - 
+                    ent.tags.movementCost;
         super(time, [], []);
       }
       

@@ -23,12 +23,25 @@ abstract class StatEnt : DynamicEnt {
   /// Same as viewRadius as far as technicalities
   int nearbyRadius;
        
-  this(Stat hp, Stat sp, Stat thirst, Stat hunger, int viewRadius) {
+  this(string name, 
+       Sym sym, 
+       Tags tags, 
+       Link location, 
+       Coord coord, 
+       Stat hp, 
+       Stat sp, 
+       Stat thirst, 
+       Stat hunger, 
+       int viewRadius, 
+       int nearbyRadius) {
+    super(name, sym, tags, location, coord);
+    
     this.hp = hp;
     this.sp = sp;
     this.thirst = thirst;
     this.hunger = hunger;
     this.viewRadius = viewRadius;
+    this.nearbyRadius = nearbyRadius;
   }
   
   
@@ -59,34 +72,66 @@ abstract class StatEnt : DynamicEnt {
 
 
 class Player : StatEnt {
-  this() {
-    super(Stat(500), Stat(500), Stat(400), Stat(200), 12);
+  this(Coord coord) {
+    Tags tags;
     
-    name = "you";
-    sym = Sym('@', Color.Blue);
+    tags.size = 6000;
+    
+    tags.isBlocking = true;
+    tags.speed = 50;
+  
+    super("you", Sym('@', Color.Blue), tags, null, coord, 
+          Stat(500), Stat(500), Stat(400), Stat(200), 12, 25);
+  }
+}
+
+
+class Deer : StatEnt {
+  this(Coord coord) {
+    Tags tags;
+    
+    tags.size = 6000;
+    
+    tags.isBlocking = true;
+    tags.speed = 50;
+  
+    super("deer", Sym('D', Color.White), tags, null, coord,
+          Stat(300), Stat(500), Stat(400), Stat(200), 6, 18);
+  }
+  
+  
+  void tickUpdate() {
+    StatEnt.tickUpdate();
+    
+    if (update is null) {
+    }
   }
 }
 
 
 class Grass : Ent {
   this(Coord coord) {
-    this.coord = coord; // TODO put this in Ent's constructor
+    Tags tags;
+    
+    tags.size = 8;
+    
+    tags.movementCost = 20;
   
-    name = "grass";
-    sym = Sym('"', Color.Green);
+    super("grass", Sym('"', Color.Green), tags, null, coord);
   }
 }
 
 
 class Tree : Ent {
   this(Coord coord) {
-    this.coord = coord;
+    Tags tags;
     
-    name = "tree";
+    tags.size = 24000;
+    
+    tags.isBlocking = true;
     
     auto color = rand.uniform(0, 10) == 0 ? Color.Yellow : Color.Green;
-    sym = Sym('t', color);
     
-    isBlocking = true;
+    super("tree", Sym('7', color), tags, null, coord);
   }
 }
