@@ -42,9 +42,11 @@ class Menu {
   }
   
   
-  /// Add a screen to the top of the stack
+  /// Add a screen to the top of the stack and initialize it
   void addScreen(Screen screen) {
     stack ~= screen;
+    
+    screen.init();
   }
   
   
@@ -150,6 +152,12 @@ class Menu {
     /// Return: false if the input key wasn't caught
     bool input(char key) {
       return false;
+    }
+    
+    /// This gets ran once each time this screen is added to the menu stack
+    ///
+    /// Used mostly to reset ui
+    void init() {
     }
   }
   

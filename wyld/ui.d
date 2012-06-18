@@ -22,12 +22,16 @@ import std.string: toStringz;
 ///
 /// Not to be confused with the main menu
 class MainScreen : Menu.Screen {
+  MapScreen mapScreen;
+
   this() {
     super("Main", new Ui());
+    
+    mapScreen = new MapScreen();
   }
   
   Menu.Entry[] entries() {
-    return []; // TODO
+    return [new Menu.SubEntry('m', mapScreen)];
   }
   
 
@@ -362,6 +366,9 @@ class WorldView : Box {
 }
 
 
+/// Displays a small section of the world map around the player
+///
+/// This is also what handles the discovery of new map tiles
 class Minimap : Box {
   /// The radius of the view around the player
   ///
@@ -409,6 +416,140 @@ class Minimap : Box {
       ncs.move(dim.y + viewRadius,
                dim.x + viewRadius);
       Sym('X', Color.Text).draw();
+    }
+  }
+}
+
+
+/// Displays the world map
+class MapScreen : Menu.Screen {
+  /// The custom Ui
+  ///
+  /// This is the same as what's in 'ui', but its stored here too so that
+  /// we don't have to cast it to Ui every time
+  Ui mapUi;
+
+  this() {
+    super("Map");
+    
+    mapUi = new Ui();
+    ui = mapUi;
+  }
+  
+  
+  Menu.Entry[] entries() {
+    return [new CenterOnPlayer(mapUi)];
+  }
+  
+  
+  /// Recenter the map on the player every time this screen is added
+  void init() {
+    mapUi.centerOnPlayer();
+  }
+
+
+  /// A menu entry that just centers on the player
+  static class CenterOnPlayer : Menu.Entry {
+    Ui ui;
+
+    this(Ui ui) {
+      this.ui = ui;
+      
+      super('c', "Center on player");
+    }
+    
+    void select() {
+      ui.centerOnPlayer();
+    }
+  }
+  
+  
+  /// Displays the actual map
+  static class Ui : Menu.Ui {
+    /// The coord at the center of the map
+    ///
+    /// By storing location by the center instead of the corner, the map
+    /// will keep its general focus even when drawing dimensions change
+    Coord centeredOn;
+  
+    this() {
+        super(new Display(this));
+    }
+    
+    
+    bool input(char key) {
+      bool isDirKey;
+      auto dir = directionFromKey(key, isDirKey);
+      
+      if (isDirKey) {
+        centeredOn = centeredOn + coordFromDirection(dir);
+      }
+      
+      return isDirKey;
+    }
+    
+    
+    /// Center on the player's current location
+    void centerOnPlayer() {
+      centeredOn = world.mapCoord(player.coord);
+    }
+    
+    
+    /// Handles the drawing of the map
+    static class Display : Box {
+      /// We need a reference of this to get 'centeredOn'
+      Ui ui;
+      
+      this(Ui ui) {
+        this.ui = ui;
+      }
+    
+    
+      void draw(Dimension dim) {
+        /// Calculate where the corner of the view is in map coordinates
+        auto corner = ui.centeredOn - Coord(dim.width, dim.height) / 2;
+        
+        setColor(Color.Text);
+        
+        for (int y = 0; y < dim.height; ++y) {
+          ncs.move(dim.y + y, dim.x);
+          
+          for (int x = 0; x < dim.width; ++x) {
+            /// Current coordinate
+            auto coord = Coord(x, y) + corner;
+            
+            /// If the Coord is inside the map and discovered, draw it
+            if (world.map.isInside(coord)) {
+              auto value = world.map.at(coord);
+              
+              if (value.isDiscovered) {
+                geoSym(value.geo).draw();
+              } else {
+                ncs.attron(ncs.A_BOLD);
+                Sym('#', Color.White).draw();
+                ncs.attroff(ncs.A_BOLD);
+              }
+            } else {
+              /// Still draw padding where it's outside of the map, so
+              /// that the entire view doesn't get messed up
+              ncs.addch(' ');
+            }            
+          }
+        }
+        
+        /// Blink the player's location
+        if (menu.ticks % 1000 < 500) {
+          auto playerCoord = 
+            world.mapCoord(player.coord) - corner + Coord(dim.x, dim.y);
+            
+          if (playerCoord.x >= dim.x && playerCoord.x <= dim.x2 &&
+              playerCoord.y >= dim.y && playerCoord.y <= dim.y2) {
+            ncs.move(playerCoord.y, playerCoord.x);
+            
+            Sym('X', Color.Text).draw();
+          }
+        }
+      }
     }
   }
 }

@@ -21,7 +21,7 @@ void main() {
   scope (exit) ncs.endwin();
   ncs.cbreak();
   ncs.noecho();
-  ncs.keypad(ncs.stdscr, true);
+  ncs.keypad(ncs.stdscr, false);
   ncs.curs_set(false);
   initColor();
 
