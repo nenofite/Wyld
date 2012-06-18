@@ -234,6 +234,13 @@ struct Terrain {
   }
   
   
+  /// Uses the standard probability for terrain being pocked to randomly
+  /// set isPocked for this Terrain
+  void repock() {
+    isPocked = rand.uniform(0, 5) == 0;
+  }
+  
+  
   alias Type this;
   
   enum Type {
@@ -242,15 +249,6 @@ struct Terrain {
     Rock,
     Water
   }
-}
-
-
-/// Generates the given terrain type and fills in the pocked value
-/// using the standard probability for a terrain being pocked
-Terrain pockedTerrain(Terrain.Type type) {
-  auto pocked = rand.uniform(0, 5) == 0;
-  
-  return Terrain(type, pocked);
 }
 
 
@@ -296,17 +294,17 @@ Terrain geoTerrain(Geo geo) {
         type = Terrain.Dirt;
       }
       
-      return pockedTerrain(type);
+      return Terrain(type);
       
     case Geo.Grass:
     case Geo.Forest:
-      return pockedTerrain(Terrain.Dirt);
+      return Terrain(Terrain.Dirt);
       
     case Geo.Marsh:
-      return pockedTerrain(Terrain.Mud);
+      return Terrain(Terrain.Mud);
       
     case Geo.Water:
-      return pockedTerrain(Terrain.Water);
+      return Terrain(Terrain.Water);
       
     default:
       assert(false);

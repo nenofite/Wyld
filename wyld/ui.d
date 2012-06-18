@@ -405,7 +405,7 @@ class Minimap : Box {
     }
     
     /// Blink the player's position over the minimap
-    if (menu.ticks % 100 < 50) {
+    if (menu.ticks % 1000 < 500) {
       ncs.move(dim.y + viewRadius,
                dim.x + viewRadius);
       Sym('X', Color.Text).draw();

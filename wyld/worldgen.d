@@ -1,7 +1,9 @@
 module wyld.worldgen;
 
 import wyld.core.common;
+import wyld.core.ent;
 import wyld.core.world;
+import wyld.ent;
 
 import rand = std.random;
 
@@ -41,12 +43,10 @@ static World generateWorld(int p1Width, int p1Height,
     p2Grid = subdivide(p2Grid);
   }
   
-  /// Make phase 3 grid, mapping the Geos into Terrain
-  auto p3Grid = p2Grid.map2(
-    (ref Geo geo, Coord) {
-      return geoTerrain(geo);
-    }
-  );
+  /// Phase 2 grid must stay at its current size to be used for the world
+  /// map, so further subdivision must to be done using another variable
+  /// Make phase 3 grid so we can subdivide it further
+  auto p3Grid = p2Grid;
   
   /// Subdivide
   for (int i = 0; i < p3Subdivisions; ++i) {
@@ -54,12 +54,48 @@ static World generateWorld(int p1Width, int p1Height,
   }
   
   /// Create the world's staticGrid by mapping phase 3 grid into
-  /// StaticGridContents
+  /// StaticGridContents, and at the same time randomly pock the Terrain
   auto staticGrid = p3Grid.map2(
-    (ref Terrain terrain, Coord) {
-      return World.StaticContents(terrain, [], Tracks());
+    (ref Geo geo, Coord coord) {
+      Ent[] ents;
+      
+      switch (geo) {
+        case Geo.Grass:
+          if (rand.uniform(0, 100) != 0) {
+            ents ~= new Grass(coord);
+          }
+          break;
+          
+        case Geo.Forest:
+          if (rand.uniform(0, 20) != 0) {
+            ents ~= new Grass(coord);
+          }
+          break;
+          
+        default:
+          break;
+      }
+      
+      auto terrain = geoTerrain(geo);
+      
+      terrain.repock();
+      
+      return World.StaticContents(terrain, ents, Tracks());
     }
   );
+  
+  for (int y = 0; y < staticGrid.height; y += 3) {
+    for (int x = 0; x < staticGrid.width; x += 3) {
+      if (p3Grid.at(Coord(x, y)) == Geo.Forest) {
+        auto offset = Coord(rand.uniform(-1, 2), rand.uniform(-1, 2)),
+             coord = Coord(x, y) + offset;
+        
+        if (staticGrid.isInside(coord)) {
+          staticGrid.at(coord).ents = [new Tree(coord)];
+        }
+      }
+    }
+  }
   
   /// Make the map by mapping phase 2 into MapContents
   auto map = p2Grid.map2(

@@ -209,13 +209,13 @@ struct Stat {
     
     /// Draw the filled in part
     setColor(Color.Green);
-    for (int i = 0; i <= filledWidth; ++i) {
+    for (int i = 0; i < filledWidth; ++i) {
       ncs.addch('=');
     }
     
     /// Draw the rest
     setColor(Color.Red);
-    for (int i = 0; i <= width - filledWidth; ++i) {
+    for (int i = 0; i < width - filledWidth; ++i) {
       ncs.addch('-');
     }
   }

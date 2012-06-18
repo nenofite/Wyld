@@ -139,6 +139,8 @@ class World {
   
   /// Checks if there is anything blocking movement at the given coord
   bool isBlockingAt(Coord coord) {
+    if (!staticGrid.isInside(coord)) return true;
+    
     auto stat = staticGrid.at(coord);
     
     if (stat.terrain.isBlocking) {

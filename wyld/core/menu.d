@@ -5,6 +5,7 @@ import wyld.core.layout;
 import wyld.core.world;
 import wyld.main;
 
+import time = core.time;
 import ncs = ncs.ncurses;
 
 /// The menu in use, made easily accessible
@@ -18,6 +19,8 @@ class Menu {
   /// The screen to display when the ESC key is pressed from the bottom screen
   Screen escScreen;
   /// The current draw tick, used for animation
+  ///
+  /// This is based off of system time -- 1 tick is a millisecond
   ///
   /// Not to be confused with world.time.ticks, which is the current
   /// world update tick
@@ -45,7 +48,10 @@ class Menu {
   }
   
   
+  /// Updates ticks to the system time and then draws the ui
   void draw() {
+    ticks = cast(int) time.TickDuration.currSystemTick.msecs();
+  
     auto dim = Box.Dimension(0, 0, ncs.COLS, ncs.LINES);
     dim.fill();
     topUi.ui.draw(dim);
@@ -62,6 +68,7 @@ class Menu {
       auto screen = stack[$-1];
       
       auto input = cast(char) ncs.getch();
+      ncs.flushinp();
       
       /// The escape key
       if (input == 27) {
@@ -93,8 +100,6 @@ class Menu {
       }
       
       ncs.refresh();
-      
-      ++ticks;
     }
   }
   
@@ -106,7 +111,6 @@ class Menu {
       draw();
       
       ncs.refresh();
-      ++ticks;
     }
   }
   

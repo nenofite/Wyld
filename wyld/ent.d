@@ -62,4 +62,27 @@ class Player : StatEnt {
     name = "you";
     sym = Sym('@', Color.Blue);
   }
+
+
+class Grass : Ent {
+  this(Coord coord) {
+    this.coord = coord; // TODO put this in Ent's constructor
+  
+    name = "grass";
+    sym = Sym('"', Color.Green);
+  }
+}
+
+
+class Tree : Ent {
+  this(Coord coord) {
+    this.coord = coord;
+    
+    name = "tree";
+    
+    auto color = rand.uniform(0, 10) == 0 ? Color.Yellow : Color.Green;
+    sym = Sym('t', color);
+    
+    isBlocking = true;
+  }
 }
