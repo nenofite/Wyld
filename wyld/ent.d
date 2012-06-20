@@ -4,6 +4,7 @@ module wyld.ent;
 import wyld.core.common;
 import wyld.core.ent;
 import wyld.core.world;
+import wyld.interactions;
 
 
 /// An Ent with basic Stats
@@ -71,16 +72,26 @@ abstract class StatEnt : DynamicEnt {
 
 
 class Player : StatEnt {
+  Interaction[] interactions;
+
   this(Coord coord) {
     Tags tags;
     
     tags.size = 6000;
     
     tags.isBlocking = true;
+    
+    tags.containCo = .05;
+    
     tags.speed = 50;
   
     super("you", Sym('@', Color.Blue), tags, coord, 
           Stat(500), Stat(500), Stat(400), Stat(200), 12, 25);
+          
+    interactions = [
+      new PickUp(),
+      cast(Interaction) new Drink()
+    ];
   }
 }
 

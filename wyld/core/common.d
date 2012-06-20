@@ -501,3 +501,15 @@ void remove(T)(ref T[] list, T item) {
   
   list = newList;
 }
+
+
+/// Checks if the list contains the given item
+bool contains(T)(ref T[] list, T item) {
+  foreach (a; list) {
+    if (a is item) {
+      return true;
+    }
+  }
+  
+  return false;
+}

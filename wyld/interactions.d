@@ -37,3 +37,23 @@ class Drink : Interaction.Single {
     player.thirst += drinkAmount;
   }
 }
+
+
+/// Lets the player pick up Ents and put them in their inventory
+class PickUp : Interaction.Single {
+  this() {
+    super('g', "Pick up");
+  }
+  
+  
+  /// The Ents must be on the ground
+  bool isApplicable(Ent ent) {
+    return (ent.container is null);
+  }
+  
+  
+  /// Relocate the Ent's to the player's inventory
+  void apply(Ent ent) {
+    ent.relocate(player);
+  }
+}

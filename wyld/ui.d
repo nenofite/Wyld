@@ -572,15 +572,10 @@ class MapScreen : Menu.Screen {
 
 /// Player chooses items and interacts with them
 class Interact : Menu.Screen {
-  /// The list of accessible Ents and whether they are selected
-  EntSelect[] ents;
-  /// Temporary.  A sample interaction
-  Drink drink;
+  Ent[] selected;
 
   this() {
     super("Interact");
-    
-    drink = new Drink();
   }
   
   
@@ -589,34 +584,13 @@ class Interact : Menu.Screen {
     Menu.Entry[] entries;
     /// Used to give each item an alphabetic key for selecting
     char key = 'A';
-  
-    /// Go through each Ent and create an entry for it
-    foreach (ref ent; ents) {
-      entries ~= new class(key, &ent) Menu.Entry {
-        EntSelect* ent;
-      
-        this(char key, EntSelect* ent) {
-          super(key, ent.name);
-          
-          /// If the Ent is selected, put square brackets around 
-          /// its name
-          if (ent.isSelected) {
-            title = "[" ~ title ~ "]";
-          }
-          
-          this.ent = ent;
-        }
-        
-        
-        /// Toggle Ent selection when the menu entry is selected
-        void select() {
-          ent.isSelected = !ent.isSelected;
-        }
-      };
-      
-      /// Move on to the next letter in the alphabet for the key
-      ++key;
-    }
+    
+    entries ~= entSection(key, "Inventory", player.contained);
+    
+    auto entsOnGround = world.allEntsInRadius(1, player.coord);
+    entsOnGround.remove(player);
+    
+    entries ~= entSection(key, "On Ground", entsOnGround);
     
     return entries;
   }
@@ -624,19 +598,14 @@ class Interact : Menu.Screen {
   
   /// The list of Interactions applicable to the selection
   Menu.Entry[] interactions() {
-    /// NOTE: This is all temporary code right now with sample interaction
-    /// Make sure all the selected ents can be drunk
-    foreach (ent; ents) {
-      if (ent.isSelected) {
-        if (!drink.isApplicable(ent)) {
-          /// If not, there are no Interactions
-          return [];
-        }
-      }
+    Menu.Entry[] entries;
+    
+    /// Make an Entry for each Interaction
+    foreach (interaction; player.interactions) {
+      entries ~= interactionEntry(interaction);
     }
     
-    /// Otherwise, let the player drink
-    return [interactionEntry(drink)];
+    return entries;
   }
   
   
@@ -648,21 +617,10 @@ class Interact : Menu.Screen {
   }
   
   
-  /// On init, find the Ents in range and put them in the list
+  /// On init, clear the selection
   void init() {
-    auto entsInRange = world.allEntsInRadius(1, player.coord);
-    
-    /// So the player doesn't see themselves in the list
-    entsInRange.remove(player);
-  
-    ents = new EntSelect[](entsInRange.length);
-    
-    /// Convert Ent list to EntSelect list, all deselected
-    foreach (i, ent; entsInRange) {
-      ents[i] = EntSelect(ent, false);
-    }
+    selected = [];
   }
-  
   
   /// Creates an Entry for an Interaction, which applies it upon selection
   Menu.Entry interactionEntry(Interaction interaction) {
@@ -685,10 +643,8 @@ class Interact : Menu.Screen {
         
         if (single !is null) {
           /// Map Interaction over each selection individually
-          foreach (ent; interact.ents) {
-            if (ent.isSelected) {
-              single.apply(ent);
-            }
+          foreach (ent; interact.selected) {
+            single.apply(ent);
           }
         } else {
           auto multi = cast(Interaction.Multi) interaction;
@@ -696,20 +652,71 @@ class Interact : Menu.Screen {
           assert(multi !is null, 
                  "Interaction is neither Single nor Multi");
           
-          Ent[] ents;
-          
-          /// Create a list of just the selected Ents
-          foreach (ent; interact.ents) {
-            if (ent.isSelected) {
-              ents ~= ent;
-            }
-          }
-          
           /// Run interaction on the entire selected list as a whole
-          multi.apply(ents);
+          multi.apply(interact.selected);
         }
       }
     };
+  }
+  
+  
+  /// Creates a menu entry to select the given Ent
+  Menu.Entry entEntry(char key, Ent ent) {
+    return new class(key, ent, this) Menu.Entry {
+      Ent ent;
+      Interact interact;
+    
+      this(char key, Ent ent, Interact interact) {
+        super(key, ent.name);
+        
+        this.ent = ent;
+        this.interact = interact;
+        
+        /// If the Ent is selected, put square brackets around 
+        /// its the title
+        if (interact.selected.contains(ent)) {
+          title = "[" ~ title ~ "]";
+        }
+      }
+      
+      
+      /// Toggle Ent selection when the menu entry is selected
+      void select() {
+        if (interact.selected.contains(ent)) {
+          interact.selected.remove(ent);
+        } else {
+          interact.selected ~= ent;
+        }
+      }
+    };
+  }
+  
+  
+  /// Creates a section of menu entries for the given Ent source
+  ///
+  /// For example, to make a section for Ents in the player's inventory
+  /// or for Ents on the ground
+  Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
+    Menu.Entry[] entries;
+    
+    /// Make the title
+    entries ~= new TextEntry(" -" ~ title ~ "-");
+  
+    if (ents.length > 0) {
+      /// Go through each Ent and create an entry for it
+      foreach (ent; ents) {
+        /// Create a selectable entry for the Ent
+        entries ~= entEntry(key, ent);
+        
+        /// Move on to the next letter in the alphabet for the key
+        ++key;
+      }
+    } else {
+      /// If this contains no Ents, show that it is empty
+      entries ~= new TextEntry("(empty)");
+    }
+    
+    return entries;
   }
   
   
