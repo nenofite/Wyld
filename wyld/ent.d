@@ -26,7 +26,6 @@ abstract class StatEnt : DynamicEnt {
   this(string name, 
        Sym sym, 
        Tags tags, 
-       Link location, 
        Coord coord, 
        Stat hp, 
        Stat sp, 
@@ -34,7 +33,7 @@ abstract class StatEnt : DynamicEnt {
        Stat hunger, 
        int viewRadius, 
        int nearbyRadius) {
-    super(name, sym, tags, location, coord);
+    super(name, sym, tags, coord);
     
     this.hp = hp;
     this.sp = sp;
@@ -80,7 +79,7 @@ class Player : StatEnt {
     tags.isBlocking = true;
     tags.speed = 50;
   
-    super("you", Sym('@', Color.Blue), tags, null, coord, 
+    super("you", Sym('@', Color.Blue), tags, coord, 
           Stat(500), Stat(500), Stat(400), Stat(200), 12, 25);
   }
 }
@@ -98,7 +97,7 @@ class Deer : StatEnt {
     tags.isBlocking = true;
     tags.speed = 50;
   
-    super("deer", Sym('D', Color.White), tags, null, coord,
+    super("deer", Sym('D', Color.White), tags, coord,
           Stat(300), Stat(500), Stat(400), Stat(200), 6, 18);
   }
   
@@ -138,7 +137,7 @@ class Grass : Ent {
     
     tags.movementCost = 20;
   
-    super("grass", Sym('"', Color.Green), tags, null, coord);
+    super("grass", Sym('"', Color.Green), tags, coord);
   }
 }
 
@@ -153,6 +152,21 @@ class Tree : Ent {
     
     auto color = rand.uniform(0, 10) == 0 ? Color.Yellow : Color.Green;
     
-    super("tree", Sym('7', color), tags, null, coord);
+    super("tree", Sym('7', color), tags, coord);
+  }
+}
+
+
+class Water : Ent {
+  this(int size, Coord coord = Coord(-1, -1)) {
+    Tags tags;
+    
+    tags.size = size;
+    
+    tags.isFluid = true;
+    
+    tags.drinkCo = 1;
+    
+    super("water", Sym('~', Color.Blue), tags, coord);
   }
 }

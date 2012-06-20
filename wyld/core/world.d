@@ -61,48 +61,84 @@ class World {
   }
   
   
-  /// The Ents within nearbyRadius of the given StatEnt
-  Ent[] nearbyEnts(StatEnt statEnt) {
-    Ent[] ents;
-  
+  /// Returns the dynamic Ents within 'radius' units of the given center
+  DynamicEnt[] dynamicEntsInRadius(int radius, Coord center) {
+    DynamicEnt[] ents;
+    
     foreach (ent; dynamicEnts) {
-      if (ent.coord.x >= statEnt.coord.x - statEnt.nearbyRadius &&
-          ent.coord.x <= statEnt.coord.x + statEnt.nearbyRadius &&
-          ent.coord.y >= statEnt.coord.y - statEnt.nearbyRadius &&
-          ent.coord.y <= statEnt.coord.y + statEnt.nearbyRadius) {
-        if (ent !is statEnt) {
-          ents ~= ent;
-        }
+      auto diff = ent.coord - center;
+    
+      if (math.abs(diff.x) <= radius && 
+          math.abs(diff.y) <= radius) {
+        ents ~= ent;
       }
     }
     
     return ents;
   }
   
-  /// The Ents within nearbyRadius of the given StatEnt, along with their
-  /// direct distance from that Coord and sorted, closest to farthest
+  /// Returns the dynamic Ents within 'radius' units of the given center, 
+  /// along with their direct distance from the center, sorted, 
+  /// closest to farthest
   ///
-  /// Return: a struct that is aliased to the Ent, but that also includes
-  ///         int distance
-  auto nearbyEntsDistances(StatEnt statEnt) {
-    struct EntDistance {
-      Ent _ent;
+  /// Returns: a struct that is aliased to the Ent, but that also
+  ///          includes int distance
+  auto dynamicEntsInRadiusDistances(int radius, Coord center) {
+    struct DynamicEntDistance {
+      DynamicEnt _ent;
       int distance;
       
       alias _ent this;
     }
     
-    auto ents = nearbyEnts(statEnt);
-    EntDistance[] entsDistances = new EntDistance[](ents.length);
+    auto ents = dynamicEntsInRadius(radius, center);
+    DynamicEntDistance[] entsDistances = new DynamicEntDistance[](ents.length);
     
     foreach (i, ent; ents) {
       entsDistances[i] = 
-        EntDistance(ent, distanceBetween(ent.coord, statEnt.coord));
+        DynamicEntDistance(ent, distanceBetween(ent.coord, center));
     }
     
     alg.sort!("a.distance < b.distance")(entsDistances);
     
     return entsDistances;
+  }
+  
+  
+  /// Get all of the static Ents within 'radius' units of the given center
+  Ent[] staticEntsInRadius(int radius, Coord center) {
+    Ent[] ents;
+    
+    for (int xd = -radius; xd <= radius; ++xd) {
+      for (int yd = -radius; yd <= radius; ++yd) {
+        ents ~= staticGrid.at(center + Coord(xd, yd)).ents;
+      }
+    }
+    
+    return ents;
+  }
+  
+  
+  /// Get *all* Ents within 'radius' units of the given center
+  ///
+  /// This includes dynamic Ents, static Ents, and Ents that are within
+  /// the Terrain
+  Ent[] allEntsInRadius(int radius, Coord center) {
+    Ent[] ents = dynamicEntsInRadius(radius, center);
+    
+    for (int xd = -radius; xd <= radius; ++xd) {
+      for (int yd = -radius; yd <= radius; ++yd) {
+        auto stat = staticGrid.at(center + Coord(xd, yd));
+        
+        ents ~= stat.ents;
+        
+        if (stat.terrain.ent !is null) {
+          ents ~= stat.terrain.ent;
+        }
+      }
+    }
+    
+    return ents;
   }
   
   

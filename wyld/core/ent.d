@@ -2,6 +2,7 @@
 module wyld.core.ent;
 
 import wyld.core.common;
+import wyld.core.menu;
 import wyld.core.world;
 import wyld.main;
 
@@ -14,49 +15,62 @@ abstract class Ent {
   Sym sym;  
   /// Tags describing this Ent's characteristics
   Tags tags;  
-  /// This ent's current Location, or null if inside World itself
-  Link location; 
+  /// The container Ent this Ent is inside, or null if its directly
+  /// in World
+  Ent container; 
+  /// The Ents that are contained by/inside of this Ent
+  Ent[] contained;
   /// Coord inside of World, if this Ent is inside of World
   Coord coord;
   
   this(string name, 
        Sym sym, 
-       Tags tags, 
-       Link location, 
+       Tags tags,
        Coord coord) {
     this.name = name;
     this.sym = sym;
     this.tags = tags;
-    this.location = location;
     this.coord = coord;
   }
   
   
-  /// Remove this Ent from current parent, attempt to add to new one
-  void relocate(Location newLocation) {
-    if (location !is null) {
-      location.remove();
+  /// Remove this Ent from current container, attempt to add to new one
+  void relocate(Ent newContainer) {
+    if (container !is null) {
+      container.contained.remove(this);
     } else {
       world.remove(this);
     }
     
-    if (newLocation !is null) {
-      location = newLocation.add(this);
+    assert(newContainer.freeSpace >= tags.size);
+    
+    container = newContainer;
+    if (newContainer !is null) {
+      container.contained ~= this;
     } else {
-      location = null;
+      world.add(this);
     }
   }
   
   
-  /// If this Ent is currently inside a location
-  ///
-  /// Return: true if its inside a location, false if it is just inside World
-  bool isInside() {
-    return (location !is null);
+  /// Returns the amount of unused space left in this container
+  int freeSpace() {
+    /// Start by summing up the total space being used by current residents
+    int usedSpace;
+    
+    foreach (ent; contained) {
+      usedSpace += ent.tags.size;
+    }
+    
+    /// Subtract that from the total space this can hold
+    return cast(int) (tags.size * tags.containCo - usedSpace);
   }
   
   
   /// Tags contain various Ent characteristics used for interactivity
+  ///
+  /// All contained coefficient values (their names end in 'Co') are multiplied
+  /// by 'size' for their final amount
   static struct Tags {
     /// Size of this Ent in cubic inches
     int size; 
@@ -67,6 +81,12 @@ abstract class Ent {
     
     /// If this Ent blocks others' movement entirely
     bool isBlocking; 
+    /// The coefficient for how much of the Thirst stat this replenishes
+    /// upon drinking
+    float drinkCo = 0;
+    /// The coefficient for how much space their is available inside
+    /// this Ent to contain other Ents
+    float containCo = 0;
     /// How long it takes other Ents to move by this Ent
     int movementCost; 
     /// How long it takes the Ent to move one space, not including
@@ -74,40 +94,6 @@ abstract class Ent {
     int speed; 
     
     // TODO finish transferring tags
-  }
-  
-  
-  /// Represents something that can contain Ents
-  static interface Location {
-    /// How much room there is for more Ents
-    ///
-    /// Return: the available space in cubic inches or -1 if infinite
-    ///         room is available
-    int availableRoom();
-    
-    /// If this Location can hold fluid Ents
-    bool isWatertight();
-    
-    /// Try to add an Ent
-    Link add(Ent);
-    
-  }
-  
-  
-  /// Describes an Ent's membership inside this Location
-  ///
-  /// Links are used to track membership and remove the Ent from
-  /// the Location when the time comes
-  static abstract class Link {
-    Ent ent;
-    
-    this(Ent ent) {
-      this.ent = ent;
-    }
-    
-    
-    /// Remove the Ent from the linked Location
-    void remove();
   }
 }
 
@@ -119,9 +105,8 @@ abstract class DynamicEnt : Ent {
   this(string name, 
        Sym sym, 
        Tags tags, 
-       Link location, 
        Coord coord) {
-    super(name, sym, tags, location, coord);
+    super(name, sym, tags, coord);
   }
   
   
@@ -151,7 +136,6 @@ abstract class DynamicEnt : Ent {
       }
     }
     
-    assert(!isInside);
     auto newCoord = coord + deltaCoord;
   
     
@@ -272,5 +256,71 @@ struct StatRequirement {
   /// Consume the amount specified from the Stat
   void consume() {
     stat.amount -= amount;
+  }
+}
+
+
+/// Represents something that can be done with an Ent
+///
+/// For example, eating an edible piece of food, or stacking together
+/// items of the same type
+///
+/// Classes shouldn't directly extend this class, but instead one of its
+/// children classes: Interaction.Single or Interaction.Multiple.
+abstract class Interaction {
+  char key;
+  string title;
+
+  this(char key, string title) {
+    this.key = key;
+    this.title = title;
+  }
+  
+  
+  /// Returns true if the given Ent is one that this Interaction works on
+  bool isApplicable(Ent);
+  
+  
+  /// Represents an Interaction that only applies to a single object at a
+  /// time, as opposed to applying to a group of objects taken together
+  ///
+  /// For example, eating a piece of food or placing an item into a pack
+  static abstract class Single : Interaction {
+    this(char key, string title) {
+      super(key, title);
+    }
+    
+    
+    /// Apply this Interaction's effect to the given Ent
+    ///
+    /// The given Ent is guaranteed to have already passed this Interaction's
+    /// isApplicable().
+    void apply(Ent);
+  }
+  
+  
+  /// Represents an Interaction that applies to a group of objects taken together
+  ///
+  /// For example, stacking together multiple items, or mixing together
+  /// two fluids
+  static abstract class Multi : Interaction {
+    this(char key, string title) {
+      super(key, title);
+    }
+    
+    
+    /// Apply this Interaction's effect to the given group of Ents
+    ///
+    /// All the given Ents are guaranteed to have already passed this Interaction's
+    /// isApplicable() individually, as well as together in this Ent's
+    /// isMultiApplicable().
+    void apply(Ent[]);
+    
+    /// Returns true if the given Ents would work together in a group for
+    /// this Interaction
+    ///
+    /// All Ents in the given array are guaranteed to have already passed 
+    /// this Interaction's isApplicable() before making it into the list.
+    bool isMultiApplicable(Ent[]);
   }
 }

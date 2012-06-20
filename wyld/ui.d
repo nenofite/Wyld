@@ -10,6 +10,7 @@ import wyld.core.ent;
 import wyld.core.layout;
 import wyld.core.menu;
 import wyld.core.world;
+import wyld.interactions;
 import wyld.main;
 
 import ncs = ncs.ncurses;
@@ -23,15 +24,20 @@ import std.string: toStringz;
 /// Not to be confused with the main menu
 class MainScreen : Menu.Screen {
   MapScreen mapScreen;
+  Interact interact;
 
   this() {
     super("Main", new Ui());
     
     mapScreen = new MapScreen();
+    interact = new Interact();
   }
   
   Menu.Entry[] entries() {
-    return [new Menu.SubEntry('m', mapScreen)];
+    return [
+      new Menu.SubEntry('m', mapScreen),
+      new Menu.SubEntry('i', interact)
+    ];
   }
   
 
@@ -134,8 +140,6 @@ class OnGround : Box {
   void draw(Dimension dim) {
     string[] ents;
     
-    /// Make sure the player isn't inside a location
-    assert(!player.isInside);
     /// Find the names of all the ents on the same space as the player
     foreach (ent; world.entsAt(player.coord)) {
       if (ent !is player) {
@@ -171,7 +175,9 @@ class Nearby : Box {
   
   void draw(Dimension dim) {
     /// First, get the nearby Ents, sorted by closest to farthest
-    auto nearbyEnts = world.nearbyEntsDistances(player);
+    auto nearbyEnts = 
+      world.dynamicEntsInRadiusDistances(player.nearbyRadius, 
+                                         player.coord);
     
     /// Sort the nearby Ents into directions from the player
     Ent[] nearby; /// If they're inside the view, they go in here
@@ -560,5 +566,158 @@ class MapScreen : Menu.Screen {
         }
       }
     }
+  }
+}
+
+
+/// Player chooses items and interacts with them
+class Interact : Menu.Screen {
+  /// The list of accessible Ents and whether they are selected
+  EntSelect[] ents;
+  /// Temporary.  A sample interaction
+  Drink drink;
+
+  this() {
+    super("Interact");
+    
+    drink = new Drink();
+  }
+  
+  
+  /// Create entries to select accessible Ents
+  Menu.Entry[] items() {
+    Menu.Entry[] entries;
+    /// Used to give each item an alphabetic key for selecting
+    char key = 'A';
+  
+    /// Go through each Ent and create an entry for it
+    foreach (ref ent; ents) {
+      entries ~= new class(key, &ent) Menu.Entry {
+        EntSelect* ent;
+      
+        this(char key, EntSelect* ent) {
+          super(key, ent.name);
+          
+          /// If the Ent is selected, put square brackets around 
+          /// its name
+          if (ent.isSelected) {
+            title = "[" ~ title ~ "]";
+          }
+          
+          this.ent = ent;
+        }
+        
+        
+        /// Toggle Ent selection when the menu entry is selected
+        void select() {
+          ent.isSelected = !ent.isSelected;
+        }
+      };
+      
+      /// Move on to the next letter in the alphabet for the key
+      ++key;
+    }
+    
+    return entries;
+  }
+  
+  
+  /// The list of Interactions applicable to the selection
+  Menu.Entry[] interactions() {
+    /// NOTE: This is all temporary code right now with sample interaction
+    /// Make sure all the selected ents can be drunk
+    foreach (ent; ents) {
+      if (ent.isSelected) {
+        if (!drink.isApplicable(ent)) {
+          /// If not, there are no Interactions
+          return [];
+        }
+      }
+    }
+    
+    /// Otherwise, let the player drink
+    return [interactionEntry(drink)];
+  }
+  
+  
+  /// Mash together the items and the interactions into the menu
+  Menu.Entry[] entries() {
+    return items ~  /// Items to select
+           [new TextEntry("---")] ~ /// Separator
+           interactions;  /// Available interactions
+  }
+  
+  
+  /// On init, find the Ents in range and put them in the list
+  void init() {
+    auto entsInRange = world.allEntsInRadius(1, player.coord);
+    
+    /// So the player doesn't see themselves in the list
+    entsInRange.remove(player);
+  
+    ents = new EntSelect[](entsInRange.length);
+    
+    /// Convert Ent list to EntSelect list, all deselected
+    foreach (i, ent; entsInRange) {
+      ents[i] = EntSelect(ent, false);
+    }
+  }
+  
+  
+  /// Creates an Entry for an Interaction, which applies it upon selection
+  Menu.Entry interactionEntry(Interaction interaction) {
+    return new class(this, interaction) Menu.Entry {
+      Interact interact;
+      Interaction interaction;
+      
+      this(Interact interact, Interaction interaction) {
+        this.interact = interact;
+        this.interaction = interaction;
+        
+        super(interaction.key, interaction.title);
+      }
+      
+      
+      /// When this Entry is selected, apply the Interaction
+      void select() {
+        /// Check if the Interaction is Single or Double, then run it accordingly
+        auto single = cast(Interaction.Single) interaction;
+        
+        if (single !is null) {
+          /// Map Interaction over each selection individually
+          foreach (ent; interact.ents) {
+            if (ent.isSelected) {
+              single.apply(ent);
+            }
+          }
+        } else {
+          auto multi = cast(Interaction.Multi) interaction;
+          
+          assert(multi !is null, 
+                 "Interaction is neither Single nor Multi");
+          
+          Ent[] ents;
+          
+          /// Create a list of just the selected Ents
+          foreach (ent; interact.ents) {
+            if (ent.isSelected) {
+              ents ~= ent;
+            }
+          }
+          
+          /// Run interaction on the entire selected list as a whole
+          multi.apply(ents);
+        }
+      }
+    };
+  }
+  
+  
+  /// Contains an Ent and whether it is currently selected
+  struct EntSelect {
+    Ent ent;
+    bool isSelected;
+    
+    alias ent this;
   }
 }

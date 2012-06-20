@@ -2,6 +2,7 @@
 module wyld.core.common;
 
 import wyld.core.ent;
+import wyld.ent;
 
 import math = std.math;
 
@@ -169,6 +170,12 @@ struct Terrain {
   /// If true, a slightly different graphic is displayed to give texture
   bool isPocked;
   
+  private static Ent waterEnt;
+  
+  static this() {
+    waterEnt = new Water(-1);
+  }
+  
   /// The Sym to display this terrain
   Sym sym() const {
     switch (type) {
@@ -192,11 +199,11 @@ struct Terrain {
   
   /// The Ent that is invariably at this terrain type, ie. a Water Ent
   /// is always over water terrain
-  Ent ent() const {
+  Ent ent() {
     switch (type) {
       case Type.Water:
-        //return new Water(VoidLocation, 1000);
-        assert(false); // TODO
+        waterEnt.tags.size = 10_000;
+        return waterEnt;
         
       default:
         return null;
@@ -483,6 +490,8 @@ void remove(T)(ref T[] list, T item) {
   foreach (i, a; list) {
     if (!found && a is item) {
       found = true;
+    } else if (found) {
+      newList[i-1] = a;
     } else {
       newList[i] = a;
     }

@@ -235,7 +235,11 @@ class Menu {
         ncs.move(y, dim.x);
         
         setColor(Color.Green);
-        ncs.addch(entry.key);
+        if (entry.key == '\0') {
+          ncs.addch(' ');
+        } else {
+          ncs.addch(entry.key);
+        }
         ncs.addch(' ');
         
         setColor(Color.Text);
