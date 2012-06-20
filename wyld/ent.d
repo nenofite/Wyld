@@ -87,6 +87,9 @@ class Player : StatEnt {
 
 
 class Deer : StatEnt {
+  Coord dest;
+  bool hasDest;
+
   this(Coord coord) {
     Tags tags;
     
@@ -104,6 +107,24 @@ class Deer : StatEnt {
     StatEnt.tickUpdate();
     
     if (update is null) {
+      if (coord == dest) {
+        hasDest = false;
+      }
+    
+      if (hasDest) {
+        move(coordFromDirection(directionBetween(coord, dest)));
+        
+        if (update is null) {
+          hasDest = false;
+        }
+      } else {
+        dest.x = rand.uniform(0, world.staticGrid.width);
+        dest.y = rand.uniform(0, world.staticGrid.height);
+        
+        if (!world.isBlockingAt(dest)) {
+          hasDest = true;
+        }
+      }
     }
   }
 }

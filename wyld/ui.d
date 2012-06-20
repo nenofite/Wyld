@@ -69,11 +69,20 @@ class MainScreen : Menu.Screen {
       
       if (isDir) {
         player.move(coordFromDirection(dir));
-        //menu.updateWorld();
-        // TODO when to update world?
+      } else if (key == '5') {
+        player.update = new class() Update {
+          this() {
+            super(Time.fromSeconds(1), [], []);
+          }
+          
+          void apply() {
+          }
+        };
+      } else {
+        return false;
       }
       
-      return isDir;
+      return true;
     }
   }
 }
