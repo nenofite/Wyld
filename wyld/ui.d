@@ -184,10 +184,12 @@ class Nearby : Box {
     Ent[][Direction] far;
     
     foreach (ent; nearbyEnts) {
-      if (world.isInView(ent.coord)) {
-        nearby ~= ent;
-      } else {
-        far[directionBetween(player.coord, ent.coord)] ~= ent;
+      if (ent !is player) {
+        if (world.isInView(ent.coord)) {
+          nearby ~= ent;
+        } else {
+          far[directionBetween(player.coord, ent.coord)] ~= ent;
+        }
       }
     }
     
