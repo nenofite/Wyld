@@ -616,7 +616,33 @@ class Interact : Menu.Screen {
     
     /// Make an Entry for each Interaction
     foreach (interaction; player.interactions) {
-      entries ~= interactionEntry(interaction);
+      /// Check that this Interaction is applicable to all selected
+      /// Ents before listing it
+      bool allApplicable = true;
+      
+      /// Assure that all Ents are individually applicable
+      foreach (ent; selected) {
+        if (!interaction.isApplicable(ent)) {
+          allApplicable = false;
+        }
+      }
+      
+      if (allApplicable) {
+        /// If it is a Multi Interaction, make sure the selection
+        /// as a whole is applicable
+        auto multi = cast(Interaction.Multi) interaction;
+        
+        if (multi !is null) {
+          if (!multi.isMultiApplicable(selected)) {
+            allApplicable = false;
+          }
+        }
+        
+        /// Finally, if everything was applicable, list the Interaction
+        if (allApplicable) {
+          entries ~= interactionEntry(interaction);
+        }
+      }
     }
     
     return entries;
@@ -659,6 +685,9 @@ class Interact : Menu.Screen {
           /// Map Interaction over each selection individually
           foreach (ent; interact.selected) {
             single.apply(ent);
+            
+            /// Update the world with the Interaction's changes
+            menu.updateWorld();
           }
         } else {
           auto multi = cast(Interaction.Multi) interaction;

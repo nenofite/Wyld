@@ -2,6 +2,7 @@
 module wyld.interactions;
 
 import wyld.core.ent;
+import wyld.core.world;
 import wyld.main;
 
 import alg = std.algorithm;
@@ -54,6 +55,20 @@ class PickUp : Interaction.Single {
   
   /// Relocate the Ent's to the player's inventory
   void apply(Ent ent) {
-    ent.relocate(player);
+    /// Takes 1 ingame second to pick up the object
+    player.update = new class(ent) Update {
+      Ent ent;
+    
+      this(Ent ent) {
+        super(Time.fromSeconds(1), [], []);
+        
+        this.ent = ent;
+      }
+      
+      /// Actually move the Ent to the Player's inventory
+      void apply() {
+        ent.relocate(player);
+      }
+    };
   }
 }
