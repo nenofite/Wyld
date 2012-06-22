@@ -29,6 +29,9 @@ class Menu {
   
   List ui;
   
+  string[] messages;
+  string[] newMessages;
+  
   this(Screen[] stack, Screen escScreen) {
     this.stack = stack;
     this.escScreen = escScreen;
@@ -37,7 +40,10 @@ class Menu {
       new MenuBox(),
       new Separator(false, false),
       new Separator(false, true),
-      cast(Box) new TopUiBox()
+      cast(Box) new List(false, true, [
+        new MessageBox(),
+        cast(Box) new TopUiBox()
+      ])
     ]);
   }
   
@@ -86,7 +92,7 @@ class Menu {
     
       auto screen = stack[$-1];
       
-      auto input = cast(char) ncs.getch();
+      auto input = ncs.getch();
       ncs.flushinp();
       
       /// The escape key
@@ -98,20 +104,25 @@ class Menu {
           if (escScreen !is null)
             addScreen(escScreen);
         }
-      } else {
+      /// If a key was actually pressed
+      } else if (input != ncs.ERR) {
+        /// Make the messages old
+        messages ~= newMessages;
+        newMessages = [];
+      
         bool caughtKey;
         foreach (entry; screen.entries) {
-          if (input == entry.key) {
+          if (cast(char) input == entry.key) {
             entry.select();
             caughtKey = true;
             break;
           }
         }
         if (!caughtKey) {
-          caughtKey = screen.input(input);
+          caughtKey = screen.input(cast(char) input);
         }
         if (!caughtKey) {
-          caughtKey = topUi.input(input);
+          caughtKey = topUi.input(cast(char) input);
         }
         if (!caughtKey) {
           //assert(false);
@@ -131,6 +142,12 @@ class Menu {
       
       ncs.refresh();
     }
+  }
+  
+  
+  /// Add a new message for the player
+  void addMessage(string message) {
+    newMessages ~= message;
   }
   
   
@@ -263,6 +280,32 @@ class Menu {
   
     void draw(Dimension dim) {
       menu.topUi.ui.draw(dim);
+    }
+  }
+  
+  
+  /// Displays messages to the player
+  static class MessageBox : Box {
+    int height() {
+      if (menu.newMessages.length > 0) {
+        /// Display at most 5 lines at a time, with a line of
+        /// padding from the ui
+        return alg.min(6, menu.newMessages.length + 1);
+      } else {
+        return 0;
+      }
+    }
+    
+    
+    void draw(Dimension dim) {
+      setColor(Color.Blue);
+    
+      /// Display messages, skipping the first line of this Box
+      /// to leave it blank, as padding
+      for (int i = 0; i < height - 1; ++i) {
+        ncs.mvprintw(dim.y + i + 1, dim.x, 
+                     toStringz(menu.newMessages[i]));
+      }
     }
   }
 }

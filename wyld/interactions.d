@@ -2,6 +2,7 @@
 module wyld.interactions;
 
 import wyld.core.ent;
+import wyld.core.menu;
 import wyld.core.world;
 import wyld.main;
 
@@ -67,7 +68,13 @@ class PickUp : Interaction.Single {
       
       /// Actually move the Ent to the Player's inventory
       void apply() {
-        ent.relocate(player);
+        if (player.freeSpace >= ent.tags.size) {
+          ent.relocate(player);
+          menu.addMessage("You pick up " ~ ent.name);
+        } else {
+          menu.addMessage("You don't have room to hold " ~ 
+                          ent.name);
+        }
       }
     };
   }
