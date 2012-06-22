@@ -574,7 +574,12 @@ class MapScreen : Menu.Screen {
 
 /// Player chooses items and interacts with them
 class Interact : Menu.Screen {
+  /// The currently selected Ents
   Ent[] selected;
+  /// This is used to cull out selected Ents that are not shown   
+  /// in the menu; selected Ents are added to this when displayed
+  /// on the menu, and any Ents not added to this are deselected
+  Ent[] newSelected;
 
   this() {
     super("Interact");
@@ -584,6 +589,10 @@ class Interact : Menu.Screen {
   /// Create entries to select accessible Ents
   Menu.Entry[] items() {
     Menu.Entry[] entries;
+    
+    /// Reset newSelected; the Ent entries will add to it accordingly
+    newSelected = [];
+    
     /// Used to give each item an alphabetic key for selecting
     char key = 'A';
     
@@ -593,6 +602,9 @@ class Interact : Menu.Screen {
     entsOnGround.remove(player);
     
     entries ~= entSection(key, "On Ground", entsOnGround);
+    
+    /// Cull out any selected Ents that were not shown in the menu
+    selected = newSelected;
     
     return entries;
   }
@@ -678,6 +690,10 @@ class Interact : Menu.Screen {
         /// its the title
         if (interact.selected.contains(ent)) {
           title = "[" ~ title ~ "]";
+          
+          if (!interact.newSelected.contains(ent)) {
+            interact.newSelected ~= ent;
+          }
         }
       }
       
