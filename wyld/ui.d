@@ -36,7 +36,8 @@ class MainScreen : Menu.Screen {
   Menu.Entry[] entries() {
     return [
       new Menu.SubEntry('m', mapScreen),
-      new Menu.SubEntry('i', interact)
+      new Menu.SubEntry('i', interact),
+      new Menu.SubEntry('a', new Messages())
     ];
   }
   
@@ -773,5 +774,88 @@ class Interact : Menu.Screen {
     bool isSelected;
     
     alias ent this;
+  }
+}
+
+
+/// Displays all previously seen messages
+class Messages : Menu.Screen {
+  /// The index of the latest message displayed on screen
+  int messageIndex;
+
+  this() {
+    super("Messages", new Ui(this));
+  }
+  
+  
+  Menu.Entry[] entries() {
+    return [];
+  }
+  
+  
+  /// Reset to showing the latest message
+  void init() {
+    messageIndex = cast(int) menu.messages.length - 1;
+  }
+  
+  
+  static class Ui : Menu.Ui {
+    Messages msgs;
+  
+    this(Messages msgs) {
+      super(new MsgBox(msgs));
+      
+      this.msgs = msgs;
+    }
+    
+    
+    /// Use 8 and 2 to scroll
+    bool input(char key) {
+      switch (key) {
+        case '8':
+          --msgs.messageIndex;
+          break;
+        case '2':
+          ++msgs.messageIndex;
+          break;
+        default:
+          return false;
+      }
+      
+      /// Clip the message index
+      if (msgs.messageIndex < 0) {
+        msgs.messageIndex = 0;
+      } else if (msgs.messageIndex >= menu.messages.length) {
+        msgs.messageIndex = cast(int) menu.messages.length - 1;
+      }
+      
+      return true;
+    }
+    
+    
+    /// The display
+    static class MsgBox : Box {
+      Messages msgs;
+    
+      this(Messages msgs) {
+        this.msgs = msgs;
+      }
+    
+      void draw(Dimension dim) {
+        int i = msgs.messageIndex - dim.height + 1;
+        
+        setColor(Color.Text);
+        
+        /// Go through each line and draw that message
+        for (int y = 0; y < dim.height; ++y) {
+          if (i >= 0) {
+            ncs.mvprintw(dim.y + y, dim.x,
+                         toStringz(menu.messages[i]));
+          }
+          
+          ++i;
+        }
+      }
+    }
   }
 }
