@@ -95,8 +95,25 @@ class Menu {
       auto input = ncs.getch();
       ncs.flushinp();
       
-      /// The escape key
-      if (input == 27) {
+      /// If there are more messages to be displayed
+      if (newMessages.length > MessageBox.maxMessages) {
+        switch (input) {
+          case '\n':
+            /// Enter key advances them
+            messages ~= newMessages[0 .. MessageBox.maxMessages+1];
+            newMessages = newMessages[MessageBox.maxMessages+1 .. $];
+            
+            break;
+          case 27: 
+            /// The Escape key clears them
+            messages ~= newMessages;
+            newMessages = [];
+          
+            break;
+          default:
+            break;
+        }
+      } else if (input == 27) { /// The Escape key
         if (stack.length > 1) {
           removeScreen();
         } else {
@@ -106,7 +123,7 @@ class Menu {
         }
       /// If a key was actually pressed
       } else if (input != ncs.ERR) {
-        /// Make the messages old
+        /// Make the new messages old
         messages ~= newMessages;
         newMessages = [];
       
@@ -286,11 +303,14 @@ class Menu {
   
   /// Displays messages to the player
   static class MessageBox : Box {
+    /// The max lines of messages to be displayed at once
+    immutable int maxMessages = 5;
+  
     int height() {
       if (menu.newMessages.length > 0) {
-        /// Display at most 5 lines at a time, with a line of
-        /// padding from the ui
-        return alg.min(6, menu.newMessages.length + 1);
+        /// Display at most 'maxMessages' lines at a time, with a 
+        /// line of padding from the ui and a line for 'more'
+        return alg.min(maxMessages + 1, menu.newMessages.length) + 1;
       } else {
         return 0;
       }
@@ -298,13 +318,32 @@ class Menu {
     
     
     void draw(Dimension dim) {
-      setColor(Color.Blue);
+      /// How many lines of messages are being drawn
+      /// Start being set to the length of newMessages
+      int messagesToDraw = cast(int) menu.newMessages.length;
+      /// If there are more lines
+      bool isMore = false;
+                                   
+      /// Clip the number of lines to maxMessages
+      if (messagesToDraw > maxMessages) {
+        messagesToDraw = maxMessages;
+        isMore = true;
+      }
     
+      setColor(Color.Blue);
+      
       /// Display messages, skipping the first line of this Box
       /// to leave it blank, as padding
-      for (int i = 0; i < height - 1; ++i) {
-        ncs.mvprintw(dim.y + i + 1, dim.x, 
+      for (int i = 0; i < messagesToDraw; ++i) {
+        ncs.mvprintw(dim.y + 1 + i, dim.x, 
                      toStringz(menu.newMessages[i]));
+      }
+      
+      /// Draw the 'more' sign at the bottom
+      if (isMore) {
+        setColor(Color.BlueBg);
+        
+        ncs.mvprintw(dim.y2, dim.x, "[MORE]");
       }
     }
   }
