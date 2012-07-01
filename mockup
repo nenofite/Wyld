@@ -1,0 +1,45 @@
+Enter your stats:
+
+Stamina:  used up when doing shtuff
+> 10/10
+Strength:  how many stamina points can be expended on something
+> 9
+Coordination:  affects aiming
+> 8
+
+Enter your enemy's stats:
+
+Stamina:
+> 15/15
+Strength:
+> 9
+Coordination:
+> 7
+
+You and your foe appear.
+You are holding a heavy stick.   lots o' blunt damage, but heavy, so uses lots o' stamina
+Before you stands wolf.
+> l wolf
+Wolf:
+Head            fine
+Torso           fine
+Front left leg  fine
+Front right leg fine
+Back left leg   fine
+Back right leg  fine
+Tail            fine
+> attack wo
+Choose method:
+1) whack w/ heavy stick - area: 6 in^2, transfer: 0.6 - 20 lbs: 
+2) jab w/ heavy stick - area: 2 in^2, transfer: 0.8 - 20 lbs: 2 SP base, 2 HP per additional SP
+> 2
+Jab where:
+1) Head (fine) 40 in^2 100% 0%
+2) Torso (fine) 220 in^2 100% 0%
+3) Front left leg (fine) 60 in^2 100% 0%
+   ...
+> 3
+Expending how many SP? (2 SP base, 2 HP per additional SP)
+> 6      4.8 force over 2 in^2 <- the smaller of the weapon/the target part
+         does 24 damage if target doesn't dodge/block
+
