@@ -264,15 +264,17 @@ class BodyPart : Entity {
   int size;
   bool isCritical;
   Tags tags;
-  BodyPart[] sub;
+  Creature creature;
+  BodyPart parent;
+  BodyPart[] children;
 
-  this(string keyword, Name name, Stat hp, int size, bool isCritical, Tags tags, BodyPart[] sub) {
+  this(string keyword, Name name, Stat hp, int size, bool isCritical, Tags tags, BodyPart[] children) {
     super(keyword, name);
     this.hp = hp;
     this.size = size;
     this.isCritical = isCritical;
     this.tags = tags;
-    this.sub = sub;
+    this.children = children;
   }
 
 
@@ -284,10 +286,10 @@ class BodyPart : Entity {
                               part.size,
                               part.isCritical,
                               part.tags,
-                              part.sub.dup);
+                              part.children.dup);
 
-      foreach (ref sub; dup.sub) {
-        sub = addPrefix(prefix, sub);
+      foreach (ref children; dup.children) {
+        children = addPrefix(prefix, children);
       }
 
       return dup;
@@ -302,6 +304,26 @@ class BodyPart : Entity {
     }
 
     return list;
+  }
+
+
+  /// Recursively go through all children of this BodyPart and set their
+  /// parent fields accordingly.
+  void linkChildren(Creature creature) {
+    this.creature = creature;
+  
+    foreach (child; children) {
+      child.parent = this;
+
+      child.linkChildren(creature);
+    }
+  }
+
+
+  void removePart(BodyPart child) {
+    children.remove(child);
+
+    child.parent = null;
   }
 
 
@@ -440,13 +462,15 @@ class Player : Creature {
         (new BodyPart("eye", Name("eye", "eye's"), Stat(10), 4, false, BodyPart.Tags(true), [])).mirror(["left", "right"]))
     ]);
 
-    torso.sub ~= (new BodyPart("arm", Name("arm", "arm's"), Stat(30), 40, false, BodyPart.Tags(), [
+    torso.children ~= (new BodyPart("arm", Name("arm", "arm's"), Stat(30), 40, false, BodyPart.Tags(), [
       new BodyPart("hand", Name("hand", "hand's"), Stat(20), 18, false, BodyPart.Tags(false, true), [])
     ])).mirror(["left", "right"]);
 
-    torso.sub ~= (new BodyPart("leg", Name("leg", "leg's"), Stat(40), 120, false, BodyPart.Tags(), [
+    torso.children ~= (new BodyPart("leg", Name("leg", "leg's"), Stat(40), 120, false, BodyPart.Tags(), [
       new BodyPart("foot", Name("foot", "foot's"), Stat(20), 26, false, BodyPart.Tags(), [])
     ])).mirror(["left", "right"]);
+
+    torso.linkChildren(this);
 
     super("me", Name("you", "your"), stamina, strength, coordination, torso);
   }
@@ -483,9 +507,11 @@ class Wolf : Creature {
         (new BodyPart("eye", Name("eye", "eye's"), Stat(10), 4, false, BodyPart.Tags(true), [])).mirror(["left", "right"]))
     ]);
 
-    torso.sub ~= (new BodyPart("leg", Name("leg", "leg's"), Stat(50), 100, false, BodyPart.Tags(), [
+    torso.children ~= (new BodyPart("leg", Name("leg", "leg's"), Stat(50), 100, false, BodyPart.Tags(), [
       new BodyPart("foot", Name("foot", "foot's"), Stat(20), 40, false, BodyPart.Tags(), [])
     ])).mirror(["front left", "front right", "back left", "back right"]);
+
+    torso.linkChildren(this);
 
     super("wolf", Name("wolf", "wolf's"), Stat(15), 9, 7, torso);
   }
@@ -736,18 +762,18 @@ class AttackCommand : Command {
       }
     }
 
-    auto dmg = calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
+    auto dmg = cast(int) calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
     
-    targetPart.hp -= dmg;
+    modifyHp(targetPart, -dmg);
 
-    game.put(fmt("You do %s damage to %s %s, leaving %s HPs.", dmg, target.name.posessive, targetPart.name.singular, targetPart.hp));
+    /+game.put(fmt("You do %s damage to %s %s, leaving %s HPs.", dmg, target.name.posessive, targetPart.name.singular, targetPart.hp));
 
     if (targetPart.hp.amount == 0) {
       game.put("It falls off!");
     }
 
     player.stamina -= sp;
-    game.put(fmt("\nYou are left with %s SPs.", player.stamina));
+    game.put(fmt("\nYou are left with %s SPs.", player.stamina));+/
   }
 }
 
@@ -796,7 +822,7 @@ float toPercent(float frac) {
 BodyPart[] allParts(BodyPart base) {
   auto parts = [base];
 
-  foreach (part; base.sub) {
+  foreach (part; base.children) {
     parts ~= allParts(part);
   }
 
@@ -847,6 +873,34 @@ class HeavyStick : Weapon {
       new HitMethod("whack", 6, 0.6),
       new HitMethod("jab", 2, 0.8)
     ]);
+  }
+}
+
+
+void modifyHp(BodyPart part, int hpDelta) {
+  part.hp += hpDelta;
+
+  if (part.hp > 0) {
+    string changeVerb;
+
+    if (hpDelta > 0) {
+      changeVerb = "heals";
+    } else {
+      changeVerb = "loses";
+    }
+
+    game.put(fmt("%s %s %s %s HPs.", part.creature.name.posessive, part.name.singular, changeVerb, hpDelta));
+  } else {
+    if (part.parent !is null) {
+      game.put(fmt("%s %s falls off.", part.parent.name.posessive, part.name.singular));
+
+      part.parent.removePart(part);
+      game.add(part);
+    }
+
+    if (part.isCritical) {
+      game.put(fmt("%s has died.", part.creature.name.singular));
+    }
   }
 }
 
