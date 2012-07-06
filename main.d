@@ -540,6 +540,8 @@ class SetupCommand : Command {
 
     int coordination;
     game.prompt("Coordination:", "%d", &coordination);
+    
+    game.put("");
 
     player = new Player(stamina, strength, coordination);
 
@@ -753,9 +755,9 @@ class AttackCommand : Command {
     int sp;
 
     while (true) {
-      game.prompt(fmt("Expending how many SPs? min: %s, max: %s", hitMethod.weapon.weight / 10, player.stamina.amount), "%d", &sp);
+      game.prompt(fmt("Expending how many SPs? min: %s, max: %s", minSp(hitMethod.weapon), player.stamina.amount), "%d", &sp);
 
-      if (sp >= hitMethod.weapon.weight / 10 && sp <= player.stamina) {
+      if (sp >= minSp(hitMethod.weapon) && sp <= player.stamina) {
         break;
       } else {
         game.put("Not within range.");
@@ -764,7 +766,12 @@ class AttackCommand : Command {
 
     auto dmg = cast(int) calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
     
-    modifyHp(targetPart, -dmg);
+    game.put(fmt("Will take %d", calcTime(hitMethod.weapon, hitMethod.hitMethod, sp)));
+    
+    player.update = new GenUpdate(calcTime(hitMethod.weapon, hitMethod.hitMethod, sp), () {
+      modifyHp(targetPart, -dmg);    
+    });
+    
 
     /+game.put(fmt("You do %s damage to %s %s, leaving %s HPs.", dmg, target.name.posessive, targetPart.name.singular, targetPart.hp));
 
@@ -803,9 +810,21 @@ float calcDamage(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart 
     effectiveness = (target.size - leftpoint) / hitMethod.hitArea;
   }
 
-  auto force = (sp - weapon.weight / 10) * (weapon.weight / 10) * hitMethod.transfer * effectiveness;
+  auto force = (sp - minSp(weapon)) * minSp(weapon) * hitMethod.transfer * effectiveness;
 
   return force * 10 / hitMethod.hitArea;
+}
+
+
+int calcTime(Weapon weapon, HitMethod hitMethod, int sp) {
+  auto additionalSp = sp - minSp(weapon);
+  
+  return weapon.weight * 10 / (additionalSp + 1);
+}
+
+
+int minSp(Weapon weapon) {
+  return cast(int) weapon.weight / 10;
 }
 
 
@@ -887,6 +906,7 @@ void modifyHp(BodyPart part, int hpDelta) {
       changeVerb = "heals";
     } else {
       changeVerb = "loses";
+      hpDelta = -hpDelta;
     }
 
     game.put(fmt("%s %s %s %s HPs.", part.creature.name.posessive, part.name.singular, changeVerb, hpDelta));
