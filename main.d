@@ -1,5 +1,6 @@
 module main;
 
+import alg = std.algorithm;
 import std.array: appender;
 import std.conv: ConvException;
 import std.format: formattedRead, formattedWrite;
@@ -232,6 +233,10 @@ abstract class Creature : Entity {
     if (game.time.ticks % 100 == 0) {
       ++stamina;
     }
+  }
+  
+  int expendableStamina() {
+    return alg.min(strength, stamina.amount);
   }
   
   void die() {
@@ -792,9 +797,9 @@ class AttackCommand : Command {
     int sp;
 
     while (true) {
-      game.prompt(fmt("Expending how many SPs? min: %s, max: %s", minSp(hitMethod.weapon), player.stamina.amount), "%d", &sp);
+      game.prompt(fmt("Expending how many SPs? min: %s, max: %s", minSp(hitMethod.weapon), player.expendableStamina), "%d", &sp);
 
-      if (sp >= minSp(hitMethod.weapon) && sp <= player.stamina) {
+      if (sp >= minSp(hitMethod.weapon) && sp <= player.expendableStamina) {
         break;
       } else {
         game.put("Not within range.");
