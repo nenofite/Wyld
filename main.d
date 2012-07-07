@@ -228,6 +228,12 @@ abstract class Creature : Entity {
     this.torso = torso;
   }
   
+  void statUpdate() {
+    if (game.time.ticks % 100 == 0) {
+      ++stamina;
+    }
+  }
+  
   void die() {
     game.put(fmt("%s has died.", name.singular));
   }
@@ -490,6 +496,8 @@ class Player : Creature {
 
 
   void statUpdate() {
+    Creature.statUpdate();
+  
     if (update is null) {
       auto input = words(game.read());
 
@@ -531,7 +539,7 @@ class Wolf : Creature {
 
 
   void statUpdate() {
-
+    Creature.statUpdate();
   }
 }
 
@@ -831,9 +839,11 @@ float calcDamage(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart 
 
 
 int calcTime(Weapon weapon, HitMethod hitMethod, int sp) {
-  auto additionalSp = sp - minSp(weapon);
+  int time = weapon.weight * 5;
   
-  return weapon.weight * 10 / (additionalSp + 1);
+  if (time < 50) return 50;
+
+  return weapon.weight * 5;
 }
 
 
