@@ -695,6 +695,19 @@ class GrabCommand : Command {
 }
 
 
+class WaitCommand : Command {
+  this() {
+    super("wait");
+  }
+  
+  
+  void run(Command.Parameters params) {
+    player.update = new GenUpdate(50, () {});
+    game.put("You wait a heartbeat.");
+  }
+}
+
+
 class AttackCommand : Command {
   this() {
     super("attack");
@@ -832,7 +845,7 @@ float calcDamage(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart 
     effectiveness = (target.size - leftpoint) / hitMethod.hitArea;
   }
 
-  auto force = (sp - minSp(weapon)) * minSp(weapon) * hitMethod.transfer * effectiveness;
+  auto force = (sp - minSp(weapon) + 1) * minSp(weapon) * hitMethod.transfer * effectiveness;
 
   return force * 10 / hitMethod.hitArea;
 }
@@ -946,6 +959,7 @@ void main() {
   game.commands = [
     new LookCommand(),
     new AttackCommand(),
+    new WaitCommand(),
     cast(Command) new GrabCommand()
   ];
 
