@@ -227,6 +227,10 @@ abstract class Creature : Entity {
     this.coordination = coordination;
     this.torso = torso;
   }
+  
+  void die() {
+    game.put(fmt("%s has died.", name.singular));
+  }
 }
 
 
@@ -324,6 +328,15 @@ class BodyPart : Entity {
     children.remove(child);
 
     child.parent = null;
+  }
+  
+  
+  void die() {
+    game.put(fmt("%s %s has been completely destroyed.", creature.name.posessive, name.singular));
+    
+    if (isCritical) {
+      creature.die();
+    }
   }
 
 
@@ -767,6 +780,7 @@ class AttackCommand : Command {
     auto dmg = cast(int) calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
     
     game.put(fmt("Will take %d", calcTime(hitMethod.weapon, hitMethod.hitMethod, sp)));
+    player.stamina -= sp;
     
     player.update = new GenUpdate(calcTime(hitMethod.weapon, hitMethod.hitMethod, sp), () {
       modifyHp(targetPart, -dmg);    
@@ -911,16 +925,7 @@ void modifyHp(BodyPart part, int hpDelta) {
 
     game.put(fmt("%s %s %s %s HPs.", part.creature.name.posessive, part.name.singular, changeVerb, hpDelta));
   } else {
-    if (part.parent !is null) {
-      game.put(fmt("%s %s falls off.", part.parent.name.posessive, part.name.singular));
-
-      part.parent.removePart(part);
-      game.add(part);
-    }
-
-    if (part.isCritical) {
-      game.put(fmt("%s has died.", part.creature.name.singular));
-    }
+    part.die();
   }
 }
 
