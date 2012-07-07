@@ -702,8 +702,11 @@ class WaitCommand : Command {
   
   
   void run(Command.Parameters params) {
-    player.update = new GenUpdate(50, () {});
-    game.put("You wait a heartbeat.");
+    int tenthSecs;
+    game.prompt("How many tenths of a second?", "%d", &tenthSecs);
+  
+    player.update = new GenUpdate(tenthSecs * 10, () {});
+    game.put("You wait.");
   }
 }
 
