@@ -219,6 +219,7 @@ abstract class Creature : Entity {
   int strength;
   int coordination;
   BodyPart torso;
+  bool isAlive = true;
 
   this(string keyword, Name name, Stat stamina, int strength, int coordination, BodyPart torso) {
     super(keyword, name);
@@ -240,7 +241,11 @@ abstract class Creature : Entity {
   }
   
   void die() {
-    game.put(fmt("%s has died.", name.singular));
+    if (isAlive) {    
+      game.put(fmt("%s has died.", name.singular));
+    }
+    
+    isAlive = false;
   }
 }
 
@@ -545,6 +550,16 @@ class Wolf : Creature {
 
   void statUpdate() {
     Creature.statUpdate();
+    
+    if (isAlive) {
+      if (update is null) {
+        update = new GenUpdate(Time.fromSeconds(1), () {
+          if (isAlive) {
+            game.put("Erhmahgerd werf!");          
+          }
+        });
+      }
+    }
   }
 }
 
