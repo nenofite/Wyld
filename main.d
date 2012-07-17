@@ -236,22 +236,22 @@ abstract class Creature : Entity {
     this.coordination = coordination;
     this.torso = torso;
   }
-  
+
   void statUpdate() {
     if (game.time.ticks % 100 == 0) {
       ++stamina;
     }
   }
-  
+
   int expendableStamina() {
     return alg.min(strength, stamina.amount);
   }
-  
+
   void die() {
-    if (isAlive) {    
+    if (isAlive) {
       game.put(fmt("%s has died.", name.singular));
     }
-    
+
     isAlive = false;
   }
 }
@@ -338,7 +338,7 @@ class BodyPart : Entity {
   /// parent fields accordingly.
   void linkChildren(Creature creature) {
     this.creature = creature;
-  
+
     foreach (child; children) {
       child.parent = this;
 
@@ -352,11 +352,11 @@ class BodyPart : Entity {
 
     child.parent = null;
   }
-  
-  
+
+
   void die() {
     game.put(fmt("%s %s has been completely destroyed.", creature.name.posessive, name.singular));
-    
+
     if (isCritical) {
       creature.die();
     }
@@ -501,7 +501,7 @@ class Player : Creature {
 
   void statUpdate() {
     Creature.statUpdate();
-  
+
     if (update is null) {
       auto input = words(game.read());
 
@@ -544,12 +544,12 @@ class Wolf : Creature {
 
   void statUpdate() {
     Creature.statUpdate();
-    
+
     if (isAlive) {
       if (update is null) {
         update = new GenUpdate(Time.fromSeconds(1), () {
           if (isAlive) {
-            game.put("Erhmahgerd werf!");          
+            game.put("Erhmahgerd werf!");
           }
         });
       }
@@ -575,7 +575,7 @@ class SetupCommand : Command {
 
     int coordination;
     game.prompt("Coordination:", "%d", &coordination);
-    
+
     game.put("");
 
     player = new Player(stamina, strength, coordination);
@@ -713,12 +713,12 @@ class WaitCommand : Command {
   this() {
     super("wait");
   }
-  
-  
+
+
   void run(Command.Parameters params) {
     int tenthSecs;
     game.prompt("How many tenths of a second?", "%d", &tenthSecs);
-  
+
     player.update = new GenUpdate(tenthSecs * 10, () {});
     game.put("You wait.");
   }
@@ -816,14 +816,14 @@ class AttackCommand : Command {
     }
 
     auto dmg = cast(int) calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
-    
+
     game.put(fmt("Will take %d", calcTime(hitMethod.weapon, hitMethod.hitMethod, sp)));
     player.stamina -= sp;
-    
+
     player.update = new GenUpdate(calcTime(hitMethod.weapon, hitMethod.hitMethod, sp), () {
-      modifyHp(targetPart, -dmg);    
+      modifyHp(targetPart, -dmg);
     });
-    
+
 
     /+game.put(fmt("You do %s damage to %s %s, leaving %s HPs.", dmg, target.name.posessive, targetPart.name.singular, targetPart.hp));
 
@@ -992,3 +992,4 @@ void main() {
 
   game.loop();
 }
+
