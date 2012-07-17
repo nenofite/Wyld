@@ -318,6 +318,10 @@ class BodyPart : Entity {
       foreach (ref children; dup.children) {
         children = addPrefix(prefix, children);
       }
+      
+      dup.weight = part.weight;
+      
+      dup.hitMethods = part.hitMethods.dup;
 
       return dup;
     }
@@ -485,9 +489,14 @@ class Player : Creature {
         (new BodyPart("eye", Name("eye", "eye's"), Stat(10), 4, false, BodyPart.Tags(true), [])).mirror(["left", "right"]))
     ]);
 
-    torso.children ~= (new BodyPart("arm", Name("arm", "arm's"), Stat(30), 40, false, BodyPart.Tags(), [
-      new BodyPart("hand", Name("hand", "hand's"), Stat(20), 18, false, BodyPart.Tags(false, true), [])
-    ])).mirror(["left", "right"]);
+    auto hand = new BodyPart("hand", Name("hand", "hand's"), Stat(20), 18, false, BodyPart.Tags(false, true), []);
+    hand.weight = 5;
+    hand.hitMethods = [
+      new HitMethod("punch", 12, .6),
+      new HitMethod("slap", 14, .4)
+    ];
+
+    torso.children ~= (new BodyPart("arm", Name("arm", "arm's"), Stat(30), 40, false, BodyPart.Tags(), [hand])).mirror(["left", "right"]);
 
     torso.children ~= (new BodyPart("leg", Name("leg", "leg's"), Stat(40), 120, false, BodyPart.Tags(), [
       new BodyPart("foot", Name("foot", "foot's"), Stat(20), 26, false, BodyPart.Tags(), [])
@@ -774,6 +783,16 @@ class AttackCommand : Command {
                                    weapon.weight);
             }
           }
+        }
+        
+        foreach (method; part.hitMethods) {
+          hitMethods ~= WeaponHitMethod(part, method);
+          strHitMethods ~= fmt("%s w/ %s - area: %s in^2, transfer: %s, weight: %s lbs",
+                                   method.name,
+                                   part.name.singular,
+                                   method.hitArea,
+                                   method.transfer,
+                                   part.weight);
         }
       }
 
