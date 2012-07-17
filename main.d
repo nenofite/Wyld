@@ -169,6 +169,8 @@ abstract class Entity : Location {
   string keyword;
   Name name;
   Location location;
+  int weight;
+  HitMethod[] hitMethods;
 
   Update update;
 
@@ -180,6 +182,11 @@ abstract class Entity : Location {
 
 
   void statUpdate() {}
+
+
+  bool isWeapon() {
+    return (hitMethods.length > 0);
+  }
 }
 
 
@@ -361,19 +368,6 @@ class BodyPart : Entity {
 
     bool canHold;
     Entity held;
-  }
-}
-
-
-class Weapon : Entity {
-  int weight;
-  HitMethod[] hitMethods;
-
-  this(string keyword, Name name, int weight, HitMethod[] hitMethods) {
-    super(keyword, name);
-
-    this.weight = weight;
-    this.hitMethods = hitMethods;
   }
 }
 
@@ -754,7 +748,7 @@ class AttackCommand : Command {
     }
 
     struct WeaponHitMethod {
-      Weapon weapon;
+      Entity weapon;
       HitMethod hitMethod;
     }
 
@@ -767,9 +761,9 @@ class AttackCommand : Command {
 
       foreach (part; allParts(player.torso)) {
         if (part.tags.canHold && part.tags.held !is null) {
-          auto weapon = cast(Weapon) part.tags.held;
+          auto weapon = part.tags.held;
 
-          if (weapon !is null) {
+          if (weapon.isWeapon) {
             foreach (method; weapon.hitMethods) {
               hitMethods ~= WeaponHitMethod(weapon, method);
               strHitMethods ~= fmt("%s w/ %s - area: %s in^2, transfer: %s, weight: %s lbs",
@@ -843,18 +837,18 @@ class AttackCommand : Command {
 }
 
 
-float probFullHit(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart target) {
+float probFullHit(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target) {
   return (target.size - hitMethod.hitArea) /
          (100 / coordination);
 }
 
 
-float probFullMiss(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart target) {
+float probFullMiss(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target) {
   return (1 - (target.size / (100 / coordination)));
 }
 
 
-float calcDamage(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart target, int sp) {
+float calcDamage(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target, int sp) {
   auto leftpoint = rand.uniform(0, 100) / player.coordination;
   auto rightpoint = leftpoint + hitMethod.hitArea;
 
@@ -874,16 +868,16 @@ float calcDamage(Weapon weapon, HitMethod hitMethod, int coordination, BodyPart 
 }
 
 
-int calcTime(Weapon weapon, HitMethod hitMethod, int sp) {
+int calcTime(Entity weapon, HitMethod hitMethod, int sp) {
   int time = weapon.weight * 5;
-  
+
   if (time < 50) return 50;
 
   return weapon.weight * 5;
 }
 
 
-int minSp(Weapon weapon) {
+int minSp(Entity weapon) {
   return cast(int) weapon.weight / 10;
 }
 
@@ -946,12 +940,15 @@ class GenUpdate : Update {
 }
 
 
-class HeavyStick : Weapon {
+class HeavyStick : Entity {
   this() {
-    super("stick", Name("heavy stick", "heavy stick's"), 20, [
+    super("stick", Name("heavy stick", "heavy stick's"));
+
+    weight = 20;
+    hitMethods = [
       new HitMethod("whack", 6, 0.6),
       new HitMethod("jab", 2, 0.8)
-    ]);
+    ];
   }
 }
 
