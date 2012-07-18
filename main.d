@@ -103,6 +103,28 @@ class Game : Location {
       }
     }
   }
+  
+
+  int choose(string prompt, string[] choices) {
+    while (true) {
+      game.put(prompt);
+
+      foreach (int i, choice; choices) {
+        game.put(fmt("%s) %s", i + 1, choice));
+      }
+
+      int choice;
+      bool worked = scan(game.read("# "), "%s", &choice);
+
+      --choice;
+
+      if (worked && choice >= 0 && choice < choices.length) {
+        return choice;
+      } else {
+        game.put("Invalid choice.");
+      }
+    }
+  }
 }
 
 
@@ -245,6 +267,16 @@ abstract class Creature : Entity {
 
   int expendableStamina() {
     return alg.min(strength, stamina.amount);
+  }
+  
+  int bodyWeight() {
+    int weight;
+    
+    foreach (part; allParts(torso)) {
+      weight += part.weight;
+    }
+    
+    return weight;
   }
 
   void die() {
@@ -420,28 +452,6 @@ abstract class Command {
       ++index;
 
       return (ent !is null);
-    }
-
-
-    int choose(string prompt, string[] choices) {
-      while (true) {
-        game.put(prompt);
-
-        foreach (int i, choice; choices) {
-          game.put(fmt("%s) %s", i + 1, choice));
-        }
-
-        int choice;
-        bool worked = scan(game.read("# "), "%s", &choice);
-
-        --choice;
-
-        if (worked && choice >= 0 && choice < choices.length) {
-          return choice;
-        } else {
-          game.put("Invalid choice.");
-        }
-      }
     }
   }
 }
@@ -698,7 +708,7 @@ class GrabCommand : Command {
         }
       }
 
-      auto choice = params.choose("Grab with which hand:", strHands);
+      auto choice = game.choose("Grab with which hand:", strHands);
 
       if (hands[choice].tags.held !is null) {
         game.add(hands[choice].tags.held);
@@ -796,7 +806,7 @@ class AttackCommand : Command {
         }
       }
 
-      auto choice = params.choose("Choose method:", strHitMethods);
+      auto choice = game.choose("Choose method:", strHitMethods);
 
       hitMethod = hitMethods[choice];
     }
@@ -817,7 +827,7 @@ class AttackCommand : Command {
                           toPercent(probFullMiss(hitMethod.weapon, hitMethod.hitMethod, player.coordination, part)));
       }
 
-      auto choice = params.choose(hitMethod.hitMethod.name ~ " where:", strParts);
+      auto choice = game.choose(hitMethod.hitMethod.name ~ " where:", strParts);
 
       targetPart = parts[choice];
     }
