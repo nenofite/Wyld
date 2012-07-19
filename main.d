@@ -819,12 +819,10 @@ class AttackCommand : Command {
       string[] strParts = new string[](parts.length);
 
       foreach (int i, part; parts) {
-        strParts[i] = fmt("%s (%s) - %s in^2, %s%% %s%%",
+        strParts[i] = fmt("%s (%s) - %s in^2",
                           part.name.singular,
                           hpName(part.hp),
-                          part.size,
-                          toPercent(probFullHit(hitMethod.weapon, hitMethod.hitMethod, player.coordination, part)),
-                          toPercent(probFullMiss(hitMethod.weapon, hitMethod.hitMethod, player.coordination, part)));
+                          part.size);
       }
 
       auto choice = game.choose(hitMethod.hitMethod.name ~ " where:", strParts);
@@ -835,79 +833,99 @@ class AttackCommand : Command {
     int sp;
 
     while (true) {
-      game.prompt(fmt("Expending how many SPs? min: %s, max: %s", minSp(hitMethod.weapon), player.expendableStamina), "%d", &sp);
+      auto baseSp = minSp(hitMethod.weapon, player);
+      
+      int choice = game.choose("Normal or heavy strike?", [
+        fmt("Normal strike (%s SPs)", baseSp),
+        fmt("Heavy strike (%s SPs)", baseSp * 2)
+      ]);
+      
+      sp = baseSp * (choice + 1);
 
-      if (sp >= minSp(hitMethod.weapon) && sp <= player.expendableStamina) {
+      if (sp <= player.expendableStamina) {
         break;
       } else {
-        game.put("Not within range.");
+        game.put("You cannot expend that many SPs.");
       }
     }
-
-    auto dmg = cast(int) calcDamage(hitMethod.weapon, hitMethod.hitMethod, player.coordination, targetPart, sp);
-
-    game.put(fmt("Will take %d", calcTime(hitMethod.weapon, hitMethod.hitMethod, sp)));
-    player.stamina -= sp;
-
-    player.update = new GenUpdate(calcTime(hitMethod.weapon, hitMethod.hitMethod, sp), () {
-      modifyHp(targetPart, -dmg);
+    
+    auto hit = calcHit(hitMethod.weapon, hitMethod.hitMethod, player, sp, targetPart);
+    
+    game.put(fmt("Will take %s", hit.time));
+    
+    player.update = new GenUpdate(hit.time, () {
+      if (hit.type == Hit.Type.FullHit) {
+        game.put("You land a solid hit.");
+      } else if (hit.type == Hit.Type.Glance) {
+        game.put("You manage a glancing blow.");
+      } else if (hit.type == Hit.Type.Miss) {
+        game.put("You miss, but manage to recover quickly.");
+      } else {
+        game.put("You miss and are thrown off balance.");
+      }
+    
+      modifyHp(targetPart, -hit.damage);
     });
-
-
-    /+game.put(fmt("You do %s damage to %s %s, leaving %s HPs.", dmg, target.name.posessive, targetPart.name.singular, targetPart.hp));
-
-    if (targetPart.hp.amount == 0) {
-      game.put("It falls off!");
-    }
-
-    player.stamina -= sp;
-    game.put(fmt("\nYou are left with %s SPs.", player.stamina));+/
   }
 }
 
 
-float probFullHit(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target) {
-  return (target.size - hitMethod.hitArea) /
-         (100 / coordination);
-}
+Hit calcHit(Entity weapon, HitMethod method, Creature creature, int sp, BodyPart target) {
+  Hit hit;
 
-
-float probFullMiss(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target) {
-  return (1 - (target.size / (100 / coordination)));
-}
-
-
-float calcDamage(Entity weapon, HitMethod hitMethod, int coordination, BodyPart target, int sp) {
-  auto leftpoint = rand.uniform(0, 100) / player.coordination;
-  auto rightpoint = leftpoint + hitMethod.hitArea;
-
-  float effectiveness;
-
-  if (leftpoint >= target.size) {
-    effectiveness = 0;
-  } else if (rightpoint <= target.size) {
-    effectiveness = 1;
+  float accuracy;
+  
+  auto rnd = rand.uniform(0, 10);
+  
+  if (rnd <= creature.coordination) {
+    hit.type = Hit.Type.FullHit;
+    
+    accuracy = 1;
+  } else if (rnd == creature.coordination + 1) {
+    hit.type = Hit.Type.Glance;
+    
+    accuracy = 0.5;
   } else {
-    effectiveness = (target.size - leftpoint) / hitMethod.hitArea;
+    hit.type = Hit.Type.Miss;
+    
+    hit.time = 50;
+    
+    if (rand.uniform(0, 5) <= 3) {
+      hit.time += rand.uniform!("[]")(20, 50);
+      
+      hit.type = Hit.Type.FullMiss;
+    }
+    
+    return hit;
   }
-
-  auto force = (sp - minSp(weapon) + 1) * minSp(weapon) * hitMethod.transfer * effectiveness;
-
-  return force * 10 / hitMethod.hitArea;
+  
+  /// For when it did hit or glance...
+  
+  hit.time = 50 + rand.uniform!("[]")(-10, 10);
+  
+  hit.damage = cast(int) (rand.uniform!("[]")(1, 1.5) * sp * method.transfer * accuracy);
+  
+  return hit;
 }
 
 
-int calcTime(Entity weapon, HitMethod hitMethod, int sp) {
-  int time = weapon.weight * 5;
-
-  if (time < 50) return 50;
-
-  return weapon.weight * 5;
+struct Hit {
+  int damage,
+      time;
+  
+  Type type;
+  
+  enum Type {
+    FullHit,  /// solid hit
+    Glance,   /// glancing hit (half damage)
+    Miss,     /// completely missed, but recovered (no damage)
+    FullMiss  /// completely missed, lost balance (no damage, up to double the time)
+  }
 }
 
 
-int minSp(Entity weapon) {
-  return cast(int) weapon.weight / 10;
+int minSp(Entity weapon, Creature creature) {
+  return cast(int) alg.max(weapon.weight / 10, 1) + creature.bodyWeight / 2;
 }
 
 
