@@ -103,7 +103,7 @@ class Game : Location {
       }
     }
   }
-  
+
 
   int choose(string prompt, string[] choices) {
     while (true) {
@@ -268,14 +268,14 @@ abstract class Creature : Entity {
   int expendableStamina() {
     return alg.min(strength, stamina.amount);
   }
-  
+
   int bodyWeight() {
     int weight;
-    
+
     foreach (part; allParts(torso)) {
       weight += part.weight;
     }
-    
+
     return weight;
   }
 
@@ -350,9 +350,9 @@ class BodyPart : Entity {
       foreach (ref children; dup.children) {
         children = addPrefix(prefix, children);
       }
-      
+
       dup.weight = part.weight;
-      
+
       dup.hitMethods = part.hitMethods.dup;
 
       return dup;
@@ -794,7 +794,7 @@ class AttackCommand : Command {
             }
           }
         }
-        
+
         foreach (method; part.hitMethods) {
           hitMethods ~= WeaponHitMethod(part, method);
           strHitMethods ~= fmt("%s w/ %s - area: %s in^2, transfer: %s, weight: %s lbs",
@@ -834,12 +834,12 @@ class AttackCommand : Command {
 
     while (true) {
       auto baseSp = minSp(hitMethod.weapon, player);
-      
+
       int choice = game.choose("Normal or heavy strike?", [
         fmt("Normal strike (%s SPs)", baseSp),
         fmt("Heavy strike (%s SPs)", baseSp * 2)
       ]);
-      
+
       sp = baseSp * (choice + 1);
 
       if (sp <= player.expendableStamina) {
@@ -848,11 +848,11 @@ class AttackCommand : Command {
         game.put("You cannot expend that many SPs.");
       }
     }
-    
+
     auto hit = calcHit(hitMethod.weapon, hitMethod.hitMethod, player, sp, targetPart);
-    
+
     game.put(fmt("Will take %s", hit.time));
-    
+
     player.update = new GenUpdate(hit.time, () {
       if (hit.type == Hit.Type.FullHit) {
         game.put("You land a solid hit.");
@@ -863,7 +863,7 @@ class AttackCommand : Command {
       } else {
         game.put("You miss and are thrown off balance.");
       }
-    
+
       modifyHp(targetPart, -hit.damage);
     });
   }
@@ -874,37 +874,37 @@ Hit calcHit(Entity weapon, HitMethod method, Creature creature, int sp, BodyPart
   Hit hit;
 
   float accuracy;
-  
+
   auto rnd = rand.uniform(0, 10);
-  
+
   if (rnd <= creature.coordination) {
     hit.type = Hit.Type.FullHit;
-    
+
     accuracy = 1;
   } else if (rnd == creature.coordination + 1) {
     hit.type = Hit.Type.Glance;
-    
+
     accuracy = 0.5;
   } else {
     hit.type = Hit.Type.Miss;
-    
+
     hit.time = 50;
-    
+
     if (rand.uniform(0, 5) <= 3) {
       hit.time += rand.uniform!("[]")(20, 50);
-      
+
       hit.type = Hit.Type.FullMiss;
     }
-    
+
     return hit;
   }
-  
+
   /// For when it did hit or glance...
-  
+
   hit.time = 50 + rand.uniform!("[]")(-10, 10);
-  
+
   hit.damage = cast(int) (rand.uniform!("[]")(1, 1.5) * sp * method.transfer * accuracy);
-  
+
   return hit;
 }
 
@@ -912,9 +912,9 @@ Hit calcHit(Entity weapon, HitMethod method, Creature creature, int sp, BodyPart
 struct Hit {
   int damage,
       time;
-  
+
   Type type;
-  
+
   enum Type {
     FullHit,  /// solid hit
     Glance,   /// glancing hit (half damage)
