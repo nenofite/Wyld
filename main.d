@@ -412,12 +412,14 @@ class BodyPart : Entity {
 class HitMethod {
   string name;
   int hitArea;
-  float transfer;
+  float transfer,
+        sharpness;
 
-  this(string name, int hitArea, float transfer) {
+  this(string name, int hitArea, float transfer, float sharpness) {
     this.name = name;
     this.hitArea = hitArea;
     this.transfer = transfer;
+    this.sharpness = sharpness;
   }
 }
 
@@ -502,8 +504,8 @@ class Player : Creature {
     auto hand = new BodyPart("hand", Name("hand", "hand's"), Stat(20), 18, false, BodyPart.Tags(false, true), []);
     hand.weight = 5;
     hand.hitMethods = [
-      new HitMethod("punch", 12, .6),
-      new HitMethod("slap", 14, .4)
+      new HitMethod("punch", 12, .6, 0),
+      new HitMethod("slap", 14, .4, 0)
     ];
 
     torso.children ~= (new BodyPart("arm", Name("arm", "arm's"), Stat(30), 40, false, BodyPart.Tags(), [hand])).mirror(["left", "right"]);
@@ -854,17 +856,30 @@ class AttackCommand : Command {
     game.put(fmt("Will take %s", hit.time));
 
     player.update = new GenUpdate(hit.time, () {
-      if (hit.type == Hit.Type.FullHit) {
-        game.put("You land a solid hit.");
-      } else if (hit.type == Hit.Type.Glance) {
-        game.put("You manage a glancing blow.");
-      } else if (hit.type == Hit.Type.Miss) {
-        game.put("You miss, but manage to recover quickly.");
-      } else {
-        game.put("You miss and are thrown off balance.");
+      switch (hit.type) {
+        case Hit.Type.Severing:
+          targetPart.die();
+        break;
+        case Hit.Type.Miss:
+          game.put("You miss, but manage to recover quickly.");
+        break;
+        case Hit.Type.FullMiss:
+          game.put("You miss and are thrown off balance.");
+        break;
+        default:
+          switch (hit.type) {
+            case Hit.Type.FullHit:
+              game.put("You land a solid hit.");
+            break;
+            case Hit.Type.Glance:
+              game.put("You manage a glancing blow.");
+            break;
+            default: assert(false);
+          }
+          
+          modifyHp(targetPart, -hit.damage);
+        break;
       }
-
-      modifyHp(targetPart, -hit.damage);
     });
   }
 }
@@ -905,6 +920,10 @@ Hit calcHit(Entity weapon, HitMethod method, Creature creature, int sp, BodyPart
   switch (hit.type) {
     case Hit.Type.FullHit:
       accuracy = 1;
+      
+      if (method.sharpness / 2 + rand.uniform!("[]")(1, 5) > 5) {
+        hit.type = Hit.Type.Severing;
+      }
     break;
     
     case Hit.Type.Glance:
@@ -942,6 +961,7 @@ struct Hit {
   Type type;
 
   enum Type {
+    Severing, /// target was cut off
     FullHit,  /// solid hit
     Glance,   /// glancing hit (half damage)
     Miss,     /// completely missed, but recovered (no damage)
@@ -1019,8 +1039,21 @@ class HeavyStick : Entity {
 
     weight = 20;
     hitMethods = [
-      new HitMethod("whack", 6, 0.6),
-      new HitMethod("jab", 2, 0.8)
+      new HitMethod("whack", 6, 0.6, 0),
+      new HitMethod("jab", 2, 0.8, 0)
+    ];
+  }
+}
+
+
+class SteelAxe : Entity {
+  this() {
+    super("axe", Name("steel axe", "steel axe's"));
+    
+    weight = 15;
+    hitMethods = [
+      new HitMethod("hack", 4, 2, 6),
+      new HitMethod("bash", 6, 0.6, 0)
     ];
   }
 }
@@ -1060,6 +1093,7 @@ void main() {
   setup.run(new Command.Parameters([]));
 
   game.add(new HeavyStick());
+  game.add(new SteelAxe());
 
   game.add(new Wolf());
 
