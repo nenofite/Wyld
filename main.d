@@ -872,31 +872,57 @@ class AttackCommand : Command {
 
 Hit calcHit(Entity weapon, HitMethod method, Creature creature, int sp, BodyPart target) {
   Hit hit;
-
-  float accuracy;
-
-  auto rnd = rand.uniform(0, 10);
-
-  if (rnd <= creature.coordination) {
+  
+  int rnd = rand.uniform!("[]")(1, 10);
+  
+  game.put(fmt("Rolled %d", rnd));
+  
+  if (rnd == 1) {
+    hit.type = Hit.Type.FullMiss;
+  } else if (rnd == 10) {
     hit.type = Hit.Type.FullHit;
-
-    accuracy = 1;
-  } else if (rnd == creature.coordination + 1) {
-    hit.type = Hit.Type.Glance;
-
-    accuracy = 0.5;
   } else {
-    hit.type = Hit.Type.Miss;
-
-    hit.time = 50;
-
-    if (rand.uniform(0, 5) <= 3) {
-      hit.time += rand.uniform!("[]")(20, 50);
-
-      hit.type = Hit.Type.FullMiss;
-    }
-
-    return hit;
+    int roll = 11 - (rnd + creature.coordination) / 2,
+        against = (method.hitArea / 4 + target.size / 15) / 2;
+    
+    game.put(fmt("%d against %d", roll, against));
+    
+    if (roll < against) {
+      hit.type = Hit.Type.FullHit;
+    } else if (roll == against) {
+      hit.type = Hit.Type.Glance;
+    } else {
+      hit.type = Hit.Type.Miss;
+      
+      if (rand.uniform(0, 3) == 2) {
+        hit.type = Hit.Type.FullMiss;
+      }
+    }  
+  }
+  
+  float accuracy;
+  
+  switch (hit.type) {
+    case Hit.Type.FullHit:
+      accuracy = 1;
+    break;
+    
+    case Hit.Type.Glance:
+      accuracy = .5;
+    break;
+    
+    case Hit.Type.Miss:
+      hit.time = 50;
+      return hit;
+    break;
+    
+    case Hit.Type.FullMiss:
+      hit.time = 50 + rand.uniform!("[]")(20, 50);
+      return hit;
+    break;
+    
+    default:
+      assert(false);
   }
 
   /// For when it did hit or glance...
