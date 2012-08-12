@@ -981,7 +981,7 @@ string hpName(Stat hp) {
     return "gone";
   }
 
-  float ratio = hp / hp.max;
+  float ratio = cast(float) hp / hp.max;
 
   if (ratio >= .75) {
     return "fine";
