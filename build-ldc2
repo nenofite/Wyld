@@ -1,0 +1,3 @@
+#!/bin/sh
+
+ldc2 -of main -oq wyld/*.d wyld/core/*.d -I ncs/ -L-lcurses $*
