@@ -397,7 +397,7 @@ Coord coordFromDirection(Direction dir) {
 
 /// Calculate the direct distance between the two Coords
 int distanceBetween(Coord a, Coord b) {
-  return cast(int) math.sqrt((b.x - a.x) ^^ 2 + (b.y - a.y) ^^ 2);
+  return cast(int) math.sqrt(cast(float) (b.x - a.x) ^^ 2 + (b.y - a.y) ^^ 2);
 }
 
 

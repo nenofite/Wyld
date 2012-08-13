@@ -124,7 +124,7 @@ class World {
   /// This includes dynamic Ents, static Ents, and Ents that are within
   /// the Terrain
   Ent[] allEntsInRadius(int radius, Coord center) {
-    Ent[] ents = dynamicEntsInRadius(radius, center);
+    Ent[] ents = cast(Ent[]) dynamicEntsInRadius(radius, center);
     
     for (int xd = -radius; xd <= radius; ++xd) {
       for (int yd = -radius; yd <= radius; ++yd) {

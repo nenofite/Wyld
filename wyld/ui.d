@@ -653,7 +653,7 @@ class Interact : Menu.Screen {
   /// Mash together the items and the interactions into the menu
   Menu.Entry[] entries() {
     return items ~  /// Items to select
-           [new TextEntry("---")] ~ /// Separator
+           [cast(Menu.Entry) new TextEntry("---")] ~ /// Separator
            interactions;  /// Available interactions
   }
   
