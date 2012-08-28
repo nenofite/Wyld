@@ -859,3 +859,23 @@ class Messages : Menu.Screen {
     }
   }
 }
+
+class EscapeScreen : Menu.Screen {
+    this() {
+        super("Main Menu");
+    }
+    
+    Menu.Entry[] entries() {
+        return [
+            new class Menu.Entry {
+                this() {
+                    super('Q', "Quit");
+                }
+                
+                void select() {
+                    menu.running = false;
+                }
+            }
+        ];
+    }
+}

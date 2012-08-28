@@ -26,6 +26,7 @@ class Menu {
   /// Not to be confused with world.time.ticks, which is the current
   /// world update tick
   int ticks;
+  bool running;
   
   List ui;
   
@@ -85,7 +86,9 @@ class Menu {
   
   /// This runs the ui continuously until the user quits
   void loop() {
-    while (true) {
+    running = true;
+  
+    while (running) {
       updateWorld();
     
       draw();

@@ -36,6 +36,7 @@ void main() {
 
   /// Create the menu and set it globally
   menu = new Menu([new MainScreen()], null);
+  menu.escScreen = new EscapeScreen();
   
   menu.loop();
 }
