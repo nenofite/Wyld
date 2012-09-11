@@ -61,12 +61,18 @@ abstract class StatEnt : DynamicEnt {
   }
   
   
-  void move(Coord delta) {
+  bool move(Coord delta) {
     update = MoveUpdate.withCheck(this, delta);
     
     if (update !is null) {
       update.consumeStats ~= StatRequirement(&sp, 1);
+      return true;
     }
+    return false;
+  }
+  
+  DynamicEnt[] entsSeen() {
+    return world.dynamicEntsInRadius(nearbyRadius, coord);
   }
 }
 
