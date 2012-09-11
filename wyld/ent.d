@@ -141,6 +141,29 @@ class Deer : StatEnt {
 }
 
 
+class Wolf : StatEnt {
+    DynamicEnt prey;
+    
+    this(Coord coord) {
+        Tags tags;
+        
+        tags.size = 7000;
+        
+        tags.isBlocking = true;
+        
+        tags.speed = 40;
+    
+        super("wolf", Sym('w', Color.Blue), tags, coord, Stat(400), Stat(500), Stat(1000), Stat(200), 20, 50);
+    }
+    
+    void tickUpdate() {
+        if (world.time.ticks % Time.fromMinutes(1) == 0) {
+            // TODO howl
+        }
+    }
+}
+
+
 class Grass : Ent {
   this(Coord coord) {
     Tags tags;

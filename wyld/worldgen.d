@@ -232,3 +232,18 @@ void placeDeer(int num = 20) {
     }
   }
 }
+
+
+void placeWolves(int num = 3) {
+    for (int i = 0; i < num; ++i) {
+        for (int tryNum = 0; tryNum < 10; ++tryNum) {
+          auto coord = Coord(rand.uniform(0, world.staticGrid.width), 
+                             rand.uniform(0, world.staticGrid.height));
+          
+          if (!world.isBlockingAt(coord)) {
+            world.add(new Wolf(coord));
+            break;
+          }
+        }
+    }
+}

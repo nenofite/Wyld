@@ -33,6 +33,8 @@ void main() {
   placePlayer();
   
   placeDeer();
+  
+  placeWolves();
 
   /// Create the menu and set it globally
   menu = new Menu([new MainScreen()], null);
