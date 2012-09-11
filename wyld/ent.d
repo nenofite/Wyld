@@ -163,6 +163,24 @@ class Wolf : StatEnt {
     }
     
     void tickUpdate() {
+        if (update is null) {
+            if (prey is null) {
+                auto seen = entsSeen();
+                
+                foreach (DynamicEnt ent; seen) {
+                    if ((cast(Deer)ent !is null) || (cast(Player)ent !is null)) {
+                        prey = ent;
+                        break;
+                    }
+                }
+            } else {
+                auto delta = coordFromDirection(directionBetween(coord, prey.coord));
+                if (!move(delta)) {
+                    prey = null;
+                }
+            }
+        }
+    
         if (world.time.ticks % Time.fromMinutes(1) == 0) {
             // TODO howl
         }
