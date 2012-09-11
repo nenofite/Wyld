@@ -112,38 +112,6 @@ abstract class DynamicEnt : Ent {
   
   /// Called once every tick to update simple things such as Stats
   void tickUpdate() {}
-  
-  
-  void move(Coord deltaCoord) {
-    static class Upd : Update {
-      Coord newCoord;
-      DynamicEnt ent;
-    
-      this(Coord newCoord, DynamicEnt ent) {
-        this.newCoord = newCoord;
-        this.ent = ent;
-        
-        auto time = world.movementCostAt(newCoord) + 
-                    world.movementCostAt(ent.coord) + 
-                    ent.tags.speed - 
-                    ent.tags.movementCost;
-        super(time, [], []);
-      }
-      
-      
-      void apply() {
-        ent.coord = newCoord;
-      }
-    }
-    
-    auto newCoord = coord + deltaCoord;
-  
-    
-    if (world.isBlockingAt(newCoord)) {
-    } else {
-      update = new Upd(newCoord, this);
-    }
-  }
 }
 
 
@@ -186,6 +154,40 @@ abstract class Update {
       return false;
     }
   }
+}
+
+
+class MoveUpdate : Update {
+    DynamicEnt ent;
+    Coord dest;
+    
+    this(DynamicEnt ent, Coord delta) {
+        this.ent = ent;
+        this.dest = ent.coord + delta;
+        
+        auto time = world.movementCostAt(dest) + 
+                    world.movementCostAt(ent.coord) + 
+                    ent.tags.speed - 
+                    ent.tags.movementCost;
+
+        super(time, [], []);
+    }
+    
+    static MoveUpdate withCheck(DynamicEnt ent, Coord delta) {
+        auto coord = ent.coord + delta;
+        
+        if (world.isBlockingAt(coord)) {
+            return null;
+        }
+        
+        return new MoveUpdate(ent, delta);
+    }
+    
+    void apply() {
+        if (!world.isBlockingAt(dest)) {
+            ent.coord = dest;
+        }
+    }
 }
 
 

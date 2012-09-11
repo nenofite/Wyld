@@ -61,8 +61,8 @@ abstract class StatEnt : DynamicEnt {
   }
   
   
-  void move(Coord deltaCoord) {
-    DynamicEnt.move(deltaCoord);
+  void move(Coord delta) {
+    update = MoveUpdate.withCheck(this, delta);
     
     if (update !is null) {
       update.consumeStats ~= StatRequirement(&sp, 1);
@@ -122,7 +122,8 @@ class Deer : StatEnt {
       }
     
       if (hasDest) {
-        move(coordFromDirection(directionBetween(coord, dest)));
+        auto delta = coordFromDirection(directionBetween(coord, dest));
+        move(delta);
         
         if (update is null) {
           hasDest = false;
