@@ -3,6 +3,7 @@ module wyld.ent;
 
 import wyld.core.common;
 import wyld.core.ent;
+import wyld.core.menu;
 import wyld.core.world;
 import wyld.interactions;
 
@@ -99,6 +100,10 @@ class Player : StatEnt {
       cast(Interaction) new Drink()
     ];
   }
+  
+  void hearSound(Sound sound) {
+    menu.addMessage(sound.message());
+  }
 }
 
 
@@ -144,6 +149,12 @@ class Deer : StatEnt {
       }
     }
   }
+  
+  void hearSound(Sound sound) {
+    if (cast(Wolf)sound.ent !is null) {
+        
+    }
+  }
 }
 
 
@@ -169,7 +180,7 @@ class Wolf : StatEnt {
                 
                 foreach (DynamicEnt ent; seen) {
                     if ((cast(Deer)ent !is null) || (cast(Player)ent !is null)) {
-                        prey = ent;
+                        setPrey(ent);
                         break;
                     }
                 }
@@ -183,6 +194,31 @@ class Wolf : StatEnt {
     
         if (world.time.ticks % Time.fromMinutes(1) == 0) {
             // TODO howl
+            auto howl = new HowlSound(this);
+            howl.broadcast();
+        }
+    }
+    
+    void hearSound(Sound sound) {
+        if (cast(Wolf)sound.ent is null) {
+            setPrey(cast(DynamicEnt)sound.ent);
+        }
+    }
+    
+    void setPrey(DynamicEnt prey) {
+        this.prey = prey;
+        (new GrowlSound(this)).broadcast();
+    }
+    
+    class HowlSound : Sound {
+        this(Wolf wolf) {
+            super("howling", Mood.Neutral, 20000, wolf);
+        }
+    }
+    
+    class GrowlSound : Sound {
+        this(Wolf wolf) {
+            super("growling", Mood.Aggressive, 100, wolf);
         }
     }
 }

@@ -360,3 +360,39 @@ struct Time {
     return fromHours(pers * 12);
   }
 }
+
+abstract class Sound {
+    static enum Mood {
+        Friendly,
+        Neutral,
+        Aggressive
+    }
+    
+    string desc;
+    Mood mood;
+    int radius;
+    Ent ent;
+    Coord coord;
+    
+    this(string desc, Mood mood, int radius, Ent ent) {
+        this.desc = desc;
+        this.mood = mood;
+        this.radius = radius;
+        this.ent = ent;
+        coord = ent.coord;
+    }
+    
+    string message() {
+        return "You hear " ~ desc ~ " from the " ~ directionName(directionBetween(player.coord, coord)) ~ ".";
+    }
+    
+    void broadcast() {
+        foreach (DynamicEnt ent; world.dynamicEnts) {
+            if (ent !is this.ent) {
+                if (distanceBetween(coord, ent.coord) <= radius) {
+                    ent.hearSound(this);
+                }
+            }
+        }
+    }
+}

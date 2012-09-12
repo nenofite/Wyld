@@ -112,6 +112,8 @@ abstract class DynamicEnt : Ent {
   
   /// Called once every tick to update simple things such as Stats
   void tickUpdate() {}
+  
+  abstract void hearSound(Sound);
 }
 
 
