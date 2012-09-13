@@ -160,6 +160,7 @@ class Deer : StatEnt {
 
 class Wolf : StatEnt {
     DynamicEnt prey;
+    int howlTimer = -1;
     
     this(Coord coord) {
         Tags tags;
@@ -174,6 +175,14 @@ class Wolf : StatEnt {
     }
     
     void tickUpdate() {
+        howlTimer--;
+        
+        if (howlTimer == 0) {
+            (new HowlSound(this)).broadcast();
+        } else if (howlTimer < 0) {
+            howlTimer = rand.uniform(Time.fromMinutes(1), Time.fromMinutes(30));
+        }
+    
         if (update is null) {
             if (prey is null) {
                 auto seen = entsSeen();
@@ -190,12 +199,6 @@ class Wolf : StatEnt {
                     prey = null;
                 }
             }
-        }
-    
-        if (world.time.ticks % Time.fromMinutes(1) == 0) {
-            // TODO howl
-            auto howl = new HowlSound(this);
-            howl.broadcast();
         }
     }
     
