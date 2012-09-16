@@ -8,6 +8,7 @@ import wyld.main;
 
 import alg = std.algorithm;
 import math = std.math;
+import std.string: format;
 
 /// The current game world, available for easy access
 World world;
@@ -383,7 +384,7 @@ abstract class Sound {
     }
     
     string message() {
-        return "You hear " ~ desc ~ " from the " ~ directionName(directionBetween(player.coord, coord)) ~ ".";
+        return format("You hear %s from the %s.", desc, directionName(directionBetween(player.coord, coord)));
     }
     
     void broadcast() {
