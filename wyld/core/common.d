@@ -364,6 +364,30 @@ Direction directionFromKey(char key, out bool isKey) {
 }
 
 
+Direction oppositeDirection(Direction dir) {
+    switch (dir) {
+        case Direction.N:
+            return Direction.S;
+        case Direction.Ne:
+            return Direction.Sw;
+        case Direction.E:
+            return Direction.W;
+        case Direction.Se:
+            return Direction.Nw;
+        case Direction.S:
+            return Direction.N;
+        case Direction.Sw:
+            return Direction.Ne;
+        case Direction.W:
+            return Direction.E;
+        case Direction.Nw:
+            return Direction.Se;
+        default:
+            assert(false);
+    }
+}
+
+
 /// Converts the given Direction into a Coord
 ///
 /// For example:

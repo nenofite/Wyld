@@ -130,27 +130,31 @@ class Deer : StatEnt {
     
     if (update is null) {
       if (predator !is null) {
-        (new ScreamSound(this)).broadcast();
-        predator = null;
+        if (distanceBetween(coord, predator.coord) > nearbyRadius) predator = null;
       }
-    
-      if (coord == dest) {
-        hasDest = false;
-      }
-    
-      if (hasDest) {
-        auto delta = coordFromDirection(directionBetween(coord, dest));
+      
+      if (predator !is null) {
+        auto delta = coordFromDirection(oppositeDirection(directionBetween(coord, predator.coord)));
         move(delta);
-        
-        if (update is null) {
+      } else {
+        if (coord == dest) {
           hasDest = false;
         }
-      } else {
-        dest.x = rand.uniform(0, world.staticGrid.width);
-        dest.y = rand.uniform(0, world.staticGrid.height);
-        
-        if (!world.isBlockingAt(dest)) {
-          hasDest = true;
+      
+        if (hasDest) {
+          auto delta = coordFromDirection(directionBetween(coord, dest));
+          move(delta);
+          
+          if (update is null) {
+            hasDest = false;
+          }
+        } else {
+          dest.x = rand.uniform(0, world.staticGrid.width);
+          dest.y = rand.uniform(0, world.staticGrid.height);
+          
+          if (!world.isBlockingAt(dest)) {
+            hasDest = true;
+          }
         }
       }
     }
