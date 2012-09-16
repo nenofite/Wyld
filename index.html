@@ -79,14 +79,20 @@ yourself.</strong></p>
 <p>Before you compile this, you will need:</p>
 
 <ul>
-<li>A D compiler (<code>gdc</code> is recommended)</li>
+<li>A D compiler (either <code>gdc</code> or <code>ldc2</code> is recommended)</li>
 <li>Development packages for ncurses (on Ubuntu: <code>libncurses5-dev</code>)</li>
 </ul><h2>Compiling</h2>
 
-<p>To compile:</p>
+<p>To compile with <code>gdc</code>:</p>
 
 <pre><code>cd Wyld
-./build
+./build-gdc
+</code></pre>
+
+<p>To compile with <code>ldc2</code>:</p>
+
+<pre><code>cd Wyld
+./build-ldc2
 </code></pre>
 
 <h2>Running</h2>
@@ -99,7 +105,7 @@ yourself.</strong></p>
       </section>
 
     </div>
-    <!--[if !IE]><script>fixScale(document);</script><!--<![endif]-->
+    <!--[if !IE]><script>fixScale(document);</script><![endif]-->
     
   </body>
 </html>
