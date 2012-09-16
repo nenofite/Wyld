@@ -38,15 +38,20 @@ yourself.**
 
 Before you compile this, you will need:
 
-* A D compiler (`gdc` is recommended)
+* A D compiler (either `gdc` or `ldc2` is recommended)
 * Development packages for ncurses (on Ubuntu: `libncurses5-dev`)
 
 ## Compiling
 
-To compile:
+To compile with `gdc`:
 
     cd Wyld
-    ./build
+    ./build-gdc
+    
+To compile with `ldc2`:
+
+    cd Wyld
+    ./build-ldc2
 
 ## Running
 
