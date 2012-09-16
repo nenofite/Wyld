@@ -110,6 +110,7 @@ class Player : StatEnt {
 class Deer : StatEnt {
   Coord dest;
   bool hasDest;
+  DynamicEnt predator;
 
   this(Coord coord) {
     Tags tags;
@@ -128,6 +129,11 @@ class Deer : StatEnt {
     StatEnt.tickUpdate();
     
     if (update is null) {
+      if (predator !is null) {
+        (new ScreamSound(this)).broadcast();
+        predator = null;
+      }
+    
       if (coord == dest) {
         hasDest = false;
       }
@@ -152,7 +158,13 @@ class Deer : StatEnt {
   
   void hearSound(Sound sound) {
     if (cast(Wolf)sound.ent !is null) {
-        
+        predator = cast(DynamicEnt)sound.ent;
+    }
+  }
+  
+  class ScreamSound : Sound {
+    this(Deer deer) {
+      super("screaming", Mood.Neutral, 300, deer);
     }
   }
 }
