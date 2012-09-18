@@ -200,6 +200,12 @@ class Wolf : StatEnt {
         }
     
         if (update is null) {
+            if (prey !is null) {
+                if (distanceBetween(coord, prey.coord) > nearbyRadius) {
+                    prey = null;
+                }
+            }
+        
             if (prey is null) {
                 auto seen = entsSeen();
                 
@@ -219,8 +225,10 @@ class Wolf : StatEnt {
     }
     
     void hearSound(Sound sound) {
-        if (cast(Wolf)sound.ent is null) {
-            setPrey(cast(DynamicEnt)sound.ent);
+        if (prey is null) {
+            if (cast(Wolf)sound.ent is null) {
+                setPrey(cast(DynamicEnt)sound.ent);
+            }
         }
     }
     
