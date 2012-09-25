@@ -7,6 +7,8 @@ import wyld.core.menu;
 import wyld.core.world;
 import wyld.interactions;
 
+import rand = std.random;
+
 
 /// An Ent with basic Stats
 abstract class StatEnt : DynamicEnt {
@@ -58,6 +60,13 @@ abstract class StatEnt : DynamicEnt {
     
     if (world.time.ticks % Time.fromMinutes(10) == 0) {
       --hunger;
+    }
+  }
+  
+  
+  void onAttack(Attack attack) {
+    if (rand.uniform!("[]")(0, 10) <= attack.accuracy) {
+        hp -= attack.damage;
     }
   }
   
@@ -215,6 +224,8 @@ class Wolf : StatEnt {
                         break;
                     }
                 }
+            } else if (distanceBetween(coord, prey.coord) <= 1) {
+                update = (new Bite(this, cast(StatEnt)prey)).update();
             } else {
                 auto delta = coordFromDirection(directionBetween(coord, prey.coord));
                 if (!move(delta)) {
@@ -246,6 +257,24 @@ class Wolf : StatEnt {
     class GrowlSound : Sound {
         this(Wolf wolf) {
             super("growling", Mood.Aggressive, 100, wolf);
+        }
+    }
+    
+    class Bite : Attack {
+        Wolf from;
+        
+        this(Wolf from, StatEnt to) {
+            this.from = from;
+            this.to = to;
+            type = Type.Sharp;
+        }
+        
+        Update update() {
+            return Attack.update(150);
+        }
+        
+        string message() {
+            return from.name ~ " bites at " ~ to.name ~ ".";
         }
     }
 }
@@ -291,4 +320,39 @@ class Water : Ent {
     
     super("water", Sym('~', Color.Blue), tags, coord);
   }
+}
+
+abstract class Attack {
+    static enum Type {
+        Sharp,
+        Blunt
+    }
+    
+    StatEnt from, to;
+    int accuracy, damage;
+    Type type;
+    
+    Update update(int time) {
+        return new Update(this, time);
+    }
+    
+    void apply() {
+        to.onAttack(this);
+    }
+    
+    abstract string message();
+    
+    static class Update : wyld.core.ent.Update {
+        Attack attack;
+    
+        this(Attack attack, int time) {
+            super(time, [], []);
+        
+            this.attack = attack;
+        }
+        
+        void apply() {
+            attack.apply();
+        }
+    }
 }
