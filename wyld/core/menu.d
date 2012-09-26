@@ -415,3 +415,24 @@ class TextEntry : Menu.Entry {
   
   void select() {}
 }
+
+
+abstract class Message {
+    abstract string text();
+    
+    void broadcast() {
+        menu.addMessage(text());
+    }
+}
+
+class SimpleMessage : Message {
+    string msg;
+    
+    this(string msg) {
+        this.msg = msg;
+    }
+    
+    string text() {
+        return msg;
+    }
+}

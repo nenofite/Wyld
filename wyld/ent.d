@@ -6,6 +6,7 @@ import wyld.core.ent;
 import wyld.core.menu;
 import wyld.core.world;
 import wyld.interactions;
+import wyld.main;
 
 import rand = std.random;
 
@@ -273,8 +274,9 @@ class Wolf : StatEnt {
             return Attack.update(150);
         }
         
-        string message() {
-            return from.name ~ " bites at " ~ to.name ~ ".";
+        Message message() {
+            string msg = from.name ~ " bites at " ~ to.name ~ ".";
+            return new SimpleCoordMessage(msg, from.coord);
         }
     }
 }
@@ -340,7 +342,7 @@ abstract class Attack {
         to.onAttack(this);
     }
     
-    abstract string message();
+    abstract Message message();
     
     static class Update : wyld.core.ent.Update {
         Attack attack;
@@ -353,7 +355,30 @@ abstract class Attack {
         
         void apply() {
             attack.apply();
-            menu.addMessage(attack.message());
+            attack.message().broadcast();
         }
+    }
+}
+
+abstract class CoordMessage : Message {
+    Coord source;
+    
+    void broadcast() {
+        if (distanceBetween(source, player.coord) <= player.viewRadius) {
+            Message.broadcast();
+        }
+    }
+}
+
+class SimpleCoordMessage : CoordMessage {
+    string msg;
+    
+    this(string msg, Coord source) {
+        this.msg = msg;
+        this.source = source;
+    }
+    
+    string text() {
+        return msg;
     }
 }
