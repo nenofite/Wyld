@@ -353,6 +353,7 @@ abstract class Attack {
         
         void apply() {
             attack.apply();
+            menu.addMessage(attack.message());
         }
     }
 }
