@@ -219,7 +219,7 @@ void placePlayer() {
 }
 
 
-void placeDeer(int num = 20) {
+void placeDeer(int num = 15) {
   for (int i = 0; i < num; ++i) {
     for (int tryNum = 0; tryNum < 10; ++tryNum) {
       auto coord = Coord(rand.uniform(0, world.staticGrid.width), 
@@ -234,7 +234,7 @@ void placeDeer(int num = 20) {
 }
 
 
-void placeWolves(int num = 3) {
+void placeWolves(int num = 10) {
     for (int i = 0; i < num; ++i) {
         for (int tryNum = 0; tryNum < 10; ++tryNum) {
           auto coord = Coord(rand.uniform(0, world.staticGrid.width), 

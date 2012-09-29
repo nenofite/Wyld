@@ -83,8 +83,14 @@ abstract class StatEnt : DynamicEnt {
   
   void onDie() {
     (new SimpleCoordMessage(name ~ " dies.", coord)).broadcast();
+    auto corpse = corpse();
+    world.add(corpse);
+    world.remove(this);
   }
   
+  
+  abstract Ent corpse();
+   
   
   bool isDead() {
     return hp == 0;
@@ -142,6 +148,47 @@ class Player : StatEnt {
   void onDie() {
     menu.addMessage("You have died.");
     menu.running = false;
+  }
+  
+  void attackMove(Coord delta) {
+    auto newCoord = coord + delta;
+    
+    foreach (DynamicEnt ent; world.dynamicEnts) {
+        if (ent.coord == newCoord) {
+            StatEnt statEnt = cast(StatEnt)ent;
+            if (statEnt !is null) {
+                update = (new Punch(this, statEnt)).update();
+                return;
+            }
+        }
+    }
+    
+    move(delta);
+  }
+  
+  Ent corpse() {
+    return null;
+  }
+  
+  static class Punch : Attack {
+    Player from;
+    
+    this(Player from, StatEnt to) {
+        this.from = from;
+        this.to = to;
+        type = Type.Blunt;
+        damage = 8;
+        accuracy = 4;
+    }
+    
+    Update update() {
+        return Attack.update(100);
+    }
+    
+    Message message() {
+        string msg = "You punch " ~ to.name ~ ".";
+        return new SimpleCoordMessage(msg, from.coord);
+    }
   }
 }
 
@@ -205,10 +252,21 @@ class Deer : StatEnt {
     }
   }
   
-  class ScreamSound : Sound {
+  
+  static class ScreamSound : Sound {
     this(Deer deer) {
       super("screaming", Mood.Neutral, 300, deer);
     }
+  }
+  
+  static class Corpse : Ent {
+    this(Deer deer) {
+        super("deer corpse", Sym('D', Color.Red), deer.tags, deer.coord);
+    }
+  }
+
+  Corpse corpse() {
+    return new Corpse(this);
   }
 }
 
@@ -282,6 +340,7 @@ class Wolf : StatEnt {
 //        (new GrowlSound(this)).broadcast();
     }
     
+    
     class HowlSound : Sound {
         this(Wolf wolf) {
             super("howling", Mood.Neutral, 20000, wolf);
@@ -301,7 +360,7 @@ class Wolf : StatEnt {
             this.from = from;
             this.to = to;
             type = Type.Sharp;
-            accuracy = 9;
+            accuracy = 5;
             damage = 15;
         }
         
@@ -313,6 +372,16 @@ class Wolf : StatEnt {
             string msg = from.name ~ " bites at " ~ to.name ~ ".";
             return new SimpleCoordMessage(msg, from.coord);
         }
+    }
+    
+    static class Corpse : Ent {
+      this(Wolf wolf) {
+          super("wolf corpse", Sym('w', Color.Red), wolf.tags, wolf.coord);
+      }
+    }
+    
+    Corpse corpse() {
+        return new Corpse(this);
     }
 }
 

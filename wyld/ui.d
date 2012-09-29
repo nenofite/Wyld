@@ -75,7 +75,7 @@ class MainScreen : Menu.Screen {
       auto dir = directionFromKey(key, isDir);
       
       if (isDir) {
-        player.move(coordFromDirection(dir));
+        player.attackMove(coordFromDirection(dir));
       } else if (key == '5') {
         player.update = new class() Update {
           this() {
