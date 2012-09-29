@@ -9,6 +9,7 @@ import wyld.interactions;
 import wyld.main;
 
 import rand = std.random;
+import std.format: format;
 
 
 /// An Ent with basic Stats
@@ -67,8 +68,26 @@ abstract class StatEnt : DynamicEnt {
   
   void onAttack(Attack attack) {
     if (rand.uniform!("[]")(0, 10) <= attack.accuracy) {
-        hp -= attack.damage;
+        takeDamage(attack.damage);
     }
+  }
+  
+  
+  void takeDamage(int dmg) {
+    if (!isDead()) {
+        hp -= dmg;
+        if (isDead()) onDie();
+    }
+  }
+  
+  
+  void onDie() {
+    (new SimpleCoordMessage(name ~ " dies.", coord)).broadcast();
+  }
+  
+  
+  bool isDead() {
+    return hp == 0;
   }
   
   
@@ -113,6 +132,16 @@ class Player : StatEnt {
   
   void hearSound(Sound sound) {
     menu.addMessage(sound.message());
+  }
+  
+  void takeDamage(int dmg) {
+    StatEnt.takeDamage(dmg);
+    menu.addMessage(format("You take %d damage.", dmg));
+  }
+  
+  void onDie() {
+    menu.addMessage("You have died.");
+    menu.running = false;
   }
 }
 
@@ -201,12 +230,16 @@ class Wolf : StatEnt {
     }
     
     void tickUpdate() {
-        howlTimer--;
-        
-        if (howlTimer == 0) {
-            (new HowlSound(this)).broadcast();
-        } else if (howlTimer < 0) {
-            howlTimer = rand.uniform(Time.fromMinutes(1), Time.fromMinutes(30));
+        if (prey is null) {
+            howlTimer--;
+            
+            if (howlTimer == 0) {
+                (new HowlSound(this)).broadcast();
+            } else if (howlTimer < 0) {
+                howlTimer = rand.uniform(Time.fromMinutes(1), Time.fromMinutes(5));
+            }
+        } else {
+            howlTimer = -1;
         }
     
         if (update is null) {
@@ -246,7 +279,7 @@ class Wolf : StatEnt {
     
     void setPrey(DynamicEnt prey) {
         this.prey = prey;
-        (new GrowlSound(this)).broadcast();
+//        (new GrowlSound(this)).broadcast();
     }
     
     class HowlSound : Sound {
@@ -268,6 +301,8 @@ class Wolf : StatEnt {
             this.from = from;
             this.to = to;
             type = Type.Sharp;
+            accuracy = 9;
+            damage = 15;
         }
         
         Update update() {
