@@ -494,9 +494,11 @@ class SimpleCoordMessage : CoordMessage {
 
 abstract class Recipe {
     string name;
+    int time;
     
-    this(string name) {
+    this(string name, int time) {
         this.name = name;
+        this.time = time;
     }
 
     abstract bool canTake(Ent[] ingredients, Ent[] tools);
@@ -505,7 +507,7 @@ abstract class Recipe {
 
 class SharpStoneRecipe : Recipe {
     this() {
-        super("sharpen stone");
+        super("sharpen stone", Time.fromMinutes(1));
     }
 
     bool canTake(Ent[] ingredients, Ent[] tools) {

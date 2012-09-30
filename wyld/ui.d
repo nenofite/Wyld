@@ -859,15 +859,27 @@ class Craft : Menu.Screen {
         selectTool = false;
     }
     
-    void craftRecipe(Recipe recipe) {
-        auto result = recipe.craft(ingredients, tools);
+    static class CraftUpdate : Update {
+        Recipe recipe;
+        Ent[] ingredients, tools;
         
-        foreach (Ent ent; ingredients) {
-            if (ent.container is player) player.contained.remove(ent);
-            else world.remove(ent);
+        this(Recipe recipe, Ent[] ingredients, Ent[] tools) {
+            this.recipe = recipe;
+            this.ingredients = ingredients;
+            this.tools = tools;
+            super(recipe.time, [], []);
         }
         
-        result.addTo(player);
+        void apply() {
+            auto result = recipe.craft(ingredients, tools);
+            
+            foreach (Ent ent; ingredients) {
+                if (ent.container is player) player.contained.remove(ent);
+                else world.remove(ent);
+            }
+            
+            result.addTo(player);
+        }
     }
     
     static class EntEntry : Menu.Entry {
@@ -929,7 +941,7 @@ class Craft : Menu.Screen {
         }
         
         void select() {
-            screen.craftRecipe(recipe);
+            player.update = new CraftUpdate(recipe, screen.ingredients, screen.tools);
         }
     }
     
