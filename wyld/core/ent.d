@@ -42,8 +42,13 @@ abstract class Ent {
       world.remove(this);
     }
     
-    assert(newContainer.freeSpace >= tags.size);
+//    assert(newContainer.freeSpace >= tags.size);
     
+    addTo(newContainer);
+  }
+  
+  
+  void addTo(Ent newContainer) {
     container = newContainer;
     if (newContainer !is null) {
       container.contained ~= this;

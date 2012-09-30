@@ -115,6 +115,7 @@ abstract class StatEnt : DynamicEnt {
 
 class Player : StatEnt {
   Interaction[] interactions;
+  Recipe[] recipes;
 
   this(Coord coord) {
     Tags tags;
@@ -133,6 +134,10 @@ class Player : StatEnt {
     interactions = [
       new PickUp(),
       cast(Interaction) new Drink()
+    ];
+    
+    recipes = [
+        new SharpStoneRecipe()
     ];
   }
   
@@ -484,5 +489,57 @@ class SimpleCoordMessage : CoordMessage {
     
     string text() {
         return msg;
+    }
+}
+
+abstract class Recipe {
+    string name;
+    
+    this(string name) {
+        this.name = name;
+    }
+
+    abstract bool canTake(Ent[] ingredients, Ent[] tools);
+    abstract Ent craft(Ent[] ingredients, Ent[] tools);
+}
+
+class SharpStoneRecipe : Recipe {
+    this() {
+        super("sharpen stone");
+    }
+
+    bool canTake(Ent[] ingredients, Ent[] tools) {
+        if (ingredients.length == 1 && tools.length == 1) {
+            auto inStone = cast(Stone)ingredients[0],
+                 toolStone = cast(Stone)tools[0];
+            
+            if (inStone !is null && !inStone.isSharp && toolStone !is null) return true;
+        }
+        
+        return false;
+    }
+
+    Stone craft(Ent[] ingredients, Ent[] tools) {
+        auto inStone = cast(Stone)ingredients[0];
+        inStone.sharpen();
+        return inStone;
+    }
+}
+
+class Stone : Ent {
+    bool isSharp;
+
+    this(int size, Coord coord) {
+        Tags tags;
+        tags.size = size;
+        tags.weight = size / 5 + 1;
+    
+        super("stone", Sym('o', Color.White), tags, coord);
+    }
+    
+    void sharpen() {
+        isSharp = true;
+        name = "sharp stone";
+        sym.sym = 'ô';
     }
 }

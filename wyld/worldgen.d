@@ -73,6 +73,12 @@ static World generateWorld(int p1Width, int p1Height,
           }
           break;
           
+        case Geo.Rock:
+            if (rand.uniform(0, 20) == 0) {
+                ents ~= new Stone(rand.uniform(1, 11), coord);
+            }
+            break;
+          
         default:
           break;
       }

@@ -10,6 +10,7 @@ import wyld.core.ent;
 import wyld.core.layout;
 import wyld.core.menu;
 import wyld.core.world;
+import wyld.ent;
 import wyld.interactions;
 import wyld.main;
 
@@ -25,18 +26,21 @@ import std.string: toStringz;
 class MainScreen : Menu.Screen {
   MapScreen mapScreen;
   Interact interact;
+  Craft craft;
 
   this() {
     super("Main", new Ui());
     
     mapScreen = new MapScreen();
     interact = new Interact();
+    craft = new Craft();
   }
   
   Menu.Entry[] entries() {
     return [
       new Menu.SubEntry('m', mapScreen),
       new Menu.SubEntry('i', interact),
+      new Menu.SubEntry('r', craft),
       new Menu.SubEntry('a', new Messages())
     ];
   }
@@ -748,7 +752,7 @@ class Interact : Menu.Screen {
     Menu.Entry[] entries;
     
     /// Make the title
-    entries ~= new TextEntry(" -" ~ title ~ "-");
+    entries ~= new TextEntry(" " ~ title);
   
     if (ents.length > 0) {
       /// Go through each Ent and create an entry for it
@@ -775,6 +779,194 @@ class Interact : Menu.Screen {
     
     alias ent this;
   }
+}
+
+
+class Craft : Menu.Screen {
+    Ent[] ingredients, tools;
+    bool selectTool;
+    
+    SelectTypeEntry selectTypeEntry;
+    CraftEntry craftEntry;
+    
+    Ent[] entsOnGround;
+    
+    this() {
+        super("Craft");
+        selectTypeEntry = new SelectTypeEntry(this);
+        craftEntry = new CraftEntry(this);
+    }
+    
+    Menu.Entry[] items() {
+        char key = 'A';
+        auto ret = entSection(key, "Inventory", player.contained);
+        return ret ~ entSection(key, "On Ground", entsOnGround);
+    }
+    
+    Menu.Entry[] recipes() {
+        Menu.Entry[] ret;
+        char key = 'a';
+        
+        foreach (Recipe recipe; player.recipes) {
+            if (recipe.canTake(ingredients, tools)) {
+                ret ~= new RecipeEntry(key, recipe, this);
+                if (key == 'z') break;
+                key++;
+            }
+        }
+        
+        return ret;
+    }
+    
+    Menu.Entry[] entries() {
+        entsOnGround = world.allEntsInRadius(1, player.coord);
+        entsOnGround.remove(player);
+        
+        Ent[] newIngredients, newTools;
+        
+        foreach (Ent ent; ingredients) {
+            if (entsOnGround.contains(ent) || player.contained.contains(ent)) newIngredients ~= ent;
+        }
+        
+        foreach (Ent ent; tools) {
+            if (entsOnGround.contains(ent) || player.contained.contains(ent)) newTools ~= ent;
+        }
+        
+        ingredients = newIngredients;
+        tools = newTools;
+    
+        return items() ~ selectTypeEntry ~ craftEntry ~ recipes();
+    }
+    
+    Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
+        Menu.Entry[] ret;
+        ret ~= new TextEntry(" " ~ title);
+        if (ents.length == 0) {
+            ret ~= new TextEntry("(empty)");
+        } else {
+            foreach (Ent ent; ents) {
+                ret ~= new EntEntry(key, ent, this);
+                key++;
+            }
+        }
+        
+        return ret;
+    }
+    
+    void init() {
+        ingredients = [];
+        tools = [];
+        selectTool = false;
+    }
+    
+    void craftRecipe(Recipe recipe) {
+        auto result = recipe.craft(ingredients, tools);
+        
+        foreach (Ent ent; ingredients) {
+            if (ent.container is player) player.contained.remove(ent);
+            else world.remove(ent);
+        }
+        
+        result.addTo(player);
+    }
+    
+    static class EntEntry : Menu.Entry {
+        Ent ent;
+        Craft screen;
+        
+        this(char key, Ent ent, Craft screen) {
+            this.ent = ent;
+            this.screen = screen;
+            super(key, "");
+            updateTitle();
+        }
+        
+        void select() {
+            if (screen.selectTool) {
+                if (screen.tools.contains(ent)) {
+                    screen.tools.remove(ent);
+                } else {
+                    screen.tools ~= ent;
+                    
+                    if (screen.ingredients.contains(ent)) {
+                        screen.ingredients.remove(ent);
+                    }
+                }
+            } else {
+                if (screen.ingredients.contains(ent)) {
+                    screen.ingredients.remove(ent);
+                } else {
+                    screen.ingredients ~= ent;
+                    
+                    if (screen.tools.contains(ent)) {
+                        screen.tools.remove(ent);
+                    }
+                }
+            }
+            
+            updateTitle();
+        }
+        
+        void updateTitle() {
+            if (screen.tools.contains(ent)) {
+                title = "t " ~ ent.name;
+            } else if (screen.ingredients.contains(ent)) {
+                title = "i " ~ ent.name;
+            } else {
+                title = "  " ~ ent.name;
+            }
+        }
+    }
+    
+    static class RecipeEntry : Menu.Entry {
+        Recipe recipe;
+        Craft screen;
+    
+        this(char key, Recipe recipe, Craft screen) {
+            this.recipe = recipe;
+            this.screen = screen;
+            super(key, recipe.name);
+        }
+        
+        void select() {
+            screen.craftRecipe(recipe);
+        }
+    }
+    
+    static class SelectTypeEntry : Menu.Entry {
+        Craft screen;
+        
+        this(Craft screen) {
+            this.screen = screen;
+            super(';', "");
+            updateTitle();
+        }
+        
+        void updateTitle() {
+            if (screen.selectTool) {
+                title = "Select ingredients";
+            } else {
+                title = "Select tool";
+            }
+        }
+        
+        void select() {
+            screen.selectTool = !screen.selectTool;
+            updateTitle();
+        }
+    }
+    
+    static class CraftEntry : Menu.Entry {
+        Craft screen;
+        
+        this(Craft screen) {
+            this.screen = screen;
+            super('-', "Craft");
+        }
+        
+        void select() {
+        }
+    }
 }
 
 
