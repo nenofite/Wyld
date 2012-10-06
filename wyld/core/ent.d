@@ -96,7 +96,9 @@ abstract class Ent {
     int movementCost; 
     /// How long it takes the Ent to move one space, not including
     /// the movement cost of the surroundings
-    int speed; 
+    int speed;
+    
+    bool stick, bigStick, sharp, bigSharp, tie;
     
     // TODO finish transferring tags
   }

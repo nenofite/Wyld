@@ -26,14 +26,14 @@ import std.string: toStringz;
 class MainScreen : Menu.Screen {
   MapScreen mapScreen;
   Interact interact;
-  Craft craft;
+  ChooseRecipe craft;
 
   this() {
     super("Main", new Ui());
     
     mapScreen = new MapScreen();
     interact = new Interact();
-    craft = new Craft();
+    craft = new ChooseRecipe();
   }
   
   Menu.Entry[] entries() {
@@ -782,201 +782,197 @@ class Interact : Menu.Screen {
 }
 
 
-class Craft : Menu.Screen {
-    Ent[] ingredients, tools;
-    bool selectTool;
-    
-    SelectTypeEntry selectTypeEntry;
-    CraftEntry craftEntry;
+class Craft : ScreenSequence {
+    Recipe recipe;
     
     Ent[] entsOnGround;
     
-    this() {
-        super("Craft");
-        selectTypeEntry = new SelectTypeEntry(this);
-        craftEntry = new CraftEntry(this);
-    }
-    
-    Menu.Entry[] items() {
-        char key = 'A';
-        auto ret = entSection(key, "Inventory", player.contained);
-        return ret ~ entSection(key, "On Ground", entsOnGround);
-    }
-    
-    Menu.Entry[] recipes() {
-        Menu.Entry[] ret;
-        char key = 'a';
+    this(Recipe recipe) {
+        this.recipe = recipe;
+        IngScreen[] ingScreens = new IngScreen[recipe.ingredients.length],
+                    toolScreens = new IngScreen[recipe.tools.length];
         
-        foreach (Recipe recipe; player.recipes) {
-            if (recipe.canTake(ingredients, tools)) {
-                ret ~= new RecipeEntry(key, recipe, this);
-                if (key == 'z') break;
-                key++;
-            }
+        foreach (int i, Ingredient ing; recipe.ingredients) {
+            ingScreens[i] = new IngScreen(ing, this);
         }
         
-        return ret;
-    }
-    
-    Menu.Entry[] entries() {
-        entsOnGround = world.allEntsInRadius(1, player.coord);
-        entsOnGround.remove(player);
-        
-        Ent[] newIngredients, newTools;
-        
-        foreach (Ent ent; ingredients) {
-            if (entsOnGround.contains(ent) || player.contained.contains(ent)) newIngredients ~= ent;
+        foreach (int i, Ingredient ing; recipe.tools) {
+            toolScreens[i] = new IngScreen(ing, this);
         }
         
-        foreach (Ent ent; tools) {
-            if (entsOnGround.contains(ent) || player.contained.contains(ent)) newTools ~= ent;
-        }
+        auto acceptScreen = new AcceptScreen(this);
         
-        ingredients = newIngredients;
-        tools = newTools;
-    
-        return items() ~ selectTypeEntry ~ craftEntry ~ recipes();
-    }
-    
-    Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
-        Menu.Entry[] ret;
-        ret ~= new TextEntry(" " ~ title);
-        if (ents.length == 0) {
-            ret ~= new TextEntry("(empty)");
-        } else {
-            foreach (Ent ent; ents) {
-                ret ~= new EntEntry(key, ent, this);
-                key++;
-            }
-        }
+        Menu.Screen[] screens = ingScreens ~ toolScreens;
+        screens ~= acceptScreen;
         
-        return ret;
+        super(recipe.name, screens);
     }
     
     void init() {
-        ingredients = [];
-        tools = [];
-        selectTool = false;
+        recipe.clearIngredients();
+    }
+    
+    bool isTaken(Ent ent) {
+        foreach (Ingredient ing; recipe.ingredients) {
+            if (ing.ent is ent) return true;
+        }
+        foreach (Ingredient ing; recipe.tools) {
+            if (ing.ent is ent) return true;
+        }
+        
+        return false;
+    }
+    
+    static class AcceptScreen : Menu.Screen {
+        Craft screen;
+        bool crafting;
+        
+        this(Craft screen) {
+            super(screen.recipe.name);
+            this.screen = screen;
+        }
+        
+        Menu.Entry[] entries() {
+            Menu.Entry[] ret;
+            
+            ret ~= new TextEntry(" Ingredients:");
+            foreach (Ingredient ing; screen.recipe.ingredients) {
+                ret ~= new TextEntry(ing.ent.name);
+            }
+            
+            ret ~= new TextEntry(" Tools:");
+            foreach (Ingredient ing; screen.recipe.tools) {
+                ret ~= new TextEntry(ing.ent.name);
+            }
+            
+            if (!crafting) ret ~= new AcceptEntry(this);
+            
+            return ret;
+        }
+        
+        static class AcceptEntry : Menu.Entry {
+            AcceptScreen screen;
+            
+            this(AcceptScreen screen) {
+                super('a', "Accept & craft");
+                this.screen = screen;
+            }
+            
+            void select() {
+                player.update = new CraftUpdate(screen.screen.recipe, screen.screen);
+                screen.crafting = true;
+            }
+        }
+    }
+    
+    static class IngScreen : Menu.Screen {
+        Craft screen;
+        Ingredient ingredient;
+        
+        this(Ingredient ingredient, Craft screen) {
+            super(ingredient.name);
+            this.ingredient = ingredient;
+            this.screen = screen;
+        }
+        
+        Menu.Entry[] entries() {
+            screen.entsOnGround = world.allEntsInRadius(1, player.coord);
+            screen.entsOnGround.remove(player);
+            
+            char key = 'A';
+            auto ret = entSection(key, "Inventory", player.contained);
+            ret ~= entSection(key, "On Ground", screen.entsOnGround);
+            
+            return ret;
+        }
+        
+        Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
+            Menu.Entry[] ret;
+            ret ~= new TextEntry(" " ~ title);
+            if (ents.length == 0) {
+                ret ~= new TextEntry("(empty)");
+            } else {
+                foreach (Ent ent; ents) {
+                    if (!screen.isTaken(ent) && ingredient.canTake(ent)) {
+                        ret ~= new EntEntry(key, ent, this);
+                        key++;
+                    }
+                }
+            }
+            
+            return ret;
+        }
+        
+        static class EntEntry : Menu.Entry {
+            Ent ent;
+            IngScreen screen;
+            
+            this(char key, Ent ent, IngScreen screen) {
+                super(key, ent.name);
+                this.ent = ent;
+                this.screen = screen;
+            }
+            
+            void select() {
+                screen.ingredient.ent = ent;
+                screen.screen.nextScreen();
+            }
+        }
     }
     
     static class CraftUpdate : Update {
         Recipe recipe;
-        Ent[] ingredients, tools;
+        Craft screen;
         
-        this(Recipe recipe, Ent[] ingredients, Ent[] tools) {
-            this.recipe = recipe;
-            this.ingredients = ingredients;
-            this.tools = tools;
+        this(Recipe recipe, Craft screen) {
             super(recipe.time, [], []);
+            this.recipe = recipe;
+            this.screen = screen;
         }
         
         void apply() {
-            auto result = recipe.craft(ingredients, tools);
+            auto result = recipe.craft();
             
-            foreach (Ent ent; ingredients) {
-                if (ent.container is player) player.contained.remove(ent);
-                else world.remove(ent);
+            foreach (Ingredient ing; recipe.ingredients) {
+                if (ing.ent.container is player) player.contained.remove(ing.ent);
+                else world.remove(ing.ent);
             }
             
             result.addTo(player);
+            
+            screen.nextScreen();
         }
     }
+}
+
+
+class ChooseRecipe : Menu.Screen {
+    this() {
+        super("Craft");
+    }
     
-    static class EntEntry : Menu.Entry {
-        Ent ent;
-        Craft screen;
+    Menu.Entry[] entries() {
+        RecipeEntry[] ret = new RecipeEntry[player.recipes.length];
         
-        this(char key, Ent ent, Craft screen) {
-            this.ent = ent;
-            this.screen = screen;
-            super(key, "");
-            updateTitle();
+        char key = 'a';
+        foreach (int i, Recipe rec; player.recipes) {
+            ret[i] = new RecipeEntry(key, rec);
+            key++;
         }
         
-        void select() {
-            if (screen.selectTool) {
-                if (screen.tools.contains(ent)) {
-                    screen.tools.remove(ent);
-                } else {
-                    screen.tools ~= ent;
-                    
-                    if (screen.ingredients.contains(ent)) {
-                        screen.ingredients.remove(ent);
-                    }
-                }
-            } else {
-                if (screen.ingredients.contains(ent)) {
-                    screen.ingredients.remove(ent);
-                } else {
-                    screen.ingredients ~= ent;
-                    
-                    if (screen.tools.contains(ent)) {
-                        screen.tools.remove(ent);
-                    }
-                }
-            }
-            
-            updateTitle();
-        }
-        
-        void updateTitle() {
-            if (screen.tools.contains(ent)) {
-                title = "t " ~ ent.name;
-            } else if (screen.ingredients.contains(ent)) {
-                title = "i " ~ ent.name;
-            } else {
-                title = "  " ~ ent.name;
-            }
-        }
+        return ret;
     }
     
     static class RecipeEntry : Menu.Entry {
         Recipe recipe;
-        Craft screen;
-    
-        this(char key, Recipe recipe, Craft screen) {
-            this.recipe = recipe;
-            this.screen = screen;
+        
+        this(char key, Recipe recipe) {
             super(key, recipe.name);
+            this.recipe = recipe;
         }
         
         void select() {
-            player.update = new CraftUpdate(recipe, screen.ingredients, screen.tools);
-        }
-    }
-    
-    static class SelectTypeEntry : Menu.Entry {
-        Craft screen;
-        
-        this(Craft screen) {
-            this.screen = screen;
-            super(';', "");
-            updateTitle();
-        }
-        
-        void updateTitle() {
-            if (screen.selectTool) {
-                title = "Select ingredients";
-            } else {
-                title = "Select tool";
-            }
-        }
-        
-        void select() {
-            screen.selectTool = !screen.selectTool;
-            updateTitle();
-        }
-    }
-    
-    static class CraftEntry : Menu.Entry {
-        Craft screen;
-        
-        this(Craft screen) {
-            this.screen = screen;
-            super('-', "Craft");
-        }
-        
-        void select() {
+            menu.addScreen(new Craft(recipe));
         }
     }
 }

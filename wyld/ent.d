@@ -496,41 +496,57 @@ abstract class Recipe {
     string name;
     int time;
     
+    Ingredient[] ingredients, tools;
+    
     this(string name, int time) {
         this.name = name;
         this.time = time;
     }
-
-    abstract bool canTake(Ent[] ingredients, Ent[] tools);
-    abstract Ent craft(Ent[] ingredients, Ent[] tools);
+    
+    abstract Ent craft();
+    
+    void clearIngredients() {
+        foreach (Ingredient ing; ingredients) {
+            ing.ent = null;
+        }
+        foreach (Ingredient ing; tools) {
+            ing.ent = null;
+        }
+    }
 }
 
 class SharpStoneRecipe : Recipe {
+    UnsharpStone unsharpStone;
+    ClassIngredient!Stone toolStone;
+
     this() {
         super("sharpen stone", Time.fromMinutes(1));
+        unsharpStone = new UnsharpStone();
+        toolStone = new ClassIngredient!Stone();
+        ingredients = [unsharpStone];
+        tools = [toolStone];
     }
 
-    bool canTake(Ent[] ingredients, Ent[] tools) {
-        if (ingredients.length == 1 && tools.length == 1) {
-            auto inStone = cast(Stone)ingredients[0],
-                 toolStone = cast(Stone)tools[0];
-            
-            if (inStone !is null && !inStone.isSharp && toolStone !is null) return true;
-        }
-        
-        return false;
+    Stone craft() {
+        Stone stone = cast(Stone)unsharpStone.ent;
+    
+        stone.sharpen();
+        return stone;
     }
+}
 
-    Stone craft(Ent[] ingredients, Ent[] tools) {
-        auto inStone = cast(Stone)ingredients[0];
-        inStone.sharpen();
-        return inStone;
+class UnsharpStone : Ingredient {
+    this() {
+        super("unsharpened stone");
+    }
+    
+    bool canTake(Ent ent) {
+        Stone stone = cast(Stone)ent;
+        return stone !is null && !stone.tags.sharp;
     }
 }
 
 class Stone : Ent {
-    bool isSharp;
-
     this(int size, Coord coord) {
         Tags tags;
         tags.size = size;
@@ -540,8 +556,59 @@ class Stone : Ent {
     }
     
     void sharpen() {
-        isSharp = true;
+        tags.sharp = true;
         name = "sharp stone";
-        sym.sym = 'ô';
+        sym.sym = 'x';
+    }
+}
+
+abstract class Ingredient {
+    string name;
+    Ent ent;
+    
+    this(string name) {
+        this.name = name;
+    }
+    
+    abstract bool canTake(Ent);
+}
+
+class ClassIngredient(T) : Ingredient {
+    this() {
+        super("<class>");
+    }
+    
+    bool canTake(Ent ent) {
+        return cast(T)ent !is null;
+    }
+}
+
+class BigStickIngredient : Ingredient {
+    this() {
+        super("big stick");
+    }
+    
+    bool canTake(Ent ent) {
+        return ent.tags.bigStick;
+    }
+}
+
+class SharpIngredient : Ingredient {
+    this() {
+        super("sharp");
+    }
+    
+    bool canTake(Ent ent) {
+        return ent.tags.sharp;
+    }
+}
+
+class TieIngredient : Ingredient {
+    this() {
+        super("tie");
+    }
+    
+    bool canTake(Ent ent) {
+        return ent.tags.tie;
     }
 }

@@ -369,18 +369,27 @@ class ScreenSequence : Menu.Screen {
     navigation = [
       new TextEntry(""),
       new TextEntry("---"),
-      cast(Menu.Entry) new class() Menu.Entry {
-        this() {
-          super('\\', "Back");
-        }
-        
-        void select() {
-          previousScreen();
-        }
-      }
+      cast(Menu.Entry)new BackEntry(this)
     ];
   }
   
+  static class BackEntry : Menu.Entry {
+    ScreenSequence screen;
+  
+    this(ScreenSequence screen) {
+      super('\\', "Back");
+      this.screen = screen;
+    }
+
+    void select() {
+      screen.previousScreen();
+    }
+  }
+  
+  void nextScreen() {
+    screenIndex++;
+    if (screenIndex >= screens.length) menu.removeScreen();
+  }
   
   /// Goes back a screen
   void previousScreen() {
@@ -393,7 +402,8 @@ class ScreenSequence : Menu.Screen {
   
   Menu.Entry[] entries() {
     /// Start with the current screen's entries
-    auto entries = screens[screenIndex].entries;
+    Menu.Entry[] entries = [new TextEntry(screens[screenIndex].title)];
+    entries ~= screens[screenIndex].entries;
     
     /// If this isn't the first screen, display the 'Back' entry
     if (screenIndex != 0) entries ~= navigation;
