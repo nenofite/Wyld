@@ -599,7 +599,7 @@ class Interact : Menu.Screen {
     newSelected = [];
     
     /// Used to give each item an alphabetic key for selecting
-    char key = 'A';
+    char key = 'a';
     
     entries ~= entSection(key, "Inventory", player.contained);
     
@@ -782,7 +782,7 @@ class Interact : Menu.Screen {
 }
 
 
-class Craft : ScreenSequence {
+class Craft : SequenceScreen {
     Recipe recipe;
     
     Ent[] entsOnGround;
@@ -802,13 +802,18 @@ class Craft : ScreenSequence {
         
         auto acceptScreen = new AcceptScreen(this);
         
-        Menu.Screen[] screens = ingScreens ~ toolScreens;
+        PageScreen[] screens = ingScreens ~ toolScreens;
         screens ~= acceptScreen;
         
-        super(recipe.name, screens);
+        super(screens);
+    }
+    
+    string pageTitle(PageScreen page) {
+        return page.title ~ " (" ~ recipe.name ~ ")";
     }
     
     void init() {
+        locked = false;
         recipe.clearIngredients();
     }
     
@@ -823,7 +828,11 @@ class Craft : ScreenSequence {
         return false;
     }
     
-    static class AcceptScreen : Menu.Screen {
+    bool input(char key) {
+        return true;
+    }
+    
+    static class AcceptScreen : PageScreen {
         Craft screen;
         bool crafting;
         
@@ -854,18 +863,19 @@ class Craft : ScreenSequence {
             AcceptScreen screen;
             
             this(AcceptScreen screen) {
-                super('a', "Accept & craft");
+                super('A', "Accept & craft");
                 this.screen = screen;
             }
             
             void select() {
                 player.update = new CraftUpdate(screen.screen.recipe, screen.screen);
                 screen.crafting = true;
+                screen.screen.locked = true;
             }
         }
     }
     
-    static class IngScreen : Menu.Screen {
+    static class IngScreen : PageScreen {
         Craft screen;
         Ingredient ingredient;
         
@@ -879,7 +889,7 @@ class Craft : ScreenSequence {
             screen.entsOnGround = world.allEntsInRadius(1, player.coord);
             screen.entsOnGround.remove(player);
             
-            char key = 'A';
+            char key = 'a';
             auto ret = entSection(key, "Inventory", player.contained);
             ret ~= entSection(key, "On Ground", screen.entsOnGround);
             
@@ -889,18 +899,26 @@ class Craft : ScreenSequence {
         Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
             Menu.Entry[] ret;
             ret ~= new TextEntry(" " ~ title);
-            if (ents.length == 0) {
-                ret ~= new TextEntry("(empty)");
-            } else {
-                foreach (Ent ent; ents) {
-                    if (!screen.isTaken(ent) && ingredient.canTake(ent)) {
-                        ret ~= new EntEntry(key, ent, this);
-                        key++;
-                    }
+            
+            bool empty = true;
+            foreach (Ent ent; ents) {
+                if (!screen.isTaken(ent) && ingredient.canTake(ent)) {
+                    ret ~= new EntEntry(key, ent, this);
+                    key++;
+                    empty = false;
                 }
             }
+            if (empty) ret ~= new TextEntry("(none)");
             
             return ret;
+        }
+        
+        void clear() {
+            ingredient.ent = null;
+        }
+        
+        void init() {
+            ingredient.ent = null;
         }
         
         static class EntEntry : Menu.Entry {
@@ -940,7 +958,7 @@ class Craft : ScreenSequence {
             
             result.addTo(player);
             
-            screen.nextScreen();
+            menu.removeScreen();
         }
     }
 }

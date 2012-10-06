@@ -13,7 +13,7 @@ import math = std.math;
 /// Let the player drink fluids to alleviate thirst
 class Drink : Interaction.Single {
   this() {
-    super('q', "Drink");
+    super('Q', "Drink");
   }
   
   
@@ -44,7 +44,7 @@ class Drink : Interaction.Single {
 /// Lets the player pick up Ents and put them in their inventory
 class PickUp : Interaction.Single {
   this() {
-    super('g', "Pick up");
+    super('G', "Pick up");
   }
   
   

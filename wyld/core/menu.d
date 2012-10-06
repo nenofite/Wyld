@@ -355,65 +355,81 @@ class Menu {
 
 /// Displays a sequence of screens, allowing the user to progress forward
 /// or go back through the screens in order
-class ScreenSequence : Menu.Screen {
-  Menu.Screen[] screens;  /// The ordered list of screens
-  private int screenIndex;  /// The index of the current screen
-  
-  private Menu.Entry[] navigation; /// Menu entries used for navigating
-  
-  this(string title, Menu.Screen[] screens) {
-    super(title);
+abstract class SequenceScreen : Menu.Screen {
+    PageScreen[] screens;
+    int index;
     
-    this.screens = screens;
+    bool locked;
     
-    navigation = [
-      new TextEntry(""),
-      new TextEntry("---"),
-      cast(Menu.Entry)new BackEntry(this)
-    ];
-  }
-  
-  static class BackEntry : Menu.Entry {
-    ScreenSequence screen;
-  
-    this(ScreenSequence screen) {
-      super('\\', "Back");
-      this.screen = screen;
+    TextEntry spacerEntry;
+    BackEntry backEntry;
+
+    this(PageScreen[] screens) {
+        super("");
+        this.screens = screens;
+        spacerEntry = new TextEntry("");
+        backEntry = new BackEntry(this);
+        update();
+    }
+    
+    abstract string pageTitle(PageScreen page);
+    
+    void update() {
+        screens[index].init();
+        title = pageTitle(screens[index]);
+    }
+    
+    void previousScreen() {
+        screens[index].clear();
+        index--;
+        if (index < 0) index = 0;
+        update();
+    }
+    
+    void nextScreen() {
+        index++;
+        if (index >= screens.length) index = cast(int)screens.length - 1;
+        update();
+    }
+    
+    Menu.Entry[] entries() {
+        return screens[index].entries() ~ naviEntries();
+    }
+    
+    Menu.Entry[] naviEntries() {
+        if (locked || index == 0) return [];
+    
+        return [
+            spacerEntry,
+            cast(Menu.Entry)backEntry
+        ];
+    }
+    
+    bool input(char key) {
+        return screens[index].input(key);
+    }
+    
+    static class BackEntry : Menu.Entry {
+        SequenceScreen screen;
+        
+        this(SequenceScreen screen) {
+            super('\\', "Back");
+            this.screen = screen;
+        }
+        
+        void select() {
+            screen.previousScreen();
+        }
+    }
+}
+
+
+abstract class PageScreen : Menu.Screen {
+    this(string title) {
+        super(title);
     }
 
-    void select() {
-      screen.previousScreen();
-    }
-  }
-  
-  void nextScreen() {
-    screenIndex++;
-    if (screenIndex >= screens.length) menu.removeScreen();
-  }
-  
-  /// Goes back a screen
-  void previousScreen() {
-    --screenIndex;
-    if (screenIndex < 0) {
-      screenIndex = 0;
-    }
-  }
-  
-  
-  Menu.Entry[] entries() {
-    /// Start with the current screen's entries
-    Menu.Entry[] entries = [new TextEntry(screens[screenIndex].title)];
-    entries ~= screens[screenIndex].entries;
-    
-    /// If this isn't the first screen, display the 'Back' entry
-    if (screenIndex != 0) entries ~= navigation;
-    
-    return entries;
-  }
-  
-  bool input(char key) {
-    return screens[screenIndex].input(key);
-  }
+    void clear() {}
 }
 
 
