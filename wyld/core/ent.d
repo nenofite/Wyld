@@ -33,7 +33,6 @@ abstract class Ent {
     this.coord = coord;
   }
   
-  
   /// Remove this Ent from current container, attempt to add to new one
   void relocate(Ent newContainer) {
     if (container !is null) {
@@ -109,13 +108,71 @@ abstract class Ent {
 abstract class DynamicEnt : Ent {
   Update update;  /// The Ent's currently running update
   
+  /// The radius of the view around the Ent
+  ///
+  /// This technically isn't the radius, because it doesn't count the
+  /// Ent's own square.  This is actually one less than the radius.
+  int viewRadius; 
+
+  /// The radius where the Ent can make out other dynamic Ents
+  ///
+  /// Same as viewRadius as far as technicalities
+  int nearbyRadius;
+  
+  private DynamicEnt[] _nearbyEnts;
+  private bool _nearbyEntsCached;
+  private DynamicEntDistance[] _nearbyEntsDistances;
+  private bool _nearbyEntsDistancesCached;
+  private Ent[] _entsOnGround;
+  private bool _entsOnGroundCached;
+  
   this(string name, 
        Sym sym, 
        Tags tags, 
-       Coord coord) {
+       Coord coord,
+       int viewRadius,
+       int nearbyRadius) {
     super(name, sym, tags, coord);
+    
+    this.viewRadius = viewRadius;
+    this.nearbyRadius = nearbyRadius;
   }
   
+  DynamicEnt[] nearbyEnts() {
+    if (!_nearbyEntsCached) {
+        _nearbyEnts = world.dynamicEntsInRadius(nearbyRadius, coord);
+        _nearbyEnts.remove(this);
+        _nearbyEntsCached = true;
+    }
+    
+    return _nearbyEnts;
+  }
+  
+  DynamicEntDistance[] nearbyEntsDistances() {
+    if (!_nearbyEntsDistancesCached) {
+        _nearbyEntsDistances = world.dynamicEntsInRadiusDistances(nearbyRadius, coord, nearbyEnts());
+        _nearbyEntsDistancesCached = true;
+    }
+    
+    return _nearbyEntsDistances;
+  }
+  
+  Ent[] entsOnGround() {
+    if (!_entsOnGroundCached) {
+        _entsOnGround = world.allEntsInRadius(1, coord);
+        _entsOnGround.remove(this);
+        _entsOnGroundCached = true;
+    }
+    
+    return _entsOnGround;
+  }
+  
+  void clearNearby() {
+    _nearbyEnts = null;
+    _nearbyEntsCached = false;
+    _entsOnGround = null;
+    _entsOnGroundCached = false;
+  }
   
   /// Called once every tick to update simple things such as Stats
   void tickUpdate() {}

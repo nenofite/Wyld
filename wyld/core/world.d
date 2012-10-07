@@ -31,6 +31,7 @@ class World {
   
   void update() {
     foreach (ent; dynamicEnts) {
+      ent.clearNearby();
       ent.tickUpdate();
       
       if (ent.update !is null) {
@@ -78,21 +79,17 @@ class World {
     return ents;
   }
   
+  DynamicEntDistance[] dynamicEntsInRadiusDistances(int radius, Coord center) {
+    return dynamicEntsInRadiusDistances(radius, center, dynamicEntsInRadius(radius, center));
+  }
+  
   /// Returns the dynamic Ents within 'radius' units of the given center, 
   /// along with their direct distance from the center, sorted, 
   /// closest to farthest
   ///
   /// Returns: a struct that is aliased to the Ent, but that also
   ///          includes int distance
-  auto dynamicEntsInRadiusDistances(int radius, Coord center) {
-    struct DynamicEntDistance {
-      DynamicEnt _ent;
-      int distance;
-      
-      alias _ent this;
-    }
-    
-    auto ents = dynamicEntsInRadius(radius, center);
+  DynamicEntDistance[] dynamicEntsInRadiusDistances(int radius, Coord center, DynamicEnt[] ents) {
     DynamicEntDistance[] entsDistances = new DynamicEntDistance[](ents.length);
     
     foreach (i, ent; ents) {
@@ -396,4 +393,11 @@ abstract class Sound {
             }
         }
     }
+}
+
+struct DynamicEntDistance {
+  DynamicEnt _ent;
+  int distance;
+
+  alias _ent this;
 }

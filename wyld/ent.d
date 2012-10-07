@@ -19,16 +19,6 @@ abstract class StatEnt : DynamicEnt {
        thirst,
        hunger;
        
-  /// The radius of the view around the Ent
-  ///
-  /// This technically isn't the radius, because it doesn't count the
-  /// Ent's own square.  This is actually one less than the radius.
-  int viewRadius;
-  /// The radius where the Ent can make out other dynamic Ents
-  ///
-  /// Same as viewRadius as far as technicalities
-  int nearbyRadius;
-       
   this(string name, 
        Sym sym, 
        Tags tags, 
@@ -36,17 +26,15 @@ abstract class StatEnt : DynamicEnt {
        Stat hp, 
        Stat sp, 
        Stat thirst, 
-       Stat hunger, 
-       int viewRadius, 
+       Stat hunger,
+       int viewRadius,
        int nearbyRadius) {
-    super(name, sym, tags, coord);
+    super(name, sym, tags, coord, viewRadius, nearbyRadius);
     
     this.hp = hp;
     this.sp = sp;
     this.thirst = thirst;
     this.hunger = hunger;
-    this.viewRadius = viewRadius;
-    this.nearbyRadius = nearbyRadius;
   }
   
   
@@ -105,10 +93,6 @@ abstract class StatEnt : DynamicEnt {
       return true;
     }
     return false;
-  }
-  
-  DynamicEnt[] entsSeen() {
-    return world.dynamicEntsInRadius(nearbyRadius, coord);
   }
 }
 
@@ -313,9 +297,7 @@ class Wolf : StatEnt {
             }
         
             if (prey is null) {
-                auto seen = entsSeen();
-                
-                foreach (DynamicEnt ent; seen) {
+                foreach (DynamicEnt ent; nearbyEnts()) {
                     if ((cast(Deer)ent !is null) || (cast(Player)ent !is null)) {
                         setPrey(ent);
                         break;

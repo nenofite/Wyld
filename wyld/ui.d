@@ -180,9 +180,7 @@ class Nearby : Box {
   
   void draw(Dimension dim) {
     /// First, get the nearby Ents, sorted by closest to farthest
-    auto nearbyEnts = 
-      world.dynamicEntsInRadiusDistances(player.nearbyRadius, 
-                                         player.coord);
+    auto nearbyEnts = player.nearbyEntsDistances();
     
     /// Sort the nearby Ents into directions from the player
     Ent[] nearby; /// If they're inside the view, they go in here
@@ -603,10 +601,7 @@ class Interact : Menu.Screen {
     
     entries ~= entSection(key, "Inventory", player.contained);
     
-    auto entsOnGround = world.allEntsInRadius(1, player.coord);
-    entsOnGround.remove(player);
-    
-    entries ~= entSection(key, "On Ground", entsOnGround);
+    entries ~= entSection(key, "On Ground", player.entsOnGround());
     
     /// Cull out any selected Ents that were not shown in the menu
     selected = newSelected;
@@ -728,6 +723,8 @@ class Interact : Menu.Screen {
           if (!interact.newSelected.contains(ent)) {
             interact.newSelected ~= ent;
           }
+        } else {
+          title = " " ~ title;
         }
       }
       
@@ -752,7 +749,7 @@ class Interact : Menu.Screen {
     Menu.Entry[] entries;
     
     /// Make the title
-    entries ~= new TextEntry(" " ~ title);
+    entries ~= new TextEntry(title ~ ":");
   
     if (ents.length > 0) {
       /// Go through each Ent and create an entry for it
@@ -765,7 +762,7 @@ class Interact : Menu.Screen {
       }
     } else {
       /// If this contains no Ents, show that it is empty
-      entries ~= new TextEntry("(empty)");
+      entries ~= new TextEntry(" (empty)");
     }
     
     return entries;
@@ -784,8 +781,6 @@ class Interact : Menu.Screen {
 
 class Craft : SequenceScreen {
     Recipe recipe;
-    
-    Ent[] entsOnGround;
     
     this(Recipe recipe) {
         this.recipe = recipe;
@@ -886,19 +881,16 @@ class Craft : SequenceScreen {
         }
         
         Menu.Entry[] entries() {
-            screen.entsOnGround = world.allEntsInRadius(1, player.coord);
-            screen.entsOnGround.remove(player);
-            
             char key = 'a';
             auto ret = entSection(key, "Inventory", player.contained);
-            ret ~= entSection(key, "On Ground", screen.entsOnGround);
+            ret ~= entSection(key, "On Ground", player.entsOnGround());
             
             return ret;
         }
         
         Menu.Entry[] entSection(ref char key, string title, Ent[] ents) {
             Menu.Entry[] ret;
-            ret ~= new TextEntry(" " ~ title);
+            ret ~= new TextEntry(title ~ ":");
             
             bool empty = true;
             foreach (Ent ent; ents) {
@@ -908,7 +900,7 @@ class Craft : SequenceScreen {
                     empty = false;
                 }
             }
-            if (empty) ret ~= new TextEntry("(none)");
+            if (empty) ret ~= new TextEntry(" (none)");
             
             return ret;
         }
@@ -926,7 +918,7 @@ class Craft : SequenceScreen {
             IngScreen screen;
             
             this(char key, Ent ent, IngScreen screen) {
-                super(key, ent.name);
+                super(key, " " ~ ent.name);
                 this.ent = ent;
                 this.screen = screen;
             }
