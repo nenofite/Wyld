@@ -57,6 +57,9 @@ abstract class StatEnt : DynamicEnt {
   void onAttack(Attack attack) {
     if (rand.uniform!("[]")(0, 10) <= attack.accuracy) {
         takeDamage(attack.damage);
+        attack.successfulHit(attack.damage);
+    } else {
+        attack.missHit();
     }
   }
   
@@ -185,6 +188,14 @@ class Player : StatEnt {
         string msg = "You punch " ~ to.name ~ ".";
         return new SimpleCoordMessage(msg, from.coord);
     }
+    
+    void successfulHit(int damage) {
+        menu.addMessage(format("You land a hit and deal %d damage to %s.", damage, to.name));
+    }
+    
+    void missHit() {
+        menu.addMessage("You miss " ~ to.name);
+    }
   }
   
   static class WeaponAttack : Attack {
@@ -209,6 +220,14 @@ class Player : StatEnt {
     Message message() {
         string msg = "You use " ~ weapon.name ~ " on " ~ to.name ~ ".";
         return new SimpleCoordMessage(msg, from.coord);
+    }
+    
+    void successfulHit(int damage) {
+        menu.addMessage(format("You land a hit and deal %d damage to %s.", damage, to.name));
+    }
+    
+    void missHit() {
+        menu.addMessage("You miss " ~ to.name);
     }
   }
 }
@@ -464,6 +483,10 @@ abstract class Attack {
         to.onAttack(this);
     }
     
+    void successfulHit(int damage) {}
+    
+    void missHit() {}
+    
     abstract Message message();
     
     static class Update : wyld.core.ent.Update {
@@ -476,8 +499,8 @@ abstract class Attack {
         }
         
         void apply() {
-            attack.apply();
             attack.message().broadcast();
+            attack.apply();
         }
     }
 }
