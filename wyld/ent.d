@@ -121,7 +121,8 @@ class Player : StatEnt {
     ];
     
     recipes = [
-        new SharpStoneRecipe()
+        new SharpStoneRecipe(),
+        cast(Recipe)new SpearRecipe()
     ];
   }
   
@@ -376,10 +377,9 @@ class Wolf : StatEnt {
 class Grass : Ent {
   this(Coord coord) {
     Tags tags;
-    
     tags.size = 8;
-    
     tags.movementCost = 20;
+    tags.tie = true;
   
     super("grass", Sym('"', Color.Green), tags, coord);
   }
@@ -592,5 +592,53 @@ class TieIngredient : Ingredient {
     
     bool canTake(Ent ent) {
         return ent.tags.tie;
+    }
+}
+
+class Spear : Ent {
+    this(Coord coord, int weight = 20, int size = 30) {
+        Tags tags;
+        tags.size = size;
+        tags.weight = weight;
+        tags.bigStick = true;
+        tags.damage = 10;
+
+        super("spear", Sym('/', Color.Blue), tags, coord);
+    }
+}
+
+class SpearRecipe : Recipe {
+    BigStickIngredient bigStick;
+    TieIngredient tie;
+    SharpIngredient sharp;
+
+    this() {
+        super("spear", Time.fromMinutes(1));
+        bigStick = new BigStickIngredient();
+        tie = new TieIngredient();
+        sharp = new SharpIngredient();
+        ingredients = [bigStick, tie, cast(Ingredient)sharp];
+    }
+    
+    Ent craft() {
+        int weight = bigStick.ent.tags.weight +
+                     tie.ent.tags.weight +
+                     sharp.ent.tags.weight,
+            size = bigStick.ent.tags.size +
+                   tie.ent.tags.size +
+                   sharp.ent.tags.weight;
+        return new Spear(Coord(0, 0), weight, size);
+    }
+}
+
+class Stick : Ent {
+    this(Coord coord) {
+        Tags tags;
+        tags.size = 50;
+        tags.weight = 15;
+        tags.bigStick = true;
+        tags.damage = 8;
+        
+        super("wooden stick", Sym('/', Color.Yellow), tags, coord);
     }
 }

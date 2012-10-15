@@ -71,6 +71,9 @@ static World generateWorld(int p1Width, int p1Height,
           if (rand.uniform(0, 20) != 0) {
             ents ~= new Grass(coord);
           }
+          if (rand.uniform(0, 1000) == 0) {
+            ents ~= new Stick(coord);
+          }
           break;
           
         case Geo.Rock:

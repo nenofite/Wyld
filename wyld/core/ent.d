@@ -99,6 +99,8 @@ abstract class Ent {
     
     bool stick, bigStick, sharp, bigSharp, tie;
     
+    int damage;
+    
     // TODO finish transferring tags
   }
 }
