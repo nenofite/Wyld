@@ -4,6 +4,7 @@ module wyld.core.ent;
 import wyld.core.common;
 import wyld.core.menu;
 import wyld.core.world;
+import wyld.ent;
 import wyld.main;
 
 
@@ -99,7 +100,8 @@ abstract class Ent {
     
     bool stick, bigStick, sharp, bigSharp, tie;
     
-    int damage;
+    int damage, accuracy;
+    Attack.Type damageType;
     
     // TODO finish transferring tags
   }

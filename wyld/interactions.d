@@ -79,3 +79,31 @@ class PickUp : Interaction.Single {
     };
   }
 }
+
+class Equip : Interaction.Single {
+    this() {
+        super('E', "Equip");
+    }
+    
+    bool isApplicable(Ent ent) {
+        return ent.container is player && ent.tags.damage > 0;
+    }
+    
+    void apply(Ent ent) {
+        player.update = new EquipUpdate(ent);
+    }
+    
+    static class EquipUpdate : Update {
+        Ent ent;
+        
+        this(Ent ent) {
+            super(Time.fromSeconds(ent.tags.weight / 10), [], []);
+            this.ent = ent;
+        }
+        
+        void apply() {
+            player.equipped = ent;
+            menu.addMessage("You equip " ~ ent.name ~ ".");
+        }
+    }
+}

@@ -100,6 +100,7 @@ abstract class StatEnt : DynamicEnt {
 class Player : StatEnt {
   Interaction[] interactions;
   Recipe[] recipes;
+  Ent equipped;
 
   this(Coord coord) {
     Tags tags;
@@ -117,6 +118,7 @@ class Player : StatEnt {
           
     interactions = [
       new PickUp(),
+      new Equip(),
       cast(Interaction) new Drink()
     ];
     
@@ -147,7 +149,11 @@ class Player : StatEnt {
         if (ent.coord == newCoord) {
             StatEnt statEnt = cast(StatEnt)ent;
             if (statEnt !is null) {
-                update = (new Punch(this, statEnt)).update();
+                if (equipped !is null) {
+                    update = (new WeaponAttack(this, statEnt)).update();
+                } else {
+                    update = (new Punch(this, statEnt)).update();
+                }
                 return;
             }
         }
@@ -177,6 +183,31 @@ class Player : StatEnt {
     
     Message message() {
         string msg = "You punch " ~ to.name ~ ".";
+        return new SimpleCoordMessage(msg, from.coord);
+    }
+  }
+  
+  static class WeaponAttack : Attack {
+    Player from;
+    Ent weapon;
+    
+    this(Player from, StatEnt to) {
+        this.from = from;
+        weapon = from.equipped;
+        assert(weapon !is null);
+        this.to = to;
+        type = weapon.tags.damageType;
+        damage = weapon.tags.damage;
+        accuracy = weapon.tags.accuracy;
+    }
+    
+    Update update() {
+        int time = Time.fromSeconds(weapon.tags.weight / 10);
+        return Attack.update(time);
+    }
+    
+    Message message() {
+        string msg = "You use " ~ weapon.name ~ " on " ~ to.name ~ ".";
         return new SimpleCoordMessage(msg, from.coord);
     }
   }
@@ -602,6 +633,8 @@ class Spear : Ent {
         tags.weight = weight;
         tags.bigStick = true;
         tags.damage = 10;
+        tags.accuracy = 6;
+        tags.damageType = Attack.Type.Sharp;
 
         super("spear", Sym('/', Color.Blue), tags, coord);
     }
@@ -638,6 +671,8 @@ class Stick : Ent {
         tags.weight = 15;
         tags.bigStick = true;
         tags.damage = 8;
+        tags.accuracy = 4;
+        tags.damageType = Attack.Type.Blunt;
         
         super("wooden stick", Sym('/', Color.Yellow), tags, coord);
     }
