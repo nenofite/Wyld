@@ -253,6 +253,17 @@ class Stats : Box {
     ncs.mvprintw(y, dim.x, "Hunger: ");
     player.hunger.drawBar();
     ++y;
+    
+    ++y;
+    
+    setColor(Color.Text);
+    ncs.mvprintw(y, dim.x, "Equipped: ");
+    if (player.equipped !is null) {
+        setColor(Color.Blue);
+        ncs.printw(toStringz(player.equipped.name));
+    } else
+        ncs.printw("(N/A)");
+    ++y;
   }
 }
 
