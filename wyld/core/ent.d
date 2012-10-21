@@ -85,7 +85,7 @@ abstract class Ent {
     bool isFluid; 
     
     /// If this Ent blocks others' movement entirely
-    bool isBlocking; 
+    bool isBlocking, isAirBlocking; 
     /// The coefficient for how much of the Thirst stat this replenishes
     /// upon drinking
     float drinkCo = 0;
@@ -203,6 +203,9 @@ abstract class Update {
   /// The actual action, ran once the stats are met and the time has passed
   protected void apply();
   
+  Update next() {
+    return null;
+  }
   
   /// Update this Update by one tick, and run it if the time has come
   /// Return: false once the command has ran/the required stats weren't met

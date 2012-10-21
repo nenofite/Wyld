@@ -240,6 +240,10 @@ struct Terrain {
     }
   }
   
+  bool isAirBlocking() const {
+    return false;
+  }
+  
   
   /// Uses the standard probability for terrain being pocked to randomly
   /// set isPocked for this Terrain

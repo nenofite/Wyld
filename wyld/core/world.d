@@ -38,7 +38,7 @@ class World {
         auto keep = ent.update.run();
         
         if (!keep) {
-          ent.update = null;
+          ent.update = ent.update.next();
         }
       }
     }
@@ -191,6 +191,30 @@ class World {
     
     foreach (ent; world.dynamicEnts) {
       if (ent.coord == coord && ent.tags.isBlocking) {
+        return true;
+      }
+    }
+    
+    return false;
+  }
+  
+  bool isAirBlockingAt(Coord coord) {
+    if (!staticGrid.isInside(coord)) return true;
+    
+    auto stat = staticGrid.at(coord);
+    
+    if (stat.terrain.isAirBlocking) {
+      return true;
+    } else {
+      foreach (ent; stat.ents) {
+        if (ent.tags.isAirBlocking) {
+          return true;
+        }
+      }
+    }
+    
+    foreach (ent; world.dynamicEnts) {
+      if (ent.coord == coord && ent.tags.isAirBlocking) {
         return true;
       }
     }

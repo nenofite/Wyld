@@ -27,6 +27,7 @@ class MainScreen : Menu.Screen {
   MapScreen mapScreen;
   Interact interact;
   ChooseRecipe craft;
+  Skills skills;
 
   this() {
     super("Main", new Ui());
@@ -34,6 +35,7 @@ class MainScreen : Menu.Screen {
     mapScreen = new MapScreen();
     interact = new Interact();
     craft = new ChooseRecipe();
+    skills = new Skills();
   }
   
   Menu.Entry[] entries() {
@@ -41,6 +43,7 @@ class MainScreen : Menu.Screen {
       new Menu.SubEntry('m', mapScreen),
       new Menu.SubEntry('i', interact),
       new Menu.SubEntry('r', craft),
+      new Menu.SubEntry('k', skills),
       new Menu.SubEntry('a', new Messages())
     ];
   }
@@ -1098,5 +1101,74 @@ class EscapeScreen : Menu.Screen {
                 }
             }
         ];
+    }
+}
+
+class Skills : Menu.Screen {
+    Jump jump;
+
+    this() {
+        super("Skills");
+        jump = new Jump();
+    }
+    
+    Menu.Entry[] entries() {
+        return [
+            new Menu.SubEntry('j', jump)
+        ];
+    }
+}
+
+class Jump : Menu.Screen, WorldView.Overlay {
+    Coord marker;
+
+    this() {
+        super("Jump");
+    }
+    
+    Menu.Entry[] entries() {
+        return [];
+    }
+    
+    void init() {
+        marker = player.coord;
+    }
+    
+    bool input(char key) {
+        if (key == '\n') {
+            if (!world.isBlockingAt(marker)) {
+                player.update = new JumpTo(marker, player);
+                menu.removeScreen();
+            } else {
+                menu.addMessage("There is something blocking you from jumping there.");
+            }
+        } else {
+            bool isDir;
+            auto dir = directionFromKey(key, isDir);
+            if (isDir) {
+                auto newMarker = marker + coordFromDirection(dir);
+                if (distanceBetween(newMarker, player.coord) <= player.jumpRadius &&
+                    !world.isAirBlockingAt(newMarker))
+                    marker = newMarker;
+            }
+        }
+        return true;
+    }
+    
+    void dense(Coord coord, ref Sym sym) {
+        auto dist = distanceBetween(coord, player.coord);
+        if (dist == player.jumpRadius + 1) {
+            sym.color = Color.Border;
+        } else if (dist <= player.jumpRadius) {
+            if (world.isAirBlockingAt(coord)) {
+                sym.color = Color.Border;
+            } else if (world.isBlockingAt(coord)) {
+                sym.color = Color.RedBBg;
+            }
+        }
+    }
+    
+    CoordSym[] sparse() {
+        return [CoordSym(marker, Sym('X', Color.Yellow))];
     }
 }

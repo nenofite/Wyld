@@ -104,6 +104,8 @@ class Player : StatEnt {
   Interaction[] interactions;
   Recipe[] recipes;
   Ent equipped;
+  
+  uint jumpRadius;
 
   this(Coord coord) {
     Tags tags;
@@ -115,6 +117,8 @@ class Player : StatEnt {
     tags.containCo = .05;
     
     tags.speed = 50;
+    
+    jumpRadius = 4;
   
     super("you", Sym('@', Color.Blue), tags, coord, 
           Stat(500), Stat(500), Stat(400), Stat(200), 12, 25);
@@ -443,6 +447,7 @@ class Tree : Ent {
     tags.size = 24000;
     
     tags.isBlocking = true;
+    tags.isAirBlocking = true;
     
     auto color = rand.uniform(0, 10) == 0 ? Color.Yellow : Color.Green;
     
@@ -698,5 +703,36 @@ class Stick : Ent {
         tags.damageType = Attack.Type.Blunt;
         
         super("wooden stick", Sym('/', Color.Yellow), tags, coord);
+    }
+}
+
+class JumpTo : Update {
+    Coord dest;
+    StatEnt ent;
+    
+    bool failed;
+    
+    this(Coord dest, StatEnt ent, bool initial = true) {
+        this.dest = dest;
+        this.ent = ent;
+        auto consumes = initial ? [StatRequirement(&ent.sp, distanceBetween(ent.coord, dest) * 100)] : [];
+        super(Time.fromSeconds(1) / 10, [], consumes);
+    }
+    
+    void apply() {
+        Coord delta = coordFromDirection(directionBetween(ent.coord, dest));
+        auto newCoord = ent.coord + delta;
+        if (world.isAirBlockingAt(newCoord)) {
+            failed = true;
+            menu.addMessage("You slam mid-jump into something.");
+        } else
+            ent.coord = ent.coord + delta;
+    }
+    
+    Update next() {
+        if (!failed && ent.coord != dest) {
+            return new JumpTo(dest, ent, false);
+        }
+        return null;
     }
 }
