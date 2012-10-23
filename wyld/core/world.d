@@ -35,10 +35,14 @@ class World {
       ent.tickUpdate();
       
       if (ent.update !is null) {
-        auto keep = ent.update.run();
+        bool statsMet;
+        bool keep = ent.update.run(statsMet);
         
         if (!keep) {
-          ent.update = ent.update.next();
+            if (statsMet)
+                ent.update = ent.update.next();
+            else
+                ent.update = null;
         }
       }
     }

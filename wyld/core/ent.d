@@ -209,17 +209,29 @@ abstract class Update {
   
   /// Update this Update by one tick, and run it if the time has come
   /// Return: false once the command has ran/the required stats weren't met
-  bool run() {
-    foreach (stat; requireStats ~ consumeStats) {
-      if (!stat.check) return false;
-    }
+  bool run(out bool statsMet) {
+    foreach (stat; requireStats)
+        if (!stat.check()) {
+            menu.addMessage(stat.failMessage);
+            statsMet = false;
+            return false;
+        }
+    
+    foreach (stat; consumeStats)
+        if (!stat.check()) {
+            menu.addMessage(stat.failMessage);
+            statsMet = false;
+            return false;
+        }
+  
+    statsMet = true;
   
     if (consumeTime > 0) {
       --consumeTime;
       return true;
     } else {
       foreach (stat; consumeStats) {
-        assert(stat.check);
+        assert(stat.check());
         stat.consume();
       }
       
@@ -320,6 +332,8 @@ struct StatRequirement {
   Stat* stat;
   /// The amount required/consumed
   int amount;
+  
+  string failMessage;
   
   /// Check if the requirement is met
   /// Return: true if it is met

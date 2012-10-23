@@ -92,10 +92,14 @@ abstract class StatEnt : DynamicEnt {
     update = MoveUpdate.withCheck(this, delta);
     
     if (update !is null) {
-      update.consumeStats ~= StatRequirement(&sp, 1);
+      update.consumeStats ~= spRequirement(1);
       return true;
     }
     return false;
+  }
+  
+  StatRequirement spRequirement(int amount) {
+    return StatRequirement(&sp, amount, "You do not have enough stamina.");
   }
 }
 
@@ -716,7 +720,7 @@ class JumpTo : Update {
     this(Coord dest, StatEnt ent, bool initial = true) {
         this.dest = dest;
         this.ent = ent;
-        auto consumes = initial ? [StatRequirement(&ent.sp, distanceBetween(ent.coord, dest) * 100)] : [];
+        auto consumes = initial ? [ent.spRequirement(distanceBetween(ent.coord, dest) * 100)] : [];
         super(Time.fromSeconds(1) / 10, [], consumes);
     }
     
