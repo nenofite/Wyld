@@ -126,6 +126,7 @@ class Player : StatEnt {
     interactions = [
       new PickUp(),
       new Equip(),
+      new Unequip(),
       cast(Interaction) new Drink()
     ];
     

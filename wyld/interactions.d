@@ -86,7 +86,7 @@ class Equip : Interaction.Single {
     }
     
     bool isApplicable(Ent ent) {
-        return ent.container is player && ent.tags.damage > 0;
+        return ent.container is player && player.equipped !is ent && ent.tags.damage > 0;
     }
     
     void apply(Ent ent) {
@@ -104,6 +104,34 @@ class Equip : Interaction.Single {
         void apply() {
             player.equipped = ent;
             menu.addMessage("You equip " ~ ent.name ~ ".");
+        }
+    }
+}
+
+class Unequip : Interaction.Single {
+    this() {
+        super('R', "Unequip");
+    }
+    
+    bool isApplicable(Ent ent) {
+        return player.equipped is ent;
+    }
+    
+    void apply(Ent ent) {
+        player.update = new UnequipUpdate(ent);
+    }
+    
+    static class UnequipUpdate : Update {
+        Ent ent;
+        
+        this(Ent ent) {
+            super(Time.fromSeconds(ent.tags.weight / 10), [], []);
+            this.ent = ent;
+        }
+        
+        void apply() {
+            player.equipped = null;
+            menu.addMessage("You unequip " ~ ent.name ~ ".");
         }
     }
 }
