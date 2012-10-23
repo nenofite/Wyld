@@ -56,8 +56,15 @@ abstract class StatEnt : DynamicEnt {
   
   void onAttack(Attack attack) {
     if (rand.uniform!("[]")(0, 10) <= attack.accuracy) {
-        takeDamage(attack.damage);
-        attack.successfulHit(attack.damage);
+        int damage;
+        if (rand.uniform!("[]")(0, 4) == 0) {
+            damage = cast(int)(attack.damage * rand.uniform!("[]")(2.0, 3.0));
+            attack.criticalHit(damage);
+        } else {
+            damage = attack.damage;
+            attack.successfulHit(damage);
+        }
+        takeDamage(damage);
     } else {
         attack.missHit();
     }
@@ -98,8 +105,25 @@ abstract class StatEnt : DynamicEnt {
     return false;
   }
   
-  StatRequirement spRequirement(int amount) {
-    return StatRequirement(&sp, amount, "You do not have enough stamina.");
+  SpRequirement spRequirement(int amount) {
+    return new SpRequirement(this, amount);
+  }
+  
+  static class SpRequirement : StatRequirement {
+    StatEnt ent;
+  
+    this(StatEnt ent, int amount) {
+        super(amount);
+        this.ent = ent;
+    }
+    
+    bool check() {
+        return amount <= ent.sp;
+    }
+    
+    void consume() {
+        ent.sp -= amount;
+    }
   }
 }
 
@@ -182,20 +206,20 @@ class Player : StatEnt {
     Player from;
     
     this(Player from, StatEnt to) {
-        this.from = from;
-        this.to = to;
-        type = Type.Blunt;
-        damage = 8;
-        accuracy = 4;
+        super(from, to, Type.Blunt, 4, 8);
     }
     
     Update update() {
-        return Attack.update(100);
+        return Attack.update(Time.fromSeconds(1), 50);
     }
     
     Message message() {
         string msg = "You punch " ~ to.name ~ ".";
         return new SimpleCoordMessage(msg, from.coord);
+    }
+    
+    void criticalHit(int damage) {
+        menu.addMessage(format("You score a critical hit, dealing %d damage to %s!", damage, to.name));
     }
     
     void successfulHit(int damage) {
@@ -212,23 +236,23 @@ class Player : StatEnt {
     Ent weapon;
     
     this(Player from, StatEnt to) {
-        this.from = from;
         weapon = from.equipped;
         assert(weapon !is null);
-        this.to = to;
-        type = weapon.tags.damageType;
-        damage = weapon.tags.damage;
-        accuracy = weapon.tags.accuracy;
+        super(from, to, weapon.tags.damageType, weapon.tags.accuracy, weapon.tags.damage);
     }
     
     Update update() {
         int time = Time.fromSeconds(weapon.tags.weight / 10);
-        return Attack.update(time);
+        return Attack.update(time, weapon.tags.weight * 5);
     }
     
     Message message() {
         string msg = "You use " ~ weapon.name ~ " on " ~ to.name ~ ".";
         return new SimpleCoordMessage(msg, from.coord);
+    }
+    
+    void criticalHit(int damage) {
+        menu.addMessage(format("You score a critical hit, dealing %d damage to %s!", damage, to.name));
     }
     
     void successfulHit(int damage) {
@@ -237,6 +261,20 @@ class Player : StatEnt {
     
     void missHit() {
         menu.addMessage("You miss " ~ to.name);
+    }
+  }
+  
+  SpRequirement spRequirement(int amount) {
+    return new SpRequirement(this, amount);
+  }
+  
+  static class SpRequirement : StatEnt.SpRequirement {
+    this(Player ent, int amount) {
+        super(ent, amount);
+    }
+  
+    void onFail() {
+        menu.addMessage(format("You do not have enough stamina (requires %d, you have %d).", amount, ent.sp.amount));
     }
   }
 }
@@ -321,7 +359,7 @@ class Deer : StatEnt {
 
 
 class Wolf : StatEnt {
-    DynamicEnt prey;
+    StatEnt prey;
     int howlTimer = -1;
     
     this(Coord coord) {
@@ -358,13 +396,15 @@ class Wolf : StatEnt {
         
             if (prey is null) {
                 foreach (DynamicEnt ent; nearbyEnts()) {
-                    if ((cast(Deer)ent !is null) || (cast(Player)ent !is null)) {
-                        setPrey(ent);
-                        break;
-                    }
+                    StatEnt statEnt = cast(StatEnt)ent;
+                    if (statEnt !is null)
+                        if ((cast(Deer)statEnt !is null) || (cast(Player)statEnt !is null)) {
+                            setPrey(statEnt);
+                            break;
+                        }
                 }
             } else if (distanceBetween(coord, prey.coord) <= 1) {
-                update = (new Bite(this, cast(StatEnt)prey)).update();
+                update = (new Bite(this, prey)).update();
             } else {
                 auto delta = coordFromDirection(directionBetween(coord, prey.coord));
                 if (!move(delta)) {
@@ -377,12 +417,14 @@ class Wolf : StatEnt {
     void hearSound(Sound sound) {
         if (prey is null) {
             if (cast(Wolf)sound.ent is null) {
-                setPrey(cast(DynamicEnt)sound.ent);
+                auto ent = cast(StatEnt)sound.ent;
+                if (ent !is null)
+                    setPrey(ent);
             }
         }
     }
     
-    void setPrey(DynamicEnt prey) {
+    void setPrey(StatEnt prey) {
         this.prey = prey;
 //        (new GrowlSound(this)).broadcast();
     }
@@ -401,18 +443,12 @@ class Wolf : StatEnt {
     }
     
     class Bite : Attack {
-        Wolf from;
-        
         this(Wolf from, StatEnt to) {
-            this.from = from;
-            this.to = to;
-            type = Type.Sharp;
-            accuracy = 5;
-            damage = 15;
+            super(from, to, Type.Sharp, 5, 15);
         }
         
         Update update() {
-            return Attack.update(150);
+            return Attack.update(150, 80);
         }
         
         Message message() {
@@ -482,16 +518,26 @@ abstract class Attack {
     }
     
     StatEnt from, to;
-    int accuracy, damage;
     Type type;
+    int accuracy, damage;
     
-    Update update(int time) {
-        return new Update(this, time);
+    this(StatEnt from, StatEnt to, Type type, int accuracy, int damage) {
+        this.from = from;
+        this.to = to;
+        this.type = type;
+        this.accuracy = accuracy;
+        this.damage = damage;
+    }
+    
+    Update update(int time, int stamina) {
+        return new Update(this, time, stamina);
     }
     
     void apply() {
         to.onAttack(this);
     }
+    
+    void criticalHit(int damage) {}
     
     void successfulHit(int damage) {}
     
@@ -502,8 +548,8 @@ abstract class Attack {
     static class Update : wyld.core.ent.Update {
         Attack attack;
     
-        this(Attack attack, int time) {
-            super(time, [], []);
+        this(Attack attack, int time, int sp) {
+            super(time, [], [attack.from.spRequirement(sp)]);
         
             this.attack = attack;
         }

@@ -212,14 +212,14 @@ abstract class Update {
   bool run(out bool statsMet) {
     foreach (stat; requireStats)
         if (!stat.check()) {
-            menu.addMessage(stat.failMessage);
+            stat.onFail();
             statsMet = false;
             return false;
         }
     
     foreach (stat; consumeStats)
         if (!stat.check()) {
-            menu.addMessage(stat.failMessage);
+            stat.onFail();
             statsMet = false;
             return false;
         }
@@ -327,25 +327,23 @@ struct Stat {
 
 
 /// A requirement for a certain Stat, for use in Update
-struct StatRequirement {
-  /// The Stat in question
-  Stat* stat;
+abstract class StatRequirement {
   /// The amount required/consumed
   int amount;
   
-  string failMessage;
+  this(int amount) {
+    this.amount = amount;
+  }
+  
+  void onFail() {}
   
   /// Check if the requirement is met
   /// Return: true if it is met
-  bool check() {
-    return stat.amount >= amount;
-  }
+  abstract bool check();
   
   
   /// Consume the amount specified from the Stat
-  void consume() {
-    stat.amount -= amount;
-  }
+  abstract void consume();
 }
 
 
