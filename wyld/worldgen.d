@@ -256,3 +256,15 @@ void placeWolves(int num = 10) {
         }
     }
 }
+
+void placeWalrusFriend(int num = 1) {
+    for (int i = 0; i < num; i++) {
+        for (int tryNum = 0; tryNum < 10; tryNum++) {
+            auto coord = player.coord - Coord(rand.uniform!("[]")(-20, 20), rand.uniform!("[]")(-20, 20));
+            if (!world.isBlockingAt(coord)) {
+                world.add(new WalrusFriend(coord));
+                break;
+            }
+        }
+    }
+}

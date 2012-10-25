@@ -32,6 +32,8 @@ void main() {
   
   placePlayer();
   
+  placeWalrusFriend();
+  
   placeDeer();
   
   placeWolves();

@@ -40,7 +40,7 @@ abstract class StatEnt : DynamicEnt {
   
   /// Regenerate (and degrade) certain stats over time
   void tickUpdate() {
-    if (world.time.ticks % Time.fromSeconds(1) == 0) {
+    if (world.time.ticks % 10 == 0) {
       ++sp;
     }
     
@@ -203,8 +203,6 @@ class Player : StatEnt {
   }
   
   static class Punch : Attack {
-    Player from;
-    
     this(Player from, StatEnt to) {
         super(from, to, Type.Blunt, 4, 8);
     }
@@ -232,7 +230,6 @@ class Player : StatEnt {
   }
   
   static class WeaponAttack : Attack {
-    Player from;
     Ent weapon;
     
     this(Player from, StatEnt to) {
@@ -375,6 +372,8 @@ class Wolf : StatEnt {
     }
     
     void tickUpdate() {
+        StatEnt.tickUpdate();
+    
         if (prey is null) {
             howlTimer--;
             
