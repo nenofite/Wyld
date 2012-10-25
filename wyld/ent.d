@@ -786,3 +786,62 @@ class JumpTo : Update {
         return null;
     }
 }
+
+class WalrusFriend : StatEnt {
+    int snortDelay;
+
+    this(Coord coord) {
+        Tags tags;
+        tags.size = 12000;
+        
+        tags.isBlocking = true;
+        tags.speed = 50;
+        
+        super("walrus friend", Sym('W', Color.White), tags, coord,
+              Stat(500), Stat(500), Stat(400), Stat(200), 10, 20);
+              
+        randSnortDelay();
+    }
+    
+    void tickUpdate() {
+        StatEnt.tickUpdate();
+        
+        if (update is null) {
+            if (distanceBetween(coord, player.coord) > 3) {
+                auto dir = directionBetween(coord, player.coord);
+                auto moveDelta = coordFromDirection(dir);
+                
+                update = MoveUpdate.withCheck(this, moveDelta);
+                if (update is null) {
+                    auto rndMove = Coord(rand.uniform!("[]")(-1, 1), rand.uniform!("[]")(-1, 1));
+                    update = MoveUpdate.withCheck(this, rndMove);
+                }
+            } else {
+                snortDelay--;
+                if (snortDelay <= 0) {
+                    (new SimpleCoordMessage("The walrus friend snorts at you.", coord)).broadcast();
+                
+                    randSnortDelay();
+                }
+            }
+        }
+    }
+    
+    void randSnortDelay() {
+        snortDelay = Time.fromSeconds(rand.uniform!("[]")(5, 30));
+    }
+    
+    void hearSound(Sound) {}
+    
+    Ent corpse() {
+        return new Corpse(this);
+    }
+    
+    static class Corpse : Ent {
+        this(WalrusFriend walrus) {
+            auto sym = walrus.sym;
+            sym.color = Color.Red;
+            super(walrus.name, sym, walrus.tags, walrus.coord);
+        }
+    }
+}
