@@ -536,11 +536,20 @@ abstract class Attack {
         to.onAttack(this);
     }
     
-    void criticalHit(int damage) {}
+    void criticalHit(int damage) {
+        string msg = format("%s scores a critical hit on %s, dealing %d damage.", from.name, to.name, damage);
+        (new SimpleCoordMessage(msg, from.coord)).broadcast();
+    }
     
-    void successfulHit(int damage) {}
+    void successfulHit(int damage) {
+        string msg = format("%s hits %s, dealing %d damage.", from.name, to.name, damage);
+        (new SimpleCoordMessage(msg, from.coord)).broadcast();
+    }
     
-    void missHit() {}
+    void missHit() {
+        string msg = from.name ~ " misses " ~ to.name ~ ".";
+        (new SimpleCoordMessage(msg, from.coord)).broadcast();
+    }
     
     abstract Message message();
     
