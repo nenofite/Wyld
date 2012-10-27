@@ -541,3 +541,11 @@ bool contains(T)(ref T[] list, T item) {
   
   return false;
 }
+
+Direction toDirection(int num) {
+    num = math.abs(num);
+    while (num > Direction.max) {
+        num -= Direction.max + 1;
+    }
+    return cast(Direction)num;
+}

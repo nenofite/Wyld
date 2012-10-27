@@ -789,8 +789,11 @@ class JumpTo : Update {
 
 class WalrusFriend : StatEnt {
     int snortDelay;
+    Ent follow;
 
-    this(Coord coord) {
+    this(Coord coord, Ent follow) {
+        this.follow = follow;
+    
         Tags tags;
         tags.size = 12000;
         
@@ -807,14 +810,22 @@ class WalrusFriend : StatEnt {
         StatEnt.tickUpdate();
         
         if (update is null) {
-            if (distanceBetween(coord, player.coord) > 3) {
-                auto dir = directionBetween(coord, player.coord);
+            if (distanceBetween(coord, follow.coord) > 3) {
+                auto dir = directionBetween(coord, follow.coord);
                 auto moveDelta = coordFromDirection(dir);
                 
                 update = MoveUpdate.withCheck(this, moveDelta);
                 if (update is null) {
-                    auto rndMove = Coord(rand.uniform!("[]")(-1, 1), rand.uniform!("[]")(-1, 1));
-                    update = MoveUpdate.withCheck(this, rndMove);
+                    bool sign = cast(bool)rand.uniform!("[]")(0, 1);
+                    for (int delta = 0; delta <= 4; delta++) {
+                        auto avoidDir = toDirection(dir + delta * (sign ? 1 : -1));
+                        update = MoveUpdate.withCheck(this, coordFromDirection(avoidDir));
+                        if (update !is null) break;
+
+                        avoidDir = toDirection(dir - delta * (sign ? 1 : -1));
+                        update = MoveUpdate.withCheck(this, coordFromDirection(avoidDir));
+                        if (update !is null) break;
+                    }
                 }
             } else {
                 snortDelay--;

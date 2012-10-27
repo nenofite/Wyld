@@ -32,7 +32,7 @@ void main() {
   
   placePlayer();
   
-  placeWalrusFriend();
+  placeWalrusFriend(5);
   
   placeDeer();
   
