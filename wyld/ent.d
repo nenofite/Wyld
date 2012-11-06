@@ -98,11 +98,7 @@ abstract class StatEnt : DynamicEnt {
   bool move(Coord delta) {
     update = MoveUpdate.withCheck(this, delta);
     
-    if (update !is null) {
-      update.consumeStats ~= spRequirement(1);
-      return true;
-    }
-    return false;
+    return update !is null;
   }
   
   SpRequirement spRequirement(int amount) {
@@ -208,7 +204,7 @@ class Player : StatEnt {
     }
     
     Update update() {
-        return Attack.update(Time.fromSeconds(1), 50);
+        return Attack.update(Time.fromSeconds(1), 10);
     }
     
     Message message() {
@@ -447,7 +443,7 @@ class Wolf : StatEnt {
         }
         
         Update update() {
-            return Attack.update(150, 80);
+            return Attack.update(150, 25);
         }
         
         Message message() {
