@@ -209,7 +209,7 @@ abstract class Update {
   
   /// Update this Update by one tick, and run it if the time has come
   /// Return: false once the command has ran/the required stats weren't met
-  bool run(out bool statsMet) {
+  bool run(uint elapsed, out bool statsMet) {
     foreach (stat; requireStats)
         if (!stat.check()) {
             stat.onFail();
@@ -227,7 +227,7 @@ abstract class Update {
     statsMet = true;
   
     if (consumeTime > 0) {
-      --consumeTime;
+      consumeTime -= elapsed;
       return true;
     } else {
       foreach (stat; consumeStats) {

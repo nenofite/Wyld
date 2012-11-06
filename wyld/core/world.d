@@ -31,12 +31,16 @@ class World {
   
   void update() {
     foreach (ent; dynamicEnts) {
-      ent.clearNearby();
-      ent.tickUpdate();
+      uint elapsed = time.delta;
+    
+      for (int i = 0; i < elapsed; i++) {
+          ent.clearNearby();
+          ent.tickUpdate();
+      }
       
       if (ent.update !is null) {
         bool statsMet;
-        bool keep = ent.update.run(statsMet);
+        bool keep = ent.update.run(elapsed, statsMet);
         
         if (!keep) {
             if (statsMet)
@@ -307,7 +311,8 @@ struct Tracks {
 
 /// Keeps track of in-game time and offers some utility functions
 struct Time {
-  int ticks;    /// How many ticks have elapsed in the game
+  uint ticks;    /// How many ticks have elapsed in the game
+  uint delta = 1;  /// How many ticks to increment each frame (increase to speed up game)
        
   private immutable int ticksPerSecond = 100, /// How many ticks in a single second
                         dawnDuskTicks = fromMinutes(12); /// How long dawn/dusk last
@@ -315,8 +320,8 @@ struct Time {
                           moonOffset = .4; /// Where the moon starts 
        
   /// Moves time forward, defaulting to a single tick
-  void increment(int newTicks = 1) {
-    ticks += newTicks;
+  void increment() {
+    ticks += delta;
   }
   
   
