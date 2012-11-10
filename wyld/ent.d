@@ -94,13 +94,6 @@ abstract class StatEnt : DynamicEnt {
     return hp == 0;
   }
   
-  
-  bool move(Coord delta) {
-    update = MoveUpdate.withCheck(this, delta);
-    
-    return update !is null;
-  }
-  
   SpRequirement spRequirement(int amount) {
     return new SpRequirement(this, amount);
   }
@@ -174,7 +167,8 @@ class Player : StatEnt {
     menu.running = false;
   }
   
-  void attackMove(Coord delta) {
+  void attackMove(Direction dir) {
+    auto delta = coordFromDirection(dir);
     auto newCoord = coord + delta;
     
     foreach (DynamicEnt ent; world.dynamicEnts) {
@@ -191,7 +185,7 @@ class Player : StatEnt {
         }
     }
     
-    move(delta);
+    update = MoveUpdate.avoiding(this, dir);
   }
   
   Ent corpse() {
@@ -300,16 +294,14 @@ class Deer : StatEnt {
       }
       
       if (predator !is null) {
-        auto delta = coordFromDirection(oppositeDirection(directionBetween(coord, predator.coord)));
-        move(delta);
+        update = MoveUpdate.avoiding(this, oppositeDirection(directionBetween(coord, predator.coord)));
       } else {
         if (coord == dest) {
           hasDest = false;
         }
       
         if (hasDest) {
-          auto delta = coordFromDirection(directionBetween(coord, dest));
-          move(delta);
+          update = MoveUpdate.avoiding(this, directionBetween(coord, dest));
           
           if (update is null) {
             hasDest = false;
@@ -401,8 +393,8 @@ class Wolf : StatEnt {
             } else if (distanceBetween(coord, prey.coord) <= 1) {
                 update = (new Bite(this, prey)).update();
             } else {
-                auto delta = coordFromDirection(directionBetween(coord, prey.coord));
-                if (!move(delta)) {
+                update = MoveUpdate.avoiding(this, directionBetween(coord, prey.coord));
+                if (update is null) {
                     prey = null;
                 }
             }
@@ -817,21 +809,7 @@ class WalrusFriend : StatEnt {
         if (update is null) {
             if (distanceBetween(coord, follow.coord) > 3) {
                 auto dir = directionBetween(coord, follow.coord);
-                auto moveDelta = coordFromDirection(dir);
-                
-                update = MoveUpdate.withCheck(this, moveDelta);
-                if (update is null) {
-                    bool sign = cast(bool)rand.uniform!("[]")(0, 1);
-                    for (int delta = 0; delta <= 4; delta++) {
-                        auto avoidDir = toDirection(dir + delta * (sign ? 1 : -1));
-                        update = MoveUpdate.withCheck(this, coordFromDirection(avoidDir));
-                        if (update !is null) break;
-
-                        avoidDir = toDirection(dir - delta * (sign ? 1 : -1));
-                        update = MoveUpdate.withCheck(this, coordFromDirection(avoidDir));
-                        if (update !is null) break;
-                    }
-                }
+                update = MoveUpdate.avoiding(this, dir);
             } else {
                 snortDelay--;
                 if (snortDelay <= 0) {

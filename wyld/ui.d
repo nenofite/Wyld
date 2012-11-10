@@ -82,7 +82,7 @@ class MainScreen : Menu.Screen {
       auto dir = directionFromKey(key, isDir);
       
       if (isDir) {
-        player.attackMove(coordFromDirection(dir));
+        player.attackMove(dir);
       } else if (key == '5') {
         player.update = new class() Update {
           this() {

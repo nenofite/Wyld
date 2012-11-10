@@ -269,6 +269,25 @@ class MoveUpdate : Update {
         return new MoveUpdate(ent, delta);
     }
     
+    static MoveUpdate avoiding(DynamicEnt ent, Direction dir) {
+        auto moveDelta = coordFromDirection(dir);
+        
+        auto update = MoveUpdate.withCheck(ent, moveDelta);
+        if (update is null) {
+            bool sign = cast(bool)rand.uniform!("[]")(0, 1);
+            for (int delta = 0; delta <= 2; delta++) {
+                auto avoidDir = toDirection(dir + delta * (sign ? 1 : -1));
+                update = MoveUpdate.withCheck(ent, coordFromDirection(avoidDir));
+                if (update !is null) break;
+
+                avoidDir = toDirection(dir - delta * (sign ? 1 : -1));
+                update = MoveUpdate.withCheck(ent, coordFromDirection(avoidDir));
+                if (update !is null) break;
+            }
+        }
+        return update;
+    }
+    
     void apply() {
         if (!world.isBlockingAt(dest)) {
             ent.coord = dest;
