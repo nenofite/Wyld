@@ -1106,16 +1106,101 @@ class EscapeScreen : Menu.Screen {
 
 class Skills : Menu.Screen {
     Jump jump;
+    SleepScreen sleep;
 
     this() {
         super("Skills");
         jump = new Jump();
+        sleep = new SleepScreen();
     }
     
     Menu.Entry[] entries() {
         return [
-            new Menu.SubEntry('j', jump)
+            new Menu.SubEntry('j', jump),
+            new Menu.SubEntry('s', sleep)
         ];
+    }
+}
+
+class SleepScreen : Menu.Screen {
+    UntilDawn untilDawn;
+    OneHour oneHour;
+    
+    Sleep update;
+
+    this() {
+        super("Sleep");
+        
+        untilDawn = new UntilDawn(this);
+        oneHour = new OneHour(this);
+    }
+    
+    Menu.Entry[] entries() {
+        return [untilDawn, cast(Menu.Entry)oneHour];
+    }
+    
+    static class UntilDawn : Menu.Entry {
+        SleepScreen screen;
+    
+        this(SleepScreen screen) {
+            this.screen = screen;
+            super('D', "Until Dawn");
+        }
+        
+        void select() {
+            auto upd = Sleep.untilDawn(player);
+            player.update = upd;
+            menu.addScreen(new WaitScreen(upd));
+        }
+    }
+    
+    static class OneHour : Menu.Entry {
+        SleepScreen screen;
+    
+        this(SleepScreen screen) {
+            this.screen = screen;
+            super('H', "For 1 Hour");
+        }
+        
+        void select() {
+            auto upd = Sleep.forTime(Time.fromHours(1), player);
+            player.update = upd;
+            menu.addScreen(new WaitScreen(upd));
+        }
+    }
+    
+    static class WaitScreen : Menu.Screen {
+        Sleep update;
+        
+        TimeEntry time;
+    
+        this(Sleep update) {
+            this.update = update;
+            time = new TimeEntry(this);
+            super("Sleeping...");
+        }
+        
+        Menu.Entry[] entries() {
+            time.updateTitle();
+            return [time];
+        }
+        
+        static class TimeEntry : Menu.Entry {
+            WaitScreen screen;
+            
+            this(WaitScreen screen) {
+                this.screen = screen;
+                super('\0', "");
+                updateTitle();
+            }
+            
+            void updateTitle() {
+                auto hours = screen.update.timeRemaining() / Time.fromMinutes(1);
+                title = format("%d minutes remaining", hours);
+            }
+            
+            void select() {}
+        }
     }
 }
 

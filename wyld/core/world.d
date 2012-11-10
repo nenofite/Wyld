@@ -30,15 +30,18 @@ class World {
   
   
   void update() {
+    uint elapsed = time.delta;
+    time.delta = 1;
     foreach (ent; dynamicEnts) {
-      uint elapsed = time.delta;
-    
       for (int i = 0; i < elapsed; i++) {
           ent.clearNearby();
           ent.tickUpdate();
       }
       
       if (ent.update !is null) {
+        if (ent.update.timeDelta > time.delta)
+            time.delta = ent.update.timeDelta;
+      
         bool statsMet;
         bool keep = ent.update.run(elapsed, statsMet);
         
@@ -376,8 +379,16 @@ struct Time {
     return secs * ticksPerSecond;
   }
   
+  static int fromSeconds(float secs) {
+    return cast(int)(secs * ticksPerSecond);
+  }
+  
   /// ditto
   static int fromMinutes(int mins) {
+    return fromSeconds(mins * 60);
+  }
+  
+  static int fromMinutes(float mins) {
     return fromSeconds(mins * 60);
   }
   
@@ -387,7 +398,17 @@ struct Time {
   }
   
   /// ditto
+  static int fromHours(float hrs) {
+    return fromMinutes(hrs * 60);
+  }
+  
+  /// ditto
   static int fromPeriods(int pers) {
+    return fromHours(pers * 12);
+  }
+  
+  /// ditto
+  static int fromPeriods(float pers) {
     return fromHours(pers * 12);
   }
 }

@@ -188,6 +188,7 @@ abstract class DynamicEnt : Ent {
 /// An action performed by an Ent, involving time and Stat requirements
 abstract class Update {
   int consumeTime;  /// The amount of ticks needed to perform this
+  uint timeDelta = 1; /// The minimum timeDelta this Update shall run at
   StatRequirement[] requireStats, /// Stats that must be at a certain amount
                     consumeStats; /// Stats that will be used up by this
              

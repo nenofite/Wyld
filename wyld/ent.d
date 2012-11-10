@@ -235,7 +235,7 @@ class Player : StatEnt {
     }
     
     Update update() {
-        int time = Time.fromSeconds(weapon.tags.weight / 10);
+        int time = Time.fromSeconds(weapon.tags.weight / 10.0);
         return Attack.update(time, weapon.tags.weight * 5);
     }
     
@@ -443,7 +443,7 @@ class Wolf : StatEnt {
         }
         
         Update update() {
-            return Attack.update(150, 25);
+            return Attack.update(Time.fromSeconds(1.5), 25);
         }
         
         Message message() {
@@ -859,5 +859,49 @@ class WalrusFriend : StatEnt {
             sym.color = Color.Red;
             super(walrus.name, sym, walrus.tags, walrus.coord);
         }
+    }
+}
+
+class Sleep : Update {
+    static const int pieceLength = Time.fromSeconds(10);
+
+    int remainingPieces;
+    StatEnt ent;
+
+    this(int remainingPieces, StatEnt ent) {
+        this.remainingPieces = remainingPieces;
+        this.ent = ent;
+        timeDelta = Time.fromSeconds(10);
+        super(pieceLength, [], []);
+    }
+
+    static Sleep forTime(int time, StatEnt ent) {
+        return new Sleep(time / pieceLength, ent);
+    }
+    
+    static Sleep untilDawn(StatEnt ent) {
+        int ticks = Time.fromPeriods(1) - world.time.periodTicks();
+        if (world.time.isDay())
+            ticks += Time.fromPeriods(1);
+        return Sleep.forTime(ticks, ent);
+    }
+    
+    Sleep next() {
+        if (remainingPieces > 0) {
+            remainingPieces--;
+            consumeTime = pieceLength;
+            return this;
+        } else {
+            return null;
+        }
+    }
+    
+    void apply() {
+        ent.sp.amount += 10;
+        ent.hp.amount += 10;
+    }
+    
+    int timeRemaining() {
+        return remainingPieces * pieceLength;
     }
 }
